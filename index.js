@@ -7,10 +7,14 @@ const restartButton = document.getElementById('restartButton');
 const cooldownWidget = document.getElementById('cooldownWidget');
 const cooldownText = document.getElementById('cooldownText');
 const cooldownHint = document.getElementById('cooldownHint');
+const endScreen = document.getElementById('endScreen');
+const endStatsNode = document.getElementById('endStats');
+const endRestartButton = document.getElementById('endRestartButton');
 
 const HEX_RADIUS = 4;
-const ENTRY_CELL = { q: -4, r: 0 };
-const EXIT_CELL = { q: 4, r: 0 };
+const FINAL_ROOM = 5;
+const BAT_ATTACK_MS = 2000;
+const BAT_ATTACK_DAMAGE = 6;
 const HEX_DIRECTIONS = [
     { q: 1, r: 0 },
     { q: 1, r: -1 },
@@ -20,30 +24,23 @@ const HEX_DIRECTIONS = [
     { q: 0, r: 1 }
 ];
 
-const SPRITE_SHEET = {
-    src: 'assets/sprites-idle.png',
-    columns: 4,
-    rows: 6,
-    frameMs: 180,
-    sprites: {
-        player: { row: 0 },
-        enemy: { row: 1 },
-        npc: { row: 2 },
-        pollen: { row: 3 },
-        water: { row: 4 },
-        upgrade: { row: 5 }
-    }
+const SPRITE_DEFS = {
+    playerIdle: { src: 'assets/bee-alpha.png', columns: 4, rows: 2, row: 0, frameMs: 180 },
+    playerAttack: { src: 'assets/bee-alpha.png', columns: 4, rows: 2, row: 1, frameMs: 120 },
+    enemy: { src: 'assets/wasp-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
+    bat: { src: 'assets/bat-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
+    npc: { src: 'assets/bettle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
+    water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
+    exit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
+    finalExit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 140 }
 };
 
-const spritesImage = new Image();
-let spritesReady = false;
+const spriteAssets = {};
 let spriteFrames = {};
-spritesImage.onload = () => {
-    spriteFrames = buildSpriteFrames();
-    spritesReady = true;
-    draw();
-};
-spritesImage.src = SPRITE_SHEET.src;
+let spritesReady = false;
+loadSprites();
 
 const OBJECTS = {
     empty: {
@@ -90,6 +87,11 @@ const OBJECTS = {
         name: 'Exit',
         color: '#f2bd4b',
         description: 'Open the next room.'
+    },
+    finalExit: {
+        name: 'Final Exit',
+        color: '#fff2a7',
+        description: 'End the run.'
     }
 };
 
@@ -98,7 +100,16 @@ const game = {
     logs: [],
     roomStack: [],
     roomDepth: 1,
+    entryCell: null,
+    exitCell: null,
     statPopups: [],
+    runStartedAt: 0,
+    ended: false,
+    runStats: {
+        kills: 0,
+        pollen: 0,
+        water: 0
+    },
     player: {
         q: 0,
         r: 0,
@@ -108,18 +119,19 @@ const game = {
         upgrades: 0,
         steps: 0,
         attackCooldownMs: 3000,
-        attackReadyAt: 0
+        attackReadyAt: 0,
+        attackAnimationUntil: 0
     },
     message: 'The scout starts at the center. Click a glowing neighbor to move.'
 };
 
-function randomObjectFor(q, r) {
-    if (q === ENTRY_CELL.q && r === ENTRY_CELL.r) {
+function randomObjectFor(q, r, entryCell, exitCell) {
+    if (q === entryCell.q && r === entryCell.r) {
         return 'entry';
     }
 
-    if (q === EXIT_CELL.q && r === EXIT_CELL.r) {
-        return 'exit';
+    if (q === exitCell.q && r === exitCell.r) {
+        return game.roomDepth >= FINAL_ROOM ? 'finalExit' : 'exit';
     }
 
     if (q === 0 && r === 0) {
@@ -131,8 +143,7 @@ function randomObjectFor(q, r) {
 
     if (distance === 1 && roll < 0.28) return 'pollen';
     if (distance === 1 && roll < 0.50) return 'water';
-    if (roll < 0.13) return 'enemy';
-    if (roll < 0.21) return 'bat';
+    if (roll < 0.15) return 'enemy';
     if (roll < 0.32) return 'npc';
     if (roll < 0.43) return 'upgrade';
     if (roll < 0.58) return 'pollen';
@@ -144,29 +155,41 @@ function createGrid() {
     game.logs = [];
     game.roomStack = [];
     game.roomDepth = 1;
+    game.runStartedAt = performance.now();
+    game.ended = false;
+    game.runStats = {
+        kills: 0,
+        pollen: 0,
+        water: 0
+    };
     game.player = createFreshPlayer();
+    endScreen.classList.remove('visible');
     generateRoom('restart');
 }
 
 function createFreshPlayer() {
     return {
-        q: ENTRY_CELL.q,
-        r: ENTRY_CELL.r,
+        q: 0,
+        r: 0,
         health: 100,
         pollen: 0,
         water: 0,
         upgrades: 0,
         steps: 0,
         attackCooldownMs: 3000,
-        attackReadyAt: 0
+        attackReadyAt: 0,
+        attackAnimationUntil: 0
     };
 }
 
 function generateRoom(reason) {
     game.cells = [];
     game.statPopups = [];
-    game.player.q = ENTRY_CELL.q;
-    game.player.r = ENTRY_CELL.r;
+    const portals = choosePortalCells();
+    game.entryCell = portals.entry;
+    game.exitCell = portals.exit;
+    game.player.q = game.entryCell.q;
+    game.player.r = game.entryCell.r;
     game.message = 'A new chamber opens. Find the exit.';
 
     for (let q = -HEX_RADIUS; q <= HEX_RADIUS; q++) {
@@ -177,11 +200,14 @@ function generateRoom(reason) {
             game.cells.push({
                 q,
                 r,
-                object: randomObjectFor(q, r),
-                visited: q === ENTRY_CELL.q && r === ENTRY_CELL.r
+                object: randomObjectFor(q, r, game.entryCell, game.exitCell),
+                visited: q === game.entryCell.q && r === game.entryCell.r,
+                nextAttackAt: 0
             });
         }
     }
+
+    placeBats();
 
     if (reason === 'restart') {
         addLog('Start', 'Scout the dungeon, manage sting cooldown, and use exits to crawl deeper.');
@@ -189,6 +215,51 @@ function generateRoom(reason) {
         addLog('Exit', `Entered chamber ${game.roomDepth}.`);
     }
     draw();
+}
+
+function choosePortalCells() {
+    const cells = getAllCoordinates();
+    const outerCells = cells.filter((cell) => hexDistance(0, 0, cell.q, cell.r) >= HEX_RADIUS - 1);
+    const entry = randomFrom(outerCells);
+    const exitOptions = outerCells.filter((cell) => hexDistance(entry.q, entry.r, cell.q, cell.r) >= HEX_RADIUS);
+    const exit = randomFrom(exitOptions.length ? exitOptions : outerCells.filter((cell) => cell !== entry));
+    return {
+        entry,
+        exit
+    };
+}
+
+function getAllCoordinates() {
+    const coordinates = [];
+    for (let q = -HEX_RADIUS; q <= HEX_RADIUS; q++) {
+        const rMin = Math.max(-HEX_RADIUS, -q - HEX_RADIUS);
+        const rMax = Math.min(HEX_RADIUS, -q + HEX_RADIUS);
+
+        for (let r = rMin; r <= rMax; r++) {
+            coordinates.push({ q, r });
+        }
+    }
+    return coordinates;
+}
+
+function randomFrom(items) {
+    return items[Math.floor(Math.random() * items.length)];
+}
+
+function placeBats() {
+    const batCount = Math.random() < 0.5 ? 1 : 2;
+    const candidates = game.cells.filter((cell) => (
+        cell.object === 'empty'
+        && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 2
+        && hexDistance(cell.q, cell.r, game.exitCell.q, game.exitCell.r) > 1
+    ));
+
+    for (let i = 0; i < batCount && candidates.length; i++) {
+        const index = Math.floor(Math.random() * candidates.length);
+        const [cell] = candidates.splice(index, 1);
+        cell.object = 'bat';
+        cell.nextAttackAt = 0;
+    }
 }
 
 function resizeCanvas() {
@@ -267,6 +338,7 @@ function pixelToClosestHex(x, y) {
 
 function draw() {
     if (!canvas.width || !canvas.height) return;
+    updateBatAttacks();
 
     const board = layout();
     ctx.clearRect(0, 0, board.width, board.height);
@@ -328,6 +400,10 @@ function drawCell(cell) {
     if (cell.object !== 'empty') {
         drawSprite(cell.object, x, y, size);
     }
+
+    if (cell.object === 'bat') {
+        drawBatAttackTimer(cell, x, y, size);
+    }
 }
 
 function drawHexPath(x, y, size) {
@@ -345,19 +421,52 @@ function drawHexPath(x, y, size) {
     ctx.closePath();
 }
 
+function loadSprites() {
+    const entries = Object.entries(SPRITE_DEFS);
+    let loaded = 0;
+
+    entries.forEach(([key, definition]) => {
+        const image = new Image();
+        spriteAssets[key] = image;
+        image.onload = () => {
+            loaded += 1;
+            if (loaded === entries.length) {
+                spriteFrames = buildSpriteFrames();
+                spritesReady = true;
+                draw();
+            }
+        };
+        image.onerror = () => {
+            loaded += 1;
+            if (loaded === entries.length) {
+                spriteFrames = buildSpriteFrames();
+                spritesReady = true;
+                draw();
+            }
+        };
+        image.src = definition.src;
+    });
+}
+
 function buildSpriteFrames() {
     const frames = {};
     const analysisCanvas = document.createElement('canvas');
     const analysisCtx = analysisCanvas.getContext('2d', { willReadFrequently: true });
 
-    Object.entries(SPRITE_SHEET.sprites).forEach(([type, sprite]) => {
-        frames[type] = [];
+    Object.entries(SPRITE_DEFS).forEach(([key, definition]) => {
+        const image = spriteAssets[key];
+        if (!image || !image.naturalWidth || !image.naturalHeight) {
+            frames[key] = [];
+            return;
+        }
 
-        for (let column = 0; column < SPRITE_SHEET.columns; column++) {
-            const sourceX = Math.round(column * spritesImage.naturalWidth / SPRITE_SHEET.columns);
-            const nextSourceX = Math.round((column + 1) * spritesImage.naturalWidth / SPRITE_SHEET.columns);
-            const sourceY = Math.round(sprite.row * spritesImage.naturalHeight / SPRITE_SHEET.rows);
-            const nextSourceY = Math.round((sprite.row + 1) * spritesImage.naturalHeight / SPRITE_SHEET.rows);
+        frames[key] = [];
+
+        for (let column = 0; column < definition.columns; column++) {
+            const sourceX = Math.round(column * image.naturalWidth / definition.columns);
+            const nextSourceX = Math.round((column + 1) * image.naturalWidth / definition.columns);
+            const sourceY = Math.round(definition.row * image.naturalHeight / definition.rows);
+            const nextSourceY = Math.round((definition.row + 1) * image.naturalHeight / definition.rows);
             const sourceWidth = nextSourceX - sourceX;
             const sourceHeight = nextSourceY - sourceY;
 
@@ -365,7 +474,7 @@ function buildSpriteFrames() {
             analysisCanvas.height = sourceHeight;
             analysisCtx.clearRect(0, 0, sourceWidth, sourceHeight);
             analysisCtx.drawImage(
-                spritesImage,
+                image,
                 sourceX,
                 sourceY,
                 sourceWidth,
@@ -379,7 +488,7 @@ function buildSpriteFrames() {
             const imageData = analysisCtx.getImageData(0, 0, sourceWidth, sourceHeight).data;
             const bounds = findAlphaBounds(imageData, sourceWidth, sourceHeight);
 
-            frames[type].push({
+            frames[key].push({
                 sourceX: sourceX + bounds.x,
                 sourceY: sourceY + bounds.y,
                 sourceWidth: bounds.width,
@@ -428,16 +537,21 @@ function findAlphaBounds(data, width, height) {
 }
 
 function drawSprite(type, x, y, size) {
-    const sprite = SPRITE_SHEET.sprites[type];
-    if (!spritesReady || !sprite) {
+    const spriteKey = type === 'player'
+        ? (performance.now() < game.player.attackAnimationUntil ? 'playerAttack' : 'playerIdle')
+        : type;
+    const definition = SPRITE_DEFS[spriteKey];
+    const image = spriteAssets[spriteKey];
+
+    if (!spritesReady || !definition || !image || !spriteFrames[spriteKey]?.length) {
         drawTokenFallback(type, x, y, size);
         return;
     }
 
-    const frame = Math.floor(performance.now() / SPRITE_SHEET.frameMs) % SPRITE_SHEET.columns;
-    const spriteFrame = spriteFrames[type][frame];
-    const bob = Math.sin(performance.now() / 260 + sprite.row) * size * 0.035;
-    const maxDrawSize = size * (type === 'upgrade' ? 1.08 : 1.22);
+    const frame = Math.floor(performance.now() / definition.frameMs) % definition.columns;
+    const spriteFrame = spriteFrames[spriteKey][frame];
+    const bob = Math.sin(performance.now() / 260 + definition.row) * size * 0.035;
+    const maxDrawSize = size * (type === 'entry' || type === 'exit' || type === 'finalExit' ? 1.02 : 1.22);
     const scale = maxDrawSize / Math.max(spriteFrame.sourceWidth, spriteFrame.sourceHeight);
     const drawWidth = spriteFrame.sourceWidth * scale;
     const drawHeight = spriteFrame.sourceHeight * scale;
@@ -445,7 +559,7 @@ function drawSprite(type, x, y, size) {
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(
-        spritesImage,
+        image,
         spriteFrame.sourceX,
         spriteFrame.sourceY,
         spriteFrame.sourceWidth,
@@ -535,8 +649,8 @@ function drawTokenFallback(type, x, y, size) {
         ctx.fill();
     }
 
-    if (type === 'entry' || type === 'exit') {
-        const isExit = type === 'exit';
+    if (type === 'entry' || type === 'exit' || type === 'finalExit') {
+        const isExit = type === 'exit' || type === 'finalExit';
         ctx.strokeStyle = isExit ? '#fff2a7' : '#a6ffd0';
         ctx.fillStyle = isExit ? 'rgba(242, 189, 75, 0.18)' : 'rgba(69, 177, 122, 0.18)';
         ctx.lineWidth = 4;
@@ -552,6 +666,29 @@ function drawTokenFallback(type, x, y, size) {
         ctx.stroke();
     }
 
+    ctx.restore();
+}
+
+function drawBatAttackTimer(cell, x, y, size) {
+    if (!isAdjacent(cell.q, cell.r, game.player.q, game.player.r) || game.player.health <= 0) {
+        return;
+    }
+
+    const now = performance.now();
+    const remaining = Math.max(0, cell.nextAttackAt - now);
+    const progress = 1 - remaining / BAT_ATTACK_MS;
+
+    ctx.save();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(255, 138, 114, 0.95)';
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+    ctx.stroke();
+    ctx.fillStyle = '#ff8a72';
+    ctx.font = '700 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${Math.ceil(remaining / 1000)}s`, x, y + size * 0.48);
     ctx.restore();
 }
 
@@ -635,7 +772,7 @@ function drawStar(x, y, outerRadius, innerRadius, points) {
 }
 
 function moveTo(cell) {
-    if (!cell || !isAdjacent(game.player.q, game.player.r, cell.q, cell.r) || game.player.health <= 0) {
+    if (game.ended || !cell || !isAdjacent(game.player.q, game.player.r, cell.q, cell.r) || game.player.health <= 0) {
         return;
     }
 
@@ -656,6 +793,11 @@ function moveTo(cell) {
         game.roomStack.push(createRoomSnapshot());
         game.roomDepth += 1;
         generateRoom('exit');
+        return;
+    }
+
+    if (targetObject === 'finalExit') {
+        endRun();
         return;
     }
 
@@ -682,6 +824,8 @@ function resolveInteraction(object) {
         const damage = Math.max(minimumDamage, baseDamage - game.player.upgrades * 4);
         game.player.health = Math.max(0, game.player.health - damage);
         game.player.attackReadyAt = performance.now() + game.player.attackCooldownMs;
+        game.player.attackAnimationUntil = performance.now() + 520;
+        game.runStats.kills += 1;
         return {
             message: game.player.health > 0
                 ? `${OBJECTS[object].name} fight. Lost ${damage} health.`
@@ -706,13 +850,13 @@ function resolveInteraction(object) {
                     { stat: 'water', amount: -1 },
                     { stat: 'cooldown', amount: -0.1 }
                 ],
-                consume: false
+                consume: true
             };
         }
         return {
             message: 'Trade beetle needs 1 pollen and 1 water to reduce sting cooldown.',
             deltas: [],
-            consume: false
+            consume: true
         };
     }
 
@@ -727,6 +871,7 @@ function resolveInteraction(object) {
 
     if (object === 'pollen') {
         game.player.pollen += 1;
+        game.runStats.pollen += 1;
         return {
             message: 'Collected a pollen bundle.',
             deltas: [{ stat: 'pollen', amount: 1 }],
@@ -737,6 +882,7 @@ function resolveInteraction(object) {
     if (object === 'water') {
         const previousHealth = game.player.health;
         game.player.water += 1;
+        game.runStats.water += 1;
         game.player.health = Math.min(100, game.player.health + 4);
         const healthDelta = game.player.health - previousHealth;
         const deltas = [{ stat: 'water', amount: 1 }];
@@ -763,8 +909,10 @@ function createRoomSnapshot() {
     return {
         depth: game.roomDepth,
         cells: game.cells.map((cell) => ({ ...cell })),
-        playerQ: EXIT_CELL.q,
-        playerR: EXIT_CELL.r
+        entryCell: { ...game.entryCell },
+        exitCell: { ...game.exitCell },
+        playerQ: game.exitCell.q,
+        playerR: game.exitCell.r
     };
 }
 
@@ -779,6 +927,8 @@ function loadPreviousRoom() {
 
     game.roomDepth = previousRoom.depth;
     game.cells = previousRoom.cells.map((cell) => ({ ...cell }));
+    game.entryCell = { ...previousRoom.entryCell };
+    game.exitCell = { ...previousRoom.exitCell };
     game.statPopups = [];
     game.player.q = previousRoom.playerQ;
     game.player.r = previousRoom.playerR;
@@ -815,12 +965,64 @@ function moveBats() {
 
     plannedMoves.forEach((move) => {
         move.from.object = 'empty';
+        move.from.nextAttackAt = 0;
         move.to.object = 'bat';
+        move.to.nextAttackAt = 0;
     });
 
     if (plannedMoves.length) {
         addLog('Bat Movement', `${plannedMoves.length} bat${plannedMoves.length === 1 ? '' : 's'} moved closer.`);
     }
+}
+
+function updateBatAttacks() {
+    if (game.ended || game.player.health <= 0) return;
+
+    const now = performance.now();
+    game.cells
+        .filter((cell) => cell.object === 'bat')
+        .forEach((bat) => {
+            if (!isAdjacent(bat.q, bat.r, game.player.q, game.player.r)) {
+                bat.nextAttackAt = 0;
+                return;
+            }
+
+            if (!bat.nextAttackAt) {
+                bat.nextAttackAt = now + BAT_ATTACK_MS;
+                return;
+            }
+
+            if (now >= bat.nextAttackAt) {
+                game.player.health = Math.max(0, game.player.health - BAT_ATTACK_DAMAGE);
+                addStatPopups(bat.q, bat.r, [{ stat: 'health', amount: -BAT_ATTACK_DAMAGE }]);
+                addLog('Bat Bite', `A nearby bat hit you for ${BAT_ATTACK_DAMAGE} health.`);
+                bat.nextAttackAt = now + BAT_ATTACK_MS;
+
+                if (game.player.health <= 0) {
+                    game.message = 'The dungeon run is over. Restart to try again.';
+                }
+            }
+        });
+}
+
+function endRun() {
+    game.ended = true;
+    const survivedMs = performance.now() - game.runStartedAt;
+    const seconds = Math.floor(survivedMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    game.message = 'The final exit opens into daylight.';
+    addLog('Final Exit', 'Run complete.');
+    endStatsNode.innerHTML = [
+        ['Kills', game.runStats.kills],
+        ['Pollen', game.runStats.pollen],
+        ['Water', game.runStats.water],
+        ['Time Survived', `${minutes}:${String(remainingSeconds).padStart(2, '0')}`]
+    ].map(([label, value]) => (
+        `<div><span>${label}</span><strong>${value}</strong></div>`
+    )).join('');
+    endScreen.classList.add('visible');
 }
 
 function getCell(q, r) {
@@ -933,7 +1135,9 @@ function renderLog() {
 }
 
 function renderMessage() {
-    turnTextNode.textContent = game.player.health <= 0
+    turnTextNode.textContent = game.ended
+        ? 'Run complete.'
+        : game.player.health <= 0
         ? 'The run is over. Restart the draft.'
         : 'Choose a highlighted neighboring cell.';
 }
@@ -945,6 +1149,7 @@ canvas.addEventListener('click', (event) => {
 });
 
 restartButton.addEventListener('click', createGrid);
+endRestartButton.addEventListener('click', createGrid);
 window.addEventListener('resize', resizeCanvas);
 
 createGrid();

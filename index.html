@@ -216,6 +216,50 @@
             filter: brightness(1.06);
         }
 
+        .end-screen {
+            position: fixed;
+            inset: 0;
+            display: none;
+            place-items: center;
+            padding: 24px;
+            background: rgba(10, 14, 12, 0.78);
+            z-index: 5;
+        }
+
+        .end-screen.visible {
+            display: grid;
+        }
+
+        .end-panel {
+            width: min(420px, 100%);
+            border: 1px solid rgba(243, 240, 223, 0.18);
+            background: #202a24;
+            padding: 24px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .end-panel h2 {
+            font-size: 24px;
+            text-transform: none;
+        }
+
+        .end-stats {
+            display: grid;
+            gap: 10px;
+        }
+
+        .end-stats div {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            color: var(--muted);
+        }
+
+        .end-stats strong {
+            color: var(--text);
+        }
+
         @media (max-width: 980px) {
             .shell {
                 grid-template-columns: 180px minmax(0, 1fr) 220px;
@@ -270,6 +314,15 @@
             <div class="log-list" id="logList" aria-live="polite"></div>
         </aside>
     </main>
+
+    <section class="end-screen" id="endScreen" aria-live="polite">
+        <div class="end-panel">
+            <h2>Run Complete</h2>
+            <p>The bee found the final exit.</p>
+            <div class="end-stats" id="endStats"></div>
+            <button id="endRestartButton" type="button">Start New Run</button>
+        </div>
+    </section>
 
     <script src="index.js"></script>
 </body>
