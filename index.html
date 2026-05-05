@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honeycomb Wayfinder</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #18201c;
+            --panel: #232c27;
+            --line: #4f6257;
+            --text: #f3f0df;
+            --muted: #b8c2aa;
+            --accent: #f5c84b;
+            --danger: #e76f51;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle at 20% 15%, rgba(245, 200, 75, 0.18), transparent 28rem),
+                linear-gradient(135deg, #111613, var(--bg));
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .shell {
+            width: min(1500px, 100vw);
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .board-wrap {
+            position: relative;
+            min-height: 620px;
+            border: 1px solid rgba(243, 240, 223, 0.16);
+            background: #16211c;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .side-panel {
+            border: 1px solid rgba(243, 240, 223, 0.16);
+            background: rgba(35, 44, 39, 0.92);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        h1,
+        h2,
+        p {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 14px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0;
+        }
+
+        .stats,
+        .legend {
+            display: grid;
+            gap: 10px;
+        }
+
+        .stat,
+        .legend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 32px;
+            color: var(--muted);
+        }
+
+        .stat strong {
+            color: var(--text);
+            font-size: 18px;
+        }
+
+        .swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid rgba(243, 240, 223, 0.35);
+        }
+
+        .log {
+            min-height: 110px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(243, 240, 223, 0.12);
+            color: var(--muted);
+            line-height: 1.45;
+        }
+
+        button {
+            min-height: 42px;
+            border: 0;
+            background: var(--accent);
+            color: #211a06;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button:hover {
+            filter: brightness(1.06);
+        }
+
+        @media (max-width: 900px) {
+            .shell {
+                min-height: 100vh;
+                grid-template-columns: 1fr;
+            }
+
+            .board-wrap {
+                min-height: 62vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <section class="board-wrap" aria-label="Hexagonal game board">
+            <canvas id="gameCanvas"></canvas>
+        </section>
+
+        <aside class="side-panel">
+            <div>
+                <h1>Honeycomb Wayfinder</h1>
+                <p id="turnText">Choose a highlighted neighboring cell.</p>
+            </div>
+
+            <section>
+                <h2>Supplies</h2>
+                <div class="stats" id="stats"></div>
+            </section>
+
+            <section>
+                <h2>Objects</h2>
+                <div class="legend" id="legend"></div>
+            </section>
+
+            <section>
+                <h2>Field Log</h2>
+                <p class="log" id="log">Scout the grid, collect pollen and water, help NPCs, and avoid losing all health.</p>
+            </section>
+
+            <button id="restartButton" type="button">Restart Draft</button>
+        </aside>
+    </main>
+
+    <script src="index.js"></script>
+</body>
+</html>
