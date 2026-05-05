@@ -7,14 +7,26 @@ const restartButton = document.getElementById('restartButton');
 const cooldownWidget = document.getElementById('cooldownWidget');
 const cooldownText = document.getElementById('cooldownText');
 const cooldownHint = document.getElementById('cooldownHint');
+const startScreen = document.getElementById('startScreen');
+const newRunButton = document.getElementById('newRunButton');
+const testDanceButton = document.getElementById('testDanceButton');
 const endScreen = document.getElementById('endScreen');
 const endStatsNode = document.getElementById('endStats');
 const endRestartButton = document.getElementById('endRestartButton');
 
 const HEX_RADIUS = 4;
 const FINAL_ROOM = 5;
-const BAT_ATTACK_MS = 2000;
+const BAT_ATTACK_MS = 1000;
 const BAT_ATTACK_DAMAGE = 6;
+const WASP_AURA_MS = 500;
+const WASP_AURA_DAMAGE = 3;
+const VINE_DAMAGE = 2;
+const DANCE_MOVES_REQUIRED = 12;
+const DANCE_ARROW_MS = 1000;
+const DANCE_HOLD_MS = 1000;
+const DANCE_SEQUENCE_LENGTH = 3;
+const DANCE_MULTI_MAX_CLICKS = 5;
+const DANCE_MAX_MISSES = 3;
 const HEX_DIRECTIONS = [
     { q: 1, r: 0 },
     { q: 1, r: -1 },
@@ -32,6 +44,9 @@ const SPRITE_DEFS = {
     npc: { src: 'assets/bettle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    stingUpgrade: { src: 'assets/sting-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
+    vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     exit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     finalExit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 140 }
@@ -68,6 +83,11 @@ const OBJECTS = {
         color: '#b787f4',
         description: 'Improves your scout.'
     },
+    stingUpgrade: {
+        name: 'Double Sting',
+        color: '#f28f3b',
+        description: 'One-use stronger sting.'
+    },
     pollen: {
         name: 'Pollen',
         color: '#5fc77e',
@@ -77,6 +97,11 @@ const OBJECTS = {
         name: 'Water',
         color: '#4bb6f2',
         description: 'Adds water.'
+    },
+    vine: {
+        name: 'Vines',
+        color: '#547b3d',
+        description: 'Persistent thorny hazard.'
     },
     entry: {
         name: 'Entry',
@@ -105,6 +130,9 @@ const game = {
     statPopups: [],
     runStartedAt: 0,
     ended: false,
+    mode: 'dungeon',
+    dance: null,
+    playerMotion: null,
     runStats: {
         kills: 0,
         pollen: 0,
@@ -117,6 +145,8 @@ const game = {
         pollen: 0,
         water: 0,
         upgrades: 0,
+        stingCharges: 0,
+        batHits: 0,
         steps: 0,
         attackCooldownMs: 3000,
         attackReadyAt: 0,
@@ -138,25 +168,37 @@ function randomObjectFor(q, r, entryCell, exitCell) {
         return 'empty';
     }
 
-    const distance = hexDistance(0, 0, q, r);
+    const distance = hexDistance(entryCell.q, entryCell.r, q, r);
     const roll = Math.random();
 
     if (distance === 1 && roll < 0.28) return 'pollen';
     if (distance === 1 && roll < 0.50) return 'water';
+    if (distance <= 1 && roll < 0.45) return 'empty';
     if (roll < 0.15) return 'enemy';
-    if (roll < 0.32) return 'npc';
-    if (roll < 0.43) return 'upgrade';
-    if (roll < 0.58) return 'pollen';
-    if (roll < 0.73) return 'water';
+    if (roll < 0.29) return 'npc';
+    if (roll < 0.40) return 'upgrade';
+    if (roll < 0.48) return 'stingUpgrade';
+    if (roll < 0.60) return 'vine';
+    if (roll < 0.72) return 'pollen';
+    if (roll < 0.84) return 'water';
     return 'empty';
 }
 
 function createGrid() {
+    startScreen.classList.add('hidden');
+    startRunState();
+    generateRoom('restart');
+}
+
+function startRunState() {
     game.logs = [];
     game.roomStack = [];
     game.roomDepth = 1;
     game.runStartedAt = performance.now();
     game.ended = false;
+    game.mode = 'dungeon';
+    game.dance = null;
+    game.playerMotion = null;
     game.runStats = {
         kills: 0,
         pollen: 0,
@@ -164,7 +206,13 @@ function createGrid() {
     };
     game.player = createFreshPlayer();
     endScreen.classList.remove('visible');
-    generateRoom('restart');
+}
+
+function testDanceRun() {
+    startScreen.classList.add('hidden');
+    startRunState();
+    game.roomDepth = FINAL_ROOM;
+    generateDanceRoom();
 }
 
 function createFreshPlayer() {
@@ -175,6 +223,8 @@ function createFreshPlayer() {
         pollen: 0,
         water: 0,
         upgrades: 0,
+        stingCharges: 0,
+        batHits: 0,
         steps: 0,
         attackCooldownMs: 3000,
         attackReadyAt: 0,
@@ -183,6 +233,13 @@ function createFreshPlayer() {
 }
 
 function generateRoom(reason) {
+    if (game.roomDepth >= FINAL_ROOM) {
+        generateDanceRoom();
+        return;
+    }
+
+    game.mode = 'dungeon';
+    game.dance = null;
     game.cells = [];
     game.statPopups = [];
     const portals = choosePortalCells();
@@ -201,13 +258,19 @@ function generateRoom(reason) {
                 q,
                 r,
                 object: randomObjectFor(q, r, game.entryCell, game.exitCell),
-                visited: q === game.entryCell.q && r === game.entryCell.r,
-                nextAttackAt: 0
+                visited: false,
+                revealed: false,
+                nextAttackAt: 0,
+                nextAuraAt: 0,
+                hits: 0
             });
         }
     }
 
     placeBats();
+    const startCell = getCell(game.player.q, game.player.r);
+    if (startCell) startCell.visited = true;
+    revealAroundPlayer();
 
     if (reason === 'restart') {
         addLog('Start', 'Scout the dungeon, manage sting cooldown, and use exits to crawl deeper.');
@@ -259,7 +322,191 @@ function placeBats() {
         const [cell] = candidates.splice(index, 1);
         cell.object = 'bat';
         cell.nextAttackAt = 0;
+        cell.hits = 0;
     }
+}
+
+function revealAroundPlayer() {
+    game.cells.forEach((cell) => {
+        if (hexDistance(game.player.q, game.player.r, cell.q, cell.r) <= 2) {
+            cell.revealed = true;
+        }
+    });
+}
+
+function generateDanceRoom() {
+    game.mode = 'dance';
+    game.playerMotion = null;
+    game.cells = [];
+    game.statPopups = [];
+    game.entryCell = null;
+    game.exitCell = null;
+    game.message = 'Final dance: follow the arrows to reveal the good stuff.';
+
+    for (let q = -HEX_RADIUS; q <= HEX_RADIUS; q++) {
+        const rMin = Math.max(-HEX_RADIUS, -q - HEX_RADIUS);
+        const rMax = Math.min(HEX_RADIUS, -q + HEX_RADIUS);
+
+        for (let r = rMin; r <= rMax; r++) {
+            game.cells.push({
+                q,
+                r,
+                object: 'empty',
+                visited: false,
+                nextAttackAt: 0,
+                nextAuraAt: 0,
+                hits: 0
+            });
+        }
+    }
+
+    const start = randomFrom(game.cells);
+    game.player.q = start.q;
+    game.player.r = start.r;
+    start.visited = true;
+    game.dance = {
+        completed: 0,
+        misses: 0,
+        move: null,
+        active: null,
+        holding: false,
+        lastType: null
+    };
+    addLog('Final Dance', 'Follow 12 arrows. Miss 3 and the path is lost.');
+    spawnDanceMove();
+    draw();
+}
+
+function spawnDanceMove() {
+    if (!game.dance || game.ended) return;
+
+    const types = ['fastSequence', 'hold', 'multiClick', 'spreadSequence'];
+    const options = types.filter((type) => type !== game.dance.lastType);
+    const type = randomFrom(options);
+    game.dance.lastType = type;
+    game.dance.holding = false;
+
+    if (type === 'fastSequence') {
+        game.dance.move = {
+            type,
+            label: 'Fast 3-step',
+            steps: buildAdjacentSequence(game.player.q, game.player.r, DANCE_SEQUENCE_LENGTH),
+            index: 0
+        };
+        activateDanceStep();
+        return;
+    }
+
+    if (type === 'hold') {
+        const step = randomAdjacentStep(game.player.q, game.player.r);
+        game.dance.move = {
+            type,
+            label: 'Hold',
+            steps: [step],
+            index: 0
+        };
+        activateDanceStep();
+        return;
+    }
+
+    if (type === 'multiClick') {
+        const step = randomAdjacentStep(game.player.q, game.player.r);
+        const clicks = 2 + Math.floor(Math.random() * (DANCE_MULTI_MAX_CLICKS - 1));
+        game.dance.move = {
+            type,
+            label: 'Multi-click',
+            steps: [step],
+            index: 0,
+            clicksLeft: clicks
+        };
+        activateDanceStep();
+        return;
+    }
+
+    const spread = buildSpreadSequence();
+    game.dance.move = {
+        type,
+        label: 'Spread path',
+        steps: spread.steps,
+        index: 0,
+        finalStep: spread.finalStep
+    };
+    activateDanceStep();
+}
+
+function activateDanceStep() {
+    const move = game.dance?.move;
+    if (!move) {
+        spawnDanceMove();
+        return;
+    }
+
+    const next = move.steps[move.index];
+    if (!next) {
+        completeDanceMove();
+        return;
+    }
+
+    game.dance.active = {
+        q: next.q,
+        r: next.r,
+        directionIndex: next.directionIndex,
+        expiresAt: performance.now() + DANCE_ARROW_MS,
+        holdStartedAt: 0
+    };
+    game.dance.holding = false;
+}
+
+function buildAdjacentSequence(startQ, startR, length) {
+    const sequence = [];
+    let cursor = { q: startQ, r: startR };
+
+    for (let i = 0; i < length; i++) {
+        const next = randomAdjacentStep(cursor.q, cursor.r);
+        sequence.push(next);
+        cursor = next;
+    }
+
+    return sequence;
+}
+
+function randomAdjacentStep(q, r) {
+    const options = HEX_DIRECTIONS
+        .map((direction, index) => ({
+            q: q + direction.q,
+            r: r + direction.r,
+            directionIndex: index
+        }))
+        .filter((step) => getCell(step.q, step.r));
+
+    return randomFrom(options);
+}
+
+function buildSpreadSequence() {
+    const distantCells = game.cells
+        .filter((cell) => hexDistance(game.player.q, game.player.r, cell.q, cell.r) >= 3)
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 2)
+        .map((cell) => ({
+            q: cell.q,
+            r: cell.r,
+            directionIndex: directionIndexToward(game.player.q, game.player.r, cell.q, cell.r)
+        }));
+    const finalStep = randomAdjacentStep(game.player.q, game.player.r);
+
+    return {
+        steps: [...distantCells, finalStep],
+        finalStep
+    };
+}
+
+function directionIndexToward(fromQ, fromR, toQ, toR) {
+    return HEX_DIRECTIONS
+        .map((direction, index) => ({
+            index,
+            distance: hexDistance(fromQ + direction.q, fromR + direction.r, toQ, toR)
+        }))
+        .sort((a, b) => a.distance - b.distance)[0].index;
 }
 
 function resizeCanvas() {
@@ -338,13 +585,21 @@ function pixelToClosestHex(x, y) {
 
 function draw() {
     if (!canvas.width || !canvas.height) return;
-    updateBatAttacks();
+    if (game.mode === 'dance') {
+        updateDanceArrow();
+    } else {
+        updateEnemyAuras();
+        updateBatAttacks();
+    }
 
     const board = layout();
     ctx.clearRect(0, 0, board.width, board.height);
     drawBackground(board);
 
     game.cells.forEach(drawCell);
+    if (game.mode === 'dance') {
+        drawDanceArrow();
+    }
     drawPlayer();
     drawStatPopups();
     renderStats();
@@ -361,6 +616,10 @@ function drawBackground(board) {
     ctx.fillStyle = '#16211c';
     ctx.fillRect(0, 0, board.width, board.height);
 
+    if (game.mode === 'dance') {
+        drawDiscoFloor(board);
+    }
+
     ctx.save();
     ctx.globalAlpha = 0.2;
     ctx.strokeStyle = '#f5c84b';
@@ -374,15 +633,34 @@ function drawBackground(board) {
     ctx.restore();
 }
 
+function drawDiscoFloor(board) {
+    const now = performance.now();
+    const colors = ['#f94144', '#f8961e', '#f9c74f', '#43aa8b', '#4d96ff', '#b66dff'];
+
+    game.cells.forEach((cell, index) => {
+        const { x, y, size } = hexToPixel(cell.q, cell.r);
+        const pulse = (Math.sin(now / 180 + index * 0.9) + 1) / 2;
+        drawHexPath(x, y, size - 4);
+        ctx.fillStyle = colors[(index + Math.floor(now / 260)) % colors.length];
+        ctx.globalAlpha = 0.16 + pulse * 0.16;
+        ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
+}
+
 function drawCell(cell) {
     const isPlayer = cell.q === game.player.q && cell.r === game.player.r;
-    const canMove = !isPlayer && isAdjacent(game.player.q, game.player.r, cell.q, cell.r);
+    const canMove = game.mode !== 'dance' && !isPlayer && isAdjacent(game.player.q, game.player.r, cell.q, cell.r);
     const { x, y, size } = hexToPixel(cell.q, cell.r);
     const object = OBJECTS[cell.object];
+    const hidden = game.mode !== 'dance' && !cell.revealed;
 
     drawHexPath(x, y, size - 2);
-    ctx.fillStyle = cell.visited ? shade(object.color, -18) : object.color;
-    ctx.globalAlpha = cell.visited ? 0.78 : 0.96;
+    ctx.fillStyle = hidden ? '#17211d' : cell.visited ? shade(object.color, -18) : object.color;
+    ctx.globalAlpha = hidden ? 0.96 : game.mode === 'dance'
+        ? (cell.visited ? 0.54 : 0.34)
+        : (cell.visited ? 0.78 : 0.96);
     ctx.fill();
     ctx.globalAlpha = 1;
 
@@ -397,13 +675,135 @@ function drawCell(cell) {
         ctx.stroke();
     }
 
-    if (cell.object !== 'empty') {
+    if (!hidden && cell.object !== 'empty') {
         drawSprite(cell.object, x, y, size);
     }
 
-    if (cell.object === 'bat') {
+    if (!hidden && cell.object === 'bat') {
         drawBatAttackTimer(cell, x, y, size);
     }
+
+    if (!hidden && cell.object === 'enemy') {
+        drawWaspAuraTimer(cell, x, y, size);
+    }
+
+    if (hidden) {
+        drawMist(x, y, size);
+    }
+}
+
+function drawMist(x, y, size) {
+    ctx.save();
+    drawHexPath(x, y, size - 3);
+    ctx.fillStyle = 'rgba(185, 214, 209, 0.12)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(210, 232, 227, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawDanceArrow() {
+    if (!game.dance?.active) return;
+
+    const active = game.dance.active;
+    const move = game.dance.move;
+    const target = hexToPixel(active.q, active.r);
+    const color = getDirectionColor(active.directionIndex);
+    const remaining = Math.max(0, active.expiresAt - performance.now());
+    const holdProgress = active.holdStartedAt
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / DANCE_HOLD_MS)
+        : 0;
+    const timeoutProgress = remaining / DANCE_ARROW_MS;
+    const angle = getDirectionAngle(active.directionIndex);
+
+    drawDancePreviewArrows();
+
+    drawHexPath(target.x, target.y, target.size - 7);
+    ctx.fillStyle = `${color}44`;
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(target.x, target.y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'rgba(17, 22, 19, 0.86)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(target.size * 0.34, 0);
+    ctx.lineTo(-target.size * 0.12, -target.size * 0.24);
+    ctx.lineTo(-target.size * 0.05, -target.size * 0.08);
+    ctx.lineTo(-target.size * 0.36, -target.size * 0.08);
+    ctx.lineTo(-target.size * 0.36, target.size * 0.08);
+    ctx.lineTo(-target.size * 0.05, target.size * 0.08);
+    ctx.lineTo(-target.size * 0.12, target.size * 0.24);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(
+        target.x,
+        target.y,
+        target.size * 0.54,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.PI * 2 * (active.holdStartedAt ? holdProgress : timeoutProgress)
+    );
+    ctx.stroke();
+    ctx.restore();
+
+    if (move?.type === 'multiClick') {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = 'rgba(17, 22, 19, 0.9)';
+        ctx.lineWidth = 5;
+        ctx.font = `800 ${Math.round(target.size * 0.42)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeText(String(move.clicksLeft), target.x, target.y);
+        ctx.fillText(String(move.clicksLeft), target.x, target.y);
+        ctx.restore();
+    }
+}
+
+function drawDancePreviewArrows() {
+    const move = game.dance?.move;
+    if (!move?.steps?.length) return;
+
+    move.steps.slice(move.index + 1).forEach((step, index) => {
+        const point = hexToPixel(step.q, step.r);
+        const color = getDirectionColor(step.directionIndex);
+        const angle = getDirectionAngle(step.directionIndex);
+
+        ctx.save();
+        ctx.globalAlpha = move.type === 'spreadSequence' ? 0.46 : index === 0 ? 0.38 : 0.22;
+        ctx.translate(point.x, point.y);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(point.size * 0.22, 0);
+        ctx.lineTo(-point.size * 0.12, -point.size * 0.16);
+        ctx.lineTo(-point.size * 0.12, point.size * 0.16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    });
+}
+
+function getDirectionColor(index) {
+    return ['#f94144', '#f8961e', '#f9c74f', '#43aa8b', '#4d96ff', '#b66dff'][index];
+}
+
+function getDirectionAngle(index) {
+    const direction = HEX_DIRECTIONS[index];
+    return Math.atan2(direction.r * 1.5, Math.sqrt(3) * (direction.q + direction.r / 2));
 }
 
 function drawHexPath(x, y, size) {
@@ -616,6 +1016,17 @@ function drawTokenFallback(type, x, y, size) {
         ctx.fill();
     }
 
+    if (type === 'stingUpgrade') {
+        ctx.fillStyle = '#f28f3b';
+        ctx.beginPath();
+        ctx.moveTo(0, -size * 0.32);
+        ctx.lineTo(size * 0.16, size * 0.1);
+        ctx.lineTo(0, size * 0.32);
+        ctx.lineTo(-size * 0.16, size * 0.1);
+        ctx.closePath();
+        ctx.fill();
+    }
+
     if (type === 'pollen') {
         ctx.fillStyle = '#f7d45c';
         drawStar(0, 0, size * 0.24, size * 0.11, 6);
@@ -628,6 +1039,20 @@ function drawTokenFallback(type, x, y, size) {
         ctx.moveTo(0, -size * 0.26);
         ctx.bezierCurveTo(size * 0.24, 0, size * 0.18, size * 0.28, 0, size * 0.28);
         ctx.bezierCurveTo(-size * 0.18, size * 0.28, -size * 0.24, 0, 0, -size * 0.26);
+        ctx.fill();
+    }
+
+    if (type === 'vine') {
+        ctx.strokeStyle = '#b7e08a';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.32, size * 0.16);
+        ctx.bezierCurveTo(-size * 0.14, -size * 0.22, size * 0.08, size * 0.28, size * 0.34, -size * 0.16);
+        ctx.stroke();
+        ctx.fillStyle = '#78a94e';
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.12, -size * 0.02, size * 0.11, size * 0.06, -0.55, 0, Math.PI * 2);
+        ctx.ellipse(size * 0.16, size * 0.04, size * 0.11, size * 0.06, 0.55, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -692,8 +1117,27 @@ function drawBatAttackTimer(cell, x, y, size) {
     ctx.restore();
 }
 
+function drawWaspAuraTimer(cell, x, y, size) {
+    if (!isAdjacent(cell.q, cell.r, game.player.q, game.player.r) || game.player.health <= 0) {
+        return;
+    }
+
+    const now = performance.now();
+    const remaining = Math.max(0, cell.nextAuraAt - now);
+    const progress = 1 - remaining / WASP_AURA_MS;
+
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(249, 65, 68, 0.92)';
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.58, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawPlayer() {
-    const { x, y, size } = hexToPixel(game.player.q, game.player.r);
+    const position = getPlayerDrawPosition();
+    const { x, y, size } = position;
 
     if (spritesReady) {
         drawSprite('player', x, y, size * 1.1);
@@ -727,6 +1171,38 @@ function drawPlayer() {
     ctx.arc(size * 0.19, -size * 0.03, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+}
+
+function getPlayerDrawPosition() {
+    const current = hexToPixel(game.player.q, game.player.r);
+    const motion = game.playerMotion;
+
+    if (!motion) {
+        return current;
+    }
+
+    const progress = Math.min(1, (performance.now() - motion.startedAt) / motion.duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+
+    if (progress >= 1) {
+        game.playerMotion = null;
+        return current;
+    }
+
+    return {
+        x: motion.from.x + (motion.to.x - motion.from.x) * eased,
+        y: motion.from.y + (motion.to.y - motion.from.y) * eased,
+        size: current.size
+    };
+}
+
+function startPlayerMotion(fromQ, fromR, toQ, toR) {
+    game.playerMotion = {
+        from: hexToPixel(fromQ, fromR),
+        to: hexToPixel(toQ, toR),
+        startedAt: performance.now(),
+        duration: 220
+    };
 }
 
 function drawStatPopups() {
@@ -772,7 +1248,16 @@ function drawStar(x, y, outerRadius, innerRadius, points) {
 }
 
 function moveTo(cell) {
-    if (game.ended || !cell || !isAdjacent(game.player.q, game.player.r, cell.q, cell.r) || game.player.health <= 0) {
+    if (game.ended || !cell || game.player.health <= 0) {
+        return;
+    }
+
+    if (game.mode === 'dance') {
+        handleDanceClick(cell);
+        return;
+    }
+
+    if (!isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
         return;
     }
 
@@ -784,8 +1269,10 @@ function moveTo(cell) {
         return;
     }
 
+    const previousPosition = { q: game.player.q, r: game.player.r };
     game.player.q = cell.q;
     game.player.r = cell.r;
+    startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
     game.player.steps += 1;
     cell.visited = true;
 
@@ -806,10 +1293,23 @@ function moveTo(cell) {
         return;
     }
 
-    const interaction = resolveInteraction(targetObject);
+    if (targetObject === 'vine') {
+        applyDamage(VINE_DAMAGE, cell.q, cell.r, 'Vines');
+        addLog('Vines', 'Thorny vines scraped the bee.');
+        if (game.ended) return;
+    }
+
+    const interaction = resolveInteraction(targetObject, cell);
     game.message = interaction.message;
     addLog(OBJECTS[targetObject].name, interaction.message);
     addStatPopups(cell.q, cell.r, interaction.deltas);
+    if (targetObject === 'bat' && !interaction.consume) {
+        game.player.q = previousPosition.q;
+        game.player.r = previousPosition.r;
+        game.playerMotion = null;
+        game.player.steps -= 1;
+    }
+    revealAroundPlayer();
     if (interaction.consume) {
         cell.object = 'empty';
     }
@@ -817,21 +1317,137 @@ function moveTo(cell) {
     draw();
 }
 
-function resolveInteraction(object) {
+function handleDanceClick(cell) {
+    return;
+}
+
+function startDanceHold(cell) {
+    const active = game.dance?.active;
+    const move = game.dance?.move;
+    if (!active) return;
+
+    if (cell.q !== active.q || cell.r !== active.r) {
+        registerDanceMiss('Wrong arrow.');
+        return;
+    }
+
+    if (move.type === 'hold') {
+        active.holdStartedAt = performance.now();
+        game.dance.holding = true;
+        return;
+    }
+
+    if (move.type === 'multiClick') {
+        move.clicksLeft -= 1;
+        active.expiresAt = performance.now() + DANCE_ARROW_MS;
+        if (move.clicksLeft <= 0) {
+            completeDanceStep();
+        }
+        return;
+    }
+
+    completeDanceStep();
+}
+
+function endDanceHold() {
+    const active = game.dance?.active;
+    const move = game.dance?.move;
+    if (!active?.holdStartedAt || game.ended) return;
+    if (move?.type !== 'hold') return;
+
+    registerDanceMiss('Released too early.');
+}
+
+function completeDanceStep() {
+    const active = game.dance?.active;
+    if (!active) return;
+
+    const cell = getCell(active.q, active.r);
+    if (!cell) return;
+
+    const previousPosition = { q: game.player.q, r: game.player.r };
+    game.player.q = cell.q;
+    game.player.r = cell.r;
+    startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
+    cell.visited = true;
+    game.player.steps += 1;
+    game.dance.move.index += 1;
+
+    if (game.dance.move.index >= game.dance.move.steps.length) {
+        completeDanceMove();
+        return;
+    }
+
+    activateDanceStep();
+}
+
+function completeDanceMove() {
+    game.dance.completed += 1;
+    game.message = `Dance move ${game.dance.completed}/${DANCE_MOVES_REQUIRED}: ${game.dance.move.label}.`;
+    addLog('Dance Move', game.message);
+
+    if (game.dance.completed >= DANCE_MOVES_REQUIRED) {
+        endRun('dance-complete');
+        return;
+    }
+
+    spawnDanceMove();
+}
+
+function updateDanceArrow() {
+    if (!game.dance?.active || game.ended) return;
+
+    const active = game.dance.active;
+    if (game.dance.move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= DANCE_HOLD_MS) {
+        completeDanceStep();
+        return;
+    }
+
+    if (game.dance.move?.type !== 'hold' && performance.now() >= active.expiresAt) {
+        registerDanceMiss('Arrow missed.');
+    }
+}
+
+function registerDanceMiss(reason) {
+    if (!game.dance || game.ended) return;
+
+    game.dance.misses += 1;
+    game.message = `${reason} Miss ${game.dance.misses}/${DANCE_MAX_MISSES}.`;
+    addLog('Dance Miss', game.message);
+
+    if (game.dance.misses >= DANCE_MAX_MISSES) {
+        endRun('dance-failed');
+        return;
+    }
+
+    spawnDanceMove();
+}
+
+function resolveInteraction(object, cell) {
     if (object === 'enemy' || object === 'bat') {
-        const baseDamage = object === 'bat' ? 14 : 20;
-        const minimumDamage = object === 'bat' ? 5 : 8;
-        const damage = Math.max(minimumDamage, baseDamage - game.player.upgrades * 4);
-        game.player.health = Math.max(0, game.player.health - damage);
         game.player.attackReadyAt = performance.now() + game.player.attackCooldownMs;
         game.player.attackAnimationUntil = performance.now() + 520;
-        game.runStats.kills += 1;
+        const usesDoubleSting = object === 'bat' && game.player.stingCharges > 0;
+        const hitPower = usesDoubleSting ? 2 : 1;
+        const batKilled = object === 'bat' && (cell.hits || 0) + hitPower >= 2;
+        if (object === 'bat') {
+            cell.hits = (cell.hits || 0) + hitPower;
+            cell.nextAttackAt = 0;
+            if (usesDoubleSting) {
+                game.player.stingCharges -= 1;
+            }
+        }
+        if (object === 'enemy' || batKilled) {
+            game.runStats.kills += 1;
+        }
         return {
-            message: game.player.health > 0
-                ? `${OBJECTS[object].name} fight. Lost ${damage} health.`
-                : 'The scout is out of health. Restart to try another route.',
-            deltas: [{ stat: 'health', amount: -damage }],
-            consume: true
+            message: object === 'bat' && !batKilled
+                ? `Bat hit ${cell.hits}/2. It is still flying.`
+                : object === 'bat' && usesDoubleSting
+                ? 'Double sting defeated the bat.'
+                : `${OBJECTS[object].name} defeated.`,
+            deltas: usesDoubleSting ? [{ stat: 'stingCharges', amount: -1 }] : [],
+            consume: object === 'enemy' || batKilled
         };
     }
 
@@ -861,10 +1477,19 @@ function resolveInteraction(object) {
     }
 
     if (object === 'upgrade') {
-        game.player.upgrades += 1;
+        game.player.upgrades += 8;
         return {
-            message: 'Shield upgrade collected. Future enemy damage is reduced.',
-            deltas: [{ stat: 'upgrades', amount: 1 }],
+            message: 'Shield upgrade collected. Added 8 shield.',
+            deltas: [{ stat: 'upgrades', amount: 8 }],
+            consume: true
+        };
+    }
+
+    if (object === 'stingUpgrade') {
+        game.player.stingCharges += 1;
+        return {
+            message: 'Double sting stored. It will be used before regular sting.',
+            deltas: [{ stat: 'stingCharges', amount: 1 }],
             consume: true
         };
     }
@@ -934,6 +1559,7 @@ function loadPreviousRoom() {
     game.player.r = previousRoom.playerR;
     const playerCell = getCell(game.player.q, game.player.r);
     if (playerCell) playerCell.visited = true;
+    revealAroundPlayer();
     game.message = `Returned to chamber ${game.roomDepth}.`;
     addLog('Entry', game.message);
     draw();
@@ -993,33 +1619,94 @@ function updateBatAttacks() {
             }
 
             if (now >= bat.nextAttackAt) {
-                game.player.health = Math.max(0, game.player.health - BAT_ATTACK_DAMAGE);
-                addStatPopups(bat.q, bat.r, [{ stat: 'health', amount: -BAT_ATTACK_DAMAGE }]);
+                applyDamage(BAT_ATTACK_DAMAGE, bat.q, bat.r, 'Bat Bite');
                 addLog('Bat Bite', `A nearby bat hit you for ${BAT_ATTACK_DAMAGE} health.`);
                 bat.nextAttackAt = now + BAT_ATTACK_MS;
-
-                if (game.player.health <= 0) {
-                    game.message = 'The dungeon run is over. Restart to try again.';
-                }
             }
         });
 }
 
-function endRun() {
+function updateEnemyAuras() {
+    if (game.ended || game.player.health <= 0) return;
+
+    const now = performance.now();
+    game.cells
+        .filter((cell) => cell.object === 'enemy')
+        .forEach((wasp) => {
+            if (!isAdjacent(wasp.q, wasp.r, game.player.q, game.player.r)) {
+                wasp.nextAuraAt = 0;
+                return;
+            }
+
+            if (!wasp.nextAuraAt) {
+                wasp.nextAuraAt = now + WASP_AURA_MS;
+                return;
+            }
+
+            if (now >= wasp.nextAuraAt) {
+                applyDamage(WASP_AURA_DAMAGE, wasp.q, wasp.r, 'Wasp Sting');
+                wasp.nextAuraAt = now + WASP_AURA_MS;
+            }
+        });
+}
+
+function applyDamage(amount, q, r, source) {
+    if (game.ended || amount <= 0) return;
+
+    const blocked = Math.min(game.player.upgrades, amount);
+    const healthDamage = amount - blocked;
+    const deltas = [];
+
+    if (blocked > 0) {
+        game.player.upgrades -= blocked;
+        deltas.push({ stat: 'blocked', amount: -blocked });
+    }
+
+    if (healthDamage > 0) {
+        game.player.health = Math.max(0, game.player.health - healthDamage);
+        deltas.push({ stat: 'health', amount: -healthDamage });
+    }
+
+    addStatPopups(q, r, deltas);
+
+    if (blocked > 0 && healthDamage === 0) {
+        game.message = `${source} blocked by shield.`;
+    } else if (healthDamage > 0) {
+        game.message = `${source} dealt ${healthDamage} health damage.`;
+    }
+
+    if (game.player.health <= 0) {
+        endRun('death');
+    }
+}
+
+function endRun(reason = 'final-exit') {
+    if (game.ended) return;
     game.ended = true;
     const survivedMs = performance.now() - game.runStartedAt;
     const seconds = Math.floor(survivedMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
+    const danceComplete = game.dance
+        ? Math.round(game.dance.completed / DANCE_MOVES_REQUIRED * 100)
+        : 100;
 
-    game.message = 'The final exit opens into daylight.';
-    addLog('Final Exit', 'Run complete.');
-    endStatsNode.innerHTML = [
+    game.message = reason === 'death'
+        ? 'Game over. The bee ran out of health.'
+        : reason === 'dance-failed'
+        ? `The path to food faded. ${danceComplete}% complete.`
+        : 'The dance revealed the path to food.';
+    addLog(reason === 'death' ? 'Game Over' : reason === 'dance-failed' ? 'Dance Failed' : 'Dance Complete', game.message);
+
+    const stats = [
         ['Kills', game.runStats.kills],
         ['Pollen', game.runStats.pollen],
         ['Water', game.runStats.water],
-        ['Time Survived', `${minutes}:${String(remainingSeconds).padStart(2, '0')}`]
-    ].map(([label, value]) => (
+        ['Time Survived', `${minutes}:${String(remainingSeconds).padStart(2, '0')}`],
+        ['Path to Food', reason === 'death' ? '0%' : `${danceComplete}%`]
+    ];
+
+    endStatsNode.innerHTML = stats.map(([label, value]) => (
         `<div><span>${label}</span><strong>${value}</strong></div>`
     )).join('');
     endScreen.classList.add('visible');
@@ -1063,7 +1750,7 @@ function addStatPopups(q, r, deltas) {
             y: point.y - point.size * 0.62,
             offsetY: index * 22,
             label: formatDelta(delta),
-            color: delta.amount < 0 ? '#ff8a72' : '#fff2a7',
+            color: delta.stat === 'blocked' ? '#b8b8b8' : delta.amount < 0 ? '#ff8a72' : '#fff2a7',
             createdAt: performance.now() + index * 70,
             duration: 920
         });
@@ -1077,8 +1764,13 @@ function formatDelta(delta) {
         pollen: 'Pollen',
         water: 'Water',
         upgrades: 'Shield',
-        cooldown: 'Cooldown'
+        stingCharges: 'Double Sting',
+        cooldown: 'Cooldown',
+        blocked: 'blocked'
     };
+    if (delta.stat === 'blocked') {
+        return `${delta.amount} blocked`;
+    }
     const value = delta.stat === 'cooldown' ? `${prefix}${delta.amount.toFixed(1)}s` : `${prefix}${delta.amount}`;
     return `${value} ${labels[delta.stat] || delta.stat}`;
 }
@@ -1102,8 +1794,9 @@ function renderStats() {
         ['Health', game.player.health, 'Keep this above zero'],
         ['Pollen', game.player.pollen, 'Trade with beetles'],
         ['Water', game.player.water, 'Small recovery source'],
-        ['Shield', game.player.upgrades, 'Reduces wasp damage'],
-        ['Room', game.roomDepth, 'Dungeon depth'],
+        ['Shield', game.player.upgrades, 'Blocks incoming damage'],
+        ['Double Sting', game.player.stingCharges, 'One-use bat finisher'],
+        [game.mode === 'dance' ? 'Dance' : 'Room', game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, game.mode === 'dance' ? `${DANCE_MAX_MISSES - (game.dance?.misses || 0)} misses left` : 'Dungeon depth'],
         ['Steps', game.player.steps, 'Cells moved']
     ];
 
@@ -1139,19 +1832,47 @@ function renderMessage() {
         ? 'Run complete.'
         : game.player.health <= 0
         ? 'The run is over. Restart the draft.'
+        : game.mode === 'dance'
+        ? 'Click the colored arrow before it fades.'
         : 'Choose a highlighted neighboring cell.';
 }
 
 canvas.addEventListener('click', (event) => {
+    if (game.mode === 'dance') return;
+
     const rect = canvas.getBoundingClientRect();
     const cell = pixelToClosestHex(event.clientX - rect.left, event.clientY - rect.top);
     moveTo(cell);
 });
 
+canvas.addEventListener('pointerdown', (event) => {
+    if (game.mode !== 'dance' || game.ended) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const cell = pixelToClosestHex(event.clientX - rect.left, event.clientY - rect.top);
+    if (cell) {
+        startDanceHold(cell);
+    }
+});
+
+canvas.addEventListener('pointerup', () => {
+    if (game.mode === 'dance') {
+        endDanceHold();
+    }
+});
+
+canvas.addEventListener('pointerleave', () => {
+    if (game.mode === 'dance') {
+        endDanceHold();
+    }
+});
+
 restartButton.addEventListener('click', createGrid);
 endRestartButton.addEventListener('click', createGrid);
+newRunButton.addEventListener('click', createGrid);
+testDanceButton.addEventListener('click', testDanceRun);
 window.addEventListener('resize', resizeCanvas);
 
-createGrid();
+renderStats();
 resizeCanvas();
 requestAnimationFrame(animate);

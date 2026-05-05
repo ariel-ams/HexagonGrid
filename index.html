@@ -226,11 +226,28 @@
             z-index: 5;
         }
 
+        .start-screen {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 50% 30%, rgba(245, 200, 75, 0.18), transparent 28rem),
+                rgba(10, 14, 12, 0.9);
+            z-index: 6;
+        }
+
+        .start-screen.hidden {
+            display: none;
+        }
+
         .end-screen.visible {
             display: grid;
         }
 
-        .end-panel {
+        .end-panel,
+        .start-panel {
             width: min(420px, 100%);
             border: 1px solid rgba(243, 240, 223, 0.18);
             background: #202a24;
@@ -239,7 +256,8 @@
             gap: 18px;
         }
 
-        .end-panel h2 {
+        .end-panel h2,
+        .start-panel h2 {
             font-size: 24px;
             text-transform: none;
         }
@@ -314,6 +332,15 @@
             <div class="log-list" id="logList" aria-live="polite"></div>
         </aside>
     </main>
+
+    <section class="start-screen" id="startScreen" aria-live="polite">
+        <div class="start-panel">
+            <h2>Honeycomb Wayfinder</h2>
+            <p>Start a dungeon run or jump straight into the final dance test.</p>
+            <button id="newRunButton" type="button">New Run</button>
+            <button id="testDanceButton" type="button">Test Dance</button>
+        </div>
+    </section>
 
     <section class="end-screen" id="endScreen" aria-live="polite">
         <div class="end-panel">
