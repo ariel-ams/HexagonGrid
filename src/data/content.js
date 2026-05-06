@@ -102,6 +102,7 @@ const I18N = {
             vine: ['Vines', 'Persistent thorny hazard.'],
             glowPollen: ['Glow Pollen', 'Reveals a wide patch of mist around this cell.'],
             nectarCache: ['Nectar Cache', 'Grants pollen and water together.'],
+            honeyDrop: ['Honey Drop', 'Restores health and adds honey for stamina recovery.'],
             waxDoor: ['Wax Door', 'Blocks movement. Spend 1 pollen or a ready sting to open it.'],
             stickyHoney: ['Sticky Honey', 'Leaves sticky honey behind that slows nearby moving enemies.'],
             stickyTrap: ['Sticky Patch', 'Moving enemies near this patch lose momentum.'],
@@ -114,6 +115,7 @@ const I18N = {
             enemy: ['Wasp', 'Stationary aura. Deals damage every 0.5s while adjacent.', 'Do not linger next to it while sting is cooling down.'],
             bat: ['Bat', 'Pursues the bee after each move. Attacks every 1s when adjacent.', 'Use Double Sting or plan two safe hits.'],
             miteSwarm: ['Mite Swarm', 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.', 'Cheap to kill, dangerous if ignored in groups.'],
+            thornBeetle: ['Thorn Beetle', 'Armored blocker. Deals thorn damage while you stand near it.', 'Clear it before crossing narrow routes or it will tax your shield.'],
             guardWasp: ['Guard Wasp', 'Stationary guard. Its larger aura reaches 2 cells.', 'Check your route before entering its zone.'],
             sleepingBat: ['Sleeping Bat', 'Sleeps until the bee gets close, then wakes and pursues.', 'Skirt around it unless the reward is worth waking it.'],
             honeyLeech: ['Honey Leech', 'Stationary drain. Chews through shield first, then health.', 'Shield is not permanent safety near this enemy.']
@@ -228,6 +230,7 @@ const I18N = {
             vine: ['Enredaderas', 'Peligro persistente con espinas.'],
             glowPollen: ['Polen brillante', 'Revela una zona amplia de niebla alrededor de esta celda.'],
             nectarCache: ['Reserva de néctar', 'Otorga polen y agua juntos.'],
+            honeyDrop: ['Gota de miel', 'Restaura salud y suma miel para recuperar stamina.'],
             waxDoor: ['Puerta de cera', 'Bloquea el paso. Gasta 1 polen o un aguijón listo para abrirla.'],
             stickyHoney: ['Miel pegajosa', 'Deja miel en el panal y ralentiza enemigos cercanos.'],
             stickyTrap: ['Parche pegajoso', 'Los enemigos que se mueven cerca pierden impulso.'],
@@ -240,6 +243,7 @@ const I18N = {
             enemy: ['Avispa', 'Aura fija. Hace daño cada 0.5s mientras estás al lado.', 'No te quedes cerca mientras el aguijón se recarga.'],
             bat: ['Murciélago', 'Persigue a la abeja después de cada movimiento. Ataca cada 1s si está al lado.', 'Usa Aguijón doble o planea dos golpes seguros.'],
             miteSwarm: ['Enjambre de ácaros', 'Perseguidor lento. Se mueve cada 2 pasos y muerde si está al lado.', 'Es fácil de matar, pero peligroso en grupo.'],
+            thornBeetle: ['Escarabajo espinoso', 'Bloqueador con armadura. Hace daño de espinas mientras estás cerca.', 'Límpialo antes de cruzar rutas estrechas o consumirá tu escudo.'],
             guardWasp: ['Avispa guardia', 'Guardia fija. Su aura más grande llega a 2 celdas.', 'Revisa tu ruta antes de entrar en su zona.'],
             sleepingBat: ['Murciélago dormido', 'Duerme hasta que la abeja se acerca, luego despierta y persigue.', 'Rodéalo salvo que la recompensa valga despertarlo.'],
             honeyLeech: ['Sanguijuela de miel', 'Drenaje fijo. Come escudo primero y luego salud.', 'El escudo no es seguridad permanente cerca de este enemigo.']
@@ -329,6 +333,7 @@ const SPRITE_DEFS = {
     vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     glowPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
     nectarCache: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    honeyDrop: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 230 },
     stickyHoney: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
     compassPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
@@ -369,6 +374,17 @@ const ENEMY_DEFS = {
         range: 1,
         behavior: 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.',
         lesson: 'Cheap to kill, dangerous if ignored in groups.'
+    },
+    thornBeetle: {
+        name: 'Thorn Beetle',
+        color: '#8f6d3a',
+        sprite: 'npc',
+        hp: 2,
+        attack: 1,
+        intervalMs: 1000,
+        range: 1,
+        behavior: 'Armored blocker. Deals thorn damage while you stand near it.',
+        lesson: 'Clear it before crossing narrow routes or it will tax your shield.'
     },
     guardWasp: {
         name: 'Guard Wasp',
@@ -426,6 +442,11 @@ const OBJECTS = {
         color: ENEMY_DEFS.miteSwarm.color,
         description: ENEMY_DEFS.miteSwarm.behavior
     },
+    thornBeetle: {
+        name: ENEMY_DEFS.thornBeetle.name,
+        color: ENEMY_DEFS.thornBeetle.color,
+        description: ENEMY_DEFS.thornBeetle.behavior
+    },
     guardWasp: {
         name: ENEMY_DEFS.guardWasp.name,
         color: ENEMY_DEFS.guardWasp.color,
@@ -481,6 +502,11 @@ const OBJECTS = {
         color: '#f0a64f',
         description: 'Grants pollen and water together.'
     },
+    honeyDrop: {
+        name: 'Honey Drop',
+        color: '#f2b544',
+        description: 'Restores health and adds honey for stamina recovery.'
+    },
     waxDoor: {
         name: 'Wax Door',
         color: '#d6b25f',
@@ -526,6 +552,24 @@ const DEFAULT_ENEMY_NUMBERS = Object.fromEntries(Object.entries(ENEMY_DEFS).map(
     intervalMs: enemy.intervalMs
 }]));
 
+const DISCOVERY_OBJECT_WEIGHTS = [
+    { object: 'glowPollen', weight: 4 },
+    { object: 'nectarCache', weight: 4 },
+    { object: 'honeyDrop', weight: 3 },
+    { object: 'waxDoor', weight: 3 },
+    { object: 'stickyHoney', weight: 3 },
+    { object: 'compassPollen', weight: 2 }
+];
+
+const ENEMY_SPAWN_WEIGHTS = [
+    { object: 'enemy', minDepth: 1, weight: 7 },
+    { object: 'miteSwarm', minDepth: 1, weight: 5 },
+    { object: 'thornBeetle', minDepth: 1, weight: 4 },
+    { object: 'guardWasp', minDepth: 2, weight: 4 },
+    { object: 'sleepingBat', minDepth: 2, weight: 3 },
+    { object: 'honeyLeech', minDepth: 3, weight: 4 }
+];
+
 window.HW_CONTENT = {
     I18N,
     RELICS,
@@ -533,7 +577,9 @@ window.HW_CONTENT = {
     ENEMY_DEFS,
     OBJECTS,
     DEFAULT_OBJECT_COLORS,
-    DEFAULT_ENEMY_NUMBERS
+    DEFAULT_ENEMY_NUMBERS,
+    DISCOVERY_OBJECT_WEIGHTS,
+    ENEMY_SPAWN_WEIGHTS
 };
 })();
 

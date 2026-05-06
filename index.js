@@ -52,8 +52,10 @@ const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const DANCE_MOVES_REQUIRED = 12;
 const DANCE_ARROW_MS = 1000;
-const DANCE_HOLD_MS = 1000;
-const DANCE_SEQUENCE_LENGTH = 3;
+const DANCE_HOLD_MIN_MS = 1000;
+const DANCE_HOLD_MAX_MS = 3000;
+const DANCE_SEQUENCE_MIN_LENGTH = 3;
+const DANCE_SEQUENCE_MAX_LENGTH = 6;
 const DANCE_MULTI_MAX_CLICKS = 5;
 const DANCE_MAX_MISSES = 3;
 const HEX_DIRECTIONS = [
@@ -77,7 +79,9 @@ const {
     ENEMY_DEFS,
     OBJECTS,
     DEFAULT_OBJECT_COLORS,
-    DEFAULT_ENEMY_NUMBERS
+    DEFAULT_ENEMY_NUMBERS,
+    DISCOVERY_OBJECT_WEIGHTS,
+    ENEMY_SPAWN_WEIGHTS
 } = window.HW_CONTENT;
 
 const spriteAssets = {};
@@ -105,6 +109,7 @@ const game = {
     replay: null,
     cameraPan: { x: 0, y: 0 },
     pointer: null,
+    dragAction: null,
     suppressNextClick: false,
     lastStaminaRegenAt: 0,
     relics: [],
@@ -372,22 +377,7 @@ function randomObjectFor(q, r, entryCell, exitCell) {
 }
 
 function chooseDiscoveryObject() {
-    const options = [
-        { object: 'glowPollen', weight: 4 },
-        { object: 'nectarCache', weight: 4 },
-        { object: 'waxDoor', weight: 3 },
-        { object: 'stickyHoney', weight: 3 },
-        { object: 'compassPollen', weight: 2 }
-    ];
-    const total = options.reduce((sum, option) => sum + option.weight, 0);
-    let roll = seededRandom() * total;
-
-    for (const option of options) {
-        roll -= option.weight;
-        if (roll <= 0) return option.object;
-    }
-
-    return 'glowPollen';
+    return chooseWeightedObject(DISCOVERY_OBJECT_WEIGHTS, 'glowPollen');
 }
 
 function seededRandom() {
@@ -397,13 +387,14 @@ function seededRandom() {
 
 function chooseEnemyObject() {
     const depth = game.roomDepth;
-    const options = [
-        { object: 'enemy', weight: 7 },
-        { object: 'miteSwarm', weight: depth >= 1 ? 5 : 0 },
-        { object: 'guardWasp', weight: depth >= 2 ? 4 : 0 },
-        { object: 'sleepingBat', weight: depth >= 2 ? 3 : 0 },
-        { object: 'honeyLeech', weight: depth >= 3 ? 4 : 0 }
-    ].filter((option) => option.weight > 0);
+    const options = ENEMY_SPAWN_WEIGHTS
+        .filter((option) => depth >= option.minDepth)
+        .map((option) => ({ object: option.object, weight: option.weight }));
+
+    return chooseWeightedObject(options, 'enemy');
+}
+
+function chooseWeightedObject(options, fallback) {
     const total = options.reduce((sum, option) => sum + option.weight, 0);
     let roll = seededRandom() * total;
 
@@ -414,7 +405,7 @@ function chooseEnemyObject() {
         }
     }
 
-    return 'enemy';
+    return fallback;
 }
 
 function createGrid() {
@@ -436,6 +427,7 @@ function startRunState() {
     game.replay = null;
     game.cameraPan = { x: 0, y: 0 };
     game.pointer = null;
+    game.dragAction = null;
     game.suppressNextClick = false;
     game.lastStaminaRegenAt = performance.now();
     game.dance = null;
@@ -801,10 +793,11 @@ function spawnDanceMove() {
     game.dance.holding = false;
 
     if (type === 'fastSequence') {
+        const length = DANCE_SEQUENCE_MIN_LENGTH + Math.floor(seededRandom() * (DANCE_SEQUENCE_MAX_LENGTH - DANCE_SEQUENCE_MIN_LENGTH + 1));
         game.dance.move = {
             type,
-            label: 'Fast 3-step',
-            steps: buildAdjacentSequence(game.player.q, game.player.r, DANCE_SEQUENCE_LENGTH),
+            label: `Fast ${length}-step`,
+            steps: buildAdjacentSequence(game.player.q, game.player.r, length),
             index: 0
         };
         activateDanceStep();
@@ -812,12 +805,17 @@ function spawnDanceMove() {
     }
 
     if (type === 'hold') {
-        const step = randomAdjacentStep(game.player.q, game.player.r);
+        const durationMs = DANCE_HOLD_MIN_MS + Math.floor(seededRandom() * (DANCE_HOLD_MAX_MS - DANCE_HOLD_MIN_MS + 1));
         game.dance.move = {
             type,
-            label: 'Hold',
-            steps: [step],
-            index: 0
+            label: `Hold ${(durationMs / 1000).toFixed(1)}s`,
+            steps: [{
+                q: game.player.q,
+                r: game.player.r,
+                directionIndex: 0
+            }],
+            index: 0,
+            durationMs
         };
         activateDanceStep();
         return;
@@ -865,7 +863,9 @@ function activateDanceStep() {
         q: next.q,
         r: next.r,
         directionIndex: next.directionIndex,
-        expiresAt: performance.now() + DANCE_ARROW_MS,
+        expiresAt: move.type === 'hold'
+            ? 0
+            : performance.now() + DANCE_ARROW_MS,
         holdStartedAt: 0
     };
     game.dance.holding = false;
@@ -1069,6 +1069,9 @@ function draw() {
         drawDanceArrow();
     }
     drawPlayer();
+    if (game.mode === 'dance' && game.dance?.move?.type === 'hold') {
+        drawDanceHoldForeground();
+    }
     drawStatPopups();
     drawHoverTooltip();
     renderStats();
@@ -1217,6 +1220,7 @@ function drawEnemyTypeBadge(object, x, y, size) {
     const enemy = getEnemyDef(object);
     const labels = {
         miteSwarm: 'M',
+        thornBeetle: 'T',
         guardWasp: 'G',
         sleepingBat: 'Z',
         honeyLeech: 'L'
@@ -1259,10 +1263,11 @@ function drawDanceArrow() {
     const target = hexToPixel(active.q, active.r);
     const color = getDirectionColor(active.directionIndex);
     const remaining = Math.max(0, active.expiresAt - performance.now());
+    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
     const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / DANCE_HOLD_MS)
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
         : 0;
-    const timeoutProgress = remaining / DANCE_ARROW_MS;
+    const timeoutProgress = move?.type === 'hold' ? holdProgress : remaining / DANCE_ARROW_MS;
     const angle = getDirectionAngle(active.directionIndex);
 
     drawDancePreviewArrows();
@@ -1274,24 +1279,26 @@ function drawDanceArrow() {
     ctx.lineWidth = 5;
     ctx.stroke();
 
-    ctx.save();
-    ctx.translate(target.x, target.y);
-    ctx.rotate(angle);
-    ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(17, 22, 19, 0.86)';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(target.size * 0.34, 0);
-    ctx.lineTo(-target.size * 0.12, -target.size * 0.24);
-    ctx.lineTo(-target.size * 0.05, -target.size * 0.08);
-    ctx.lineTo(-target.size * 0.36, -target.size * 0.08);
-    ctx.lineTo(-target.size * 0.36, target.size * 0.08);
-    ctx.lineTo(-target.size * 0.05, target.size * 0.08);
-    ctx.lineTo(-target.size * 0.12, target.size * 0.24);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fill();
-    ctx.restore();
+    if (move?.type !== 'hold') {
+        ctx.save();
+        ctx.translate(target.x, target.y);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.strokeStyle = 'rgba(17, 22, 19, 0.86)';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(target.size * 0.34, 0);
+        ctx.lineTo(-target.size * 0.12, -target.size * 0.24);
+        ctx.lineTo(-target.size * 0.05, -target.size * 0.08);
+        ctx.lineTo(-target.size * 0.36, -target.size * 0.08);
+        ctx.lineTo(-target.size * 0.36, target.size * 0.08);
+        ctx.lineTo(-target.size * 0.05, target.size * 0.08);
+        ctx.lineTo(-target.size * 0.12, target.size * 0.24);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+        ctx.restore();
+    }
 
     ctx.save();
     ctx.strokeStyle = color;
@@ -1323,12 +1330,52 @@ function drawDanceArrow() {
     drawDanceStepReference(target, move, active, color);
 }
 
+function drawDanceHoldForeground() {
+    const active = game.dance?.active;
+    const move = game.dance?.move;
+    if (!active || move?.type !== 'hold') return;
+
+    const target = hexToPixel(active.q, active.r);
+    const holdDuration = move.durationMs || DANCE_HOLD_MIN_MS;
+    const holdProgress = active.holdStartedAt
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
+        : 0;
+    drawDanceHoldCountdown(target, holdDuration, holdProgress);
+}
+
+function drawDanceHoldCountdown(target, holdDuration, holdProgress) {
+    const active = game.dance?.active;
+    const remainingMs = active?.holdStartedAt
+        ? Math.max(0, holdDuration - (performance.now() - active.holdStartedAt))
+        : holdDuration;
+    const seconds = Math.ceil(remainingMs / 1000);
+
+    ctx.save();
+    ctx.fillStyle = '#fff2a7';
+    ctx.strokeStyle = 'rgba(17, 22, 19, 0.9)';
+    ctx.lineWidth = 5;
+    ctx.font = `800 ${Math.round(target.size * 0.42)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeText(`${seconds}s`, target.x, target.y + target.size * 0.02);
+    ctx.fillText(`${seconds}s`, target.x, target.y + target.size * 0.02);
+
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#fff2a7';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, target.size * (0.35 + holdProgress * 0.18), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawDanceStepReference(target, move, active, color) {
     const label = getDanceStepLabel(move);
     if (!label) return;
 
+    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
     const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / DANCE_HOLD_MS)
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
         : 0;
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(target.size * 1.28, 86);
@@ -1361,7 +1408,7 @@ function drawDanceStepReference(target, move, active, color) {
 
 function getDanceStepLabel(move) {
     if (!move) return '';
-    if (move.type === 'hold') return 'HOLD';
+    if (move.type === 'hold') return 'HOLD BEE';
     if (move.type === 'multiClick') return `CLICK x${move.clicksLeft}`;
     if (move.type === 'fastSequence') return 'CLICK FAST';
     if (move.type === 'spreadSequence') return 'CLICK PATH';
@@ -1545,6 +1592,9 @@ function drawSprite(type, x, y, size) {
 
     const frame = Math.floor(performance.now() / definition.frameMs) % definition.columns;
     const spriteFrame = spriteFrames[spriteKey][frame];
+    const danceGiggle = type === 'player' && game.dance?.move?.type === 'hold' && game.dance?.active?.holdStartedAt
+        ? Math.sin(performance.now() / 42) * size * 0.045
+        : 0;
     const bob = Math.sin(performance.now() / 260 + definition.row) * size * 0.035;
     const maxDrawSize = size * (type === 'entry' || type === 'exit' || type === 'finalExit' ? 1.02 : 1.22);
     const scale = maxDrawSize / Math.max(spriteFrame.sourceWidth, spriteFrame.sourceHeight);
@@ -1559,7 +1609,7 @@ function drawSprite(type, x, y, size) {
         spriteFrame.sourceY,
         spriteFrame.sourceWidth,
         spriteFrame.sourceHeight,
-        x - drawWidth / 2,
+        x - drawWidth / 2 + danceGiggle,
         y - drawHeight / 2 + bob,
         drawWidth,
         drawHeight
@@ -1646,12 +1696,13 @@ function drawTokenFallback(type, x, y, size) {
         ctx.fill();
     }
 
-    if (type === 'glowPollen' || type === 'compassPollen' || type === 'nectarCache' || type === 'stickyHoney') {
+    if (type === 'glowPollen' || type === 'compassPollen' || type === 'nectarCache' || type === 'stickyHoney' || type === 'honeyDrop') {
         const colors = {
             glowPollen: '#7ee6a5',
             compassPollen: '#f7df72',
             nectarCache: '#f0a64f',
-            stickyHoney: '#d68c39'
+            stickyHoney: '#d68c39',
+            honeyDrop: '#f2b544'
         };
         ctx.fillStyle = colors[type];
         drawStar(0, 0, size * 0.28, size * 0.11, type === 'nectarCache' ? 8 : 6);
@@ -2280,6 +2331,15 @@ function handleDanceClick(cell) {
     return;
 }
 
+function isPlayerCell(cell) {
+    return Boolean(cell && cell.q === game.player.q && cell.r === game.player.r);
+}
+
+function isActiveDanceCell(cell) {
+    const active = game.dance?.active;
+    return Boolean(active && cell && cell.q === active.q && cell.r === active.r);
+}
+
 function startDanceHold(cell) {
     const active = game.dance?.active;
     const move = game.dance?.move;
@@ -2327,9 +2387,11 @@ function completeDanceStep() {
     const previousPosition = { q: game.player.q, r: game.player.r };
     game.player.q = cell.q;
     game.player.r = cell.r;
-    startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
+    if (previousPosition.q !== cell.q || previousPosition.r !== cell.r) {
+        startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
+        game.player.steps += 1;
+    }
     cell.visited = true;
-    game.player.steps += 1;
     game.dance.move.index += 1;
 
     if (game.dance.move.index >= game.dance.move.steps.length) {
@@ -2357,12 +2419,14 @@ function updateDanceArrow() {
     if (!game.dance?.active || game.ended) return;
 
     const active = game.dance.active;
-    if (game.dance.move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= DANCE_HOLD_MS) {
+    const move = game.dance.move;
+    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
+    if (move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= holdDuration) {
         completeDanceStep();
         return;
     }
 
-    if (game.dance.move?.type !== 'hold' && performance.now() >= active.expiresAt) {
+    if (move?.type !== 'hold' && performance.now() >= active.expiresAt) {
         registerDanceMiss('Arrow missed.');
     }
 }
@@ -2563,6 +2627,25 @@ function resolveInteraction(object, cell) {
         }
         return {
             message: 'Opened a nectar cache. Gained pollen and water.',
+            deltas,
+            consume: true
+        };
+    }
+
+    if (object === 'honeyDrop') {
+        const previousHealth = game.player.health;
+        game.player.honey += 1;
+        game.runStats.honey += 1;
+        game.player.health = Math.min(7, game.player.health + 2);
+        const healthDelta = game.player.health - previousHealth;
+        const deltas = [{ stat: 'honey', amount: 1 }];
+        if (healthDelta > 0) {
+            deltas.push({ stat: 'health', amount: healthDelta });
+        }
+        return {
+            message: healthDelta > 0
+                ? 'Collected honey. Restored health and stored stamina fuel.'
+                : 'Collected honey for stamina recovery.',
             deltas,
             consume: true
         };
@@ -2821,7 +2904,8 @@ function hasTimedAura(object) {
     return object === 'enemy'
         || object === 'guardWasp'
         || object === 'honeyLeech'
-        || object === 'miteSwarm';
+        || object === 'miteSwarm'
+        || object === 'thornBeetle';
 }
 
 function endRun(reason = 'final-exit') {
@@ -3203,6 +3287,15 @@ canvas.addEventListener('pointerdown', (event) => {
     const rect = canvas.getBoundingClientRect();
     const cell = pixelToClosestHex(event.clientX - rect.left, event.clientY - rect.top);
     const canPan = event.button === 1 || event.pointerType === 'touch';
+    if (event.button === 0 && cell) {
+        game.dragAction = {
+            id: event.pointerId,
+            mode: game.mode,
+            startCell: cell,
+            startX: event.clientX,
+            startY: event.clientY
+        };
+    }
     if (canPan && game.mode === 'dungeon') {
         event.preventDefault();
         game.pointer = {
@@ -3218,7 +3311,7 @@ canvas.addEventListener('pointerdown', (event) => {
 
     if (game.mode !== 'dance' || game.ended) return;
 
-    if (cell) {
+    if (cell && (game.dance?.move?.type === 'hold' || isActiveDanceCell(cell))) {
         startDanceHold(cell);
     }
 });
@@ -3248,11 +3341,27 @@ canvas.addEventListener('pointermove', (event) => {
     game.pointer.lastY = event.clientY;
 });
 
-canvas.addEventListener('pointerup', () => {
+canvas.addEventListener('pointerup', (event) => {
     if (game.pointer?.panning) {
         game.suppressNextClick = true;
     }
     game.pointer = null;
+    const drag = game.dragAction?.id === event.pointerId ? game.dragAction : null;
+    if (drag) {
+        const rect = canvas.getBoundingClientRect();
+        const endCell = pixelToClosestHex(event.clientX - rect.left, event.clientY - rect.top);
+        const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+        if (distance > 8 && endCell) {
+            if (drag.mode === 'dungeon' && isPlayerCell(drag.startCell)) {
+                game.suppressNextClick = true;
+                moveTo(endCell);
+            } else if (drag.mode === 'dance' && isPlayerCell(drag.startCell) && isActiveDanceCell(endCell)) {
+                game.suppressNextClick = true;
+                startDanceHold(endCell);
+            }
+        }
+    }
+    game.dragAction = null;
     if (game.mode === 'dance') {
         endDanceHold();
     }
@@ -3261,6 +3370,7 @@ canvas.addEventListener('pointerup', () => {
 canvas.addEventListener('pointerleave', () => {
     game.hover = null;
     game.pointer = null;
+    game.dragAction = null;
     canvas.style.cursor = 'default';
     if (game.mode === 'dance') {
         endDanceHold();
