@@ -161,6 +161,15 @@
             box-shadow: 0 0 18px rgba(245, 200, 75, 0.36);
         }
 
+        .cooldown.locked {
+            border-color: rgba(231, 111, 81, 0.46);
+            background: rgba(231, 111, 81, 0.12);
+        }
+
+        .cooldown.locked .sting-icon {
+            box-shadow: 0 0 18px rgba(231, 111, 81, 0.28);
+        }
+
         .cooldown-copy {
             display: grid;
             gap: 3px;
@@ -226,6 +235,20 @@
             z-index: 5;
         }
 
+        .relic-screen {
+            position: fixed;
+            inset: 0;
+            display: none;
+            place-items: center;
+            padding: 24px;
+            background: rgba(10, 14, 12, 0.74);
+            z-index: 4;
+        }
+
+        .relic-screen.visible {
+            display: grid;
+        }
+
         .start-screen {
             position: fixed;
             inset: 0;
@@ -246,9 +269,10 @@
             display: grid;
         }
 
+        .relic-panel,
         .end-panel,
         .start-panel {
-            width: min(420px, 100%);
+            width: min(720px, 100%);
             border: 1px solid rgba(243, 240, 223, 0.18);
             background: #202a24;
             padding: 24px;
@@ -256,7 +280,58 @@
             gap: 18px;
         }
 
+        .relic-panel {
+            width: min(860px, 100%);
+        }
+
+        .relic-choices {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .relic-card {
+            min-height: 150px;
+            padding: 14px;
+            display: grid;
+            align-content: start;
+            gap: 8px;
+            border: 1px solid rgba(243, 240, 223, 0.16);
+            background: rgba(243, 240, 223, 0.06);
+            color: var(--text);
+            text-align: left;
+        }
+
+        .relic-card strong {
+            color: var(--accent);
+        }
+
+        .relic-card span {
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .relic-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .relic-chip {
+            padding: 5px 7px;
+            background: rgba(245, 200, 75, 0.12);
+            border: 1px solid rgba(245, 200, 75, 0.24);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .relic-empty {
+            color: rgba(184, 194, 170, 0.68);
+            font-size: 13px;
+        }
+
         .end-panel h2,
+        .relic-panel h2,
         .start-panel h2 {
             font-size: 24px;
             text-transform: none;
@@ -276,6 +351,11 @@
 
         .end-stats strong {
             color: var(--text);
+        }
+
+        .menu-actions {
+            display: grid;
+            gap: 10px;
         }
 
         @media (max-width: 980px) {
@@ -320,6 +400,11 @@
                 </div>
             </section>
 
+            <section>
+                <h2>Relics</h2>
+                <div class="relic-list" id="relicList"></div>
+            </section>
+
             <button id="restartButton" type="button">Restart Draft</button>
         </aside>
 
@@ -336,9 +421,19 @@
     <section class="start-screen" id="startScreen" aria-live="polite">
         <div class="start-panel">
             <h2>Honeycomb Wayfinder</h2>
-            <p>Start a dungeon run or jump straight into the final dance test.</p>
-            <button id="newRunButton" type="button">New Run</button>
-            <button id="testDanceButton" type="button">Test Dance</button>
+            <p>Guide the bee through misty honeycomb chambers, collect pollen, water, shields, and relics, survive wasps, bats, and vines, then finish the run by completing the final food dance.</p>
+            <div class="menu-actions">
+                <button id="newRunButton" type="button">New Run</button>
+                <button id="testDanceButton" type="button">Test Dance</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="relic-screen" id="relicScreen" aria-live="polite">
+        <div class="relic-panel">
+            <h2>Choose a Relic</h2>
+            <p>The next chamber forms after the bee claims one reward.</p>
+            <div class="relic-choices" id="relicChoices"></div>
         </div>
     </section>
 
@@ -347,7 +442,10 @@
             <h2>Run Complete</h2>
             <p>The bee found the final exit.</p>
             <div class="end-stats" id="endStats"></div>
-            <button id="endRestartButton" type="button">Start New Run</button>
+            <div class="menu-actions">
+                <button id="endRestartButton" type="button">Start New Run</button>
+                <button id="endMenuButton" type="button">Main Menu</button>
+            </div>
         </div>
     </section>
 

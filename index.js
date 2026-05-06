@@ -10,11 +10,17 @@ const cooldownHint = document.getElementById('cooldownHint');
 const startScreen = document.getElementById('startScreen');
 const newRunButton = document.getElementById('newRunButton');
 const testDanceButton = document.getElementById('testDanceButton');
+const relicScreen = document.getElementById('relicScreen');
+const relicChoicesNode = document.getElementById('relicChoices');
+const relicListNode = document.getElementById('relicList');
 const endScreen = document.getElementById('endScreen');
 const endStatsNode = document.getElementById('endStats');
 const endRestartButton = document.getElementById('endRestartButton');
+const endMenuButton = document.getElementById('endMenuButton');
 
 const HEX_RADIUS = 4;
+const VISIBLE_RADIUS = 4;
+const DUNGEON_CELL_TARGET = 154;
 const FINAL_ROOM = 5;
 const BAT_ATTACK_MS = 1000;
 const BAT_ATTACK_DAMAGE = 6;
@@ -34,6 +40,67 @@ const HEX_DIRECTIONS = [
     { q: -1, r: 0 },
     { q: -1, r: 1 },
     { q: 0, r: 1 }
+];
+
+const RELICS = [
+    {
+        id: 'waxArmor',
+        name: 'Wax Armor',
+        description: 'Gain +4 shield at the start of each room.',
+        minDepth: 1,
+        rarity: 'common',
+        onRoomStart: () => addShield(4, 'Wax Armor')
+    },
+    {
+        id: 'sharpStinger',
+        name: 'Sharp Stinger',
+        description: 'The first sting in each room has no cooldown.',
+        minDepth: 1,
+        rarity: 'common',
+        apply: () => {
+            game.roomFirstStingAvailable = true;
+        },
+        onRoomStart: () => {
+            game.roomFirstStingAvailable = true;
+        }
+    },
+    {
+        id: 'goldenAntennae',
+        name: 'Golden Antennae',
+        description: 'The exit direction is revealed through the mist.',
+        minDepth: 1,
+        rarity: 'common',
+        onRoomStart: () => revealExitHint()
+    },
+    {
+        id: 'royalJelly',
+        name: 'Royal Jelly',
+        description: 'Every 3 pollen collected heals +3 health.',
+        minDepth: 1,
+        rarity: 'common'
+    },
+    {
+        id: 'mistpiercerWings',
+        name: 'Mistpiercer Wings',
+        description: 'Reveal radius increases from 2 to 3.',
+        minDepth: 1,
+        rarity: 'common',
+        apply: () => {
+            game.revealRadius = 3;
+            revealAroundPlayer();
+        }
+    },
+    {
+        id: 'storedVenom',
+        name: 'Stored Venom',
+        description: 'Start each room with +1 Double Sting.',
+        minDepth: 1,
+        rarity: 'common',
+        onRoomStart: () => {
+            game.player.stingCharges += 1;
+            addLog('Stored Venom', 'Gained +1 Double Sting.');
+        }
+    }
 ];
 
 const SPRITE_DEFS = {
@@ -133,6 +200,13 @@ const game = {
     mode: 'dungeon',
     dance: null,
     playerMotion: null,
+    relics: [],
+    relicChoices: [],
+    pendingNextRoomReason: null,
+    revealRadius: 2,
+    roomFirstStingAvailable: false,
+    royalJellyPollen: 0,
+    currentRoomCells: [],
     runStats: {
         kills: 0,
         pollen: 0,
@@ -199,13 +273,22 @@ function startRunState() {
     game.mode = 'dungeon';
     game.dance = null;
     game.playerMotion = null;
+    game.relics = [];
+    game.relicChoices = [];
+    game.pendingNextRoomReason = null;
+    game.revealRadius = 2;
+    game.roomFirstStingAvailable = false;
+    game.royalJellyPollen = 0;
+    game.currentRoomCells = [];
     game.runStats = {
         kills: 0,
         pollen: 0,
         water: 0
     };
     game.player = createFreshPlayer();
+    relicScreen.classList.remove('visible');
     endScreen.classList.remove('visible');
+    renderRelics();
 }
 
 function testDanceRun() {
@@ -213,6 +296,17 @@ function testDanceRun() {
     startRunState();
     game.roomDepth = FINAL_ROOM;
     generateDanceRoom();
+}
+
+function showMainMenu() {
+    game.ended = true;
+    game.mode = 'menu';
+    game.dance = null;
+    game.playerMotion = null;
+    relicScreen.classList.remove('visible');
+    endScreen.classList.remove('visible');
+    startScreen.classList.remove('hidden');
+    renderMessage();
 }
 
 function createFreshPlayer() {
@@ -242,34 +336,31 @@ function generateRoom(reason) {
     game.dance = null;
     game.cells = [];
     game.statPopups = [];
-    const portals = choosePortalCells();
+    game.currentRoomCells = generateCaveBlob(DUNGEON_CELL_TARGET);
+    const portals = choosePortalCells(game.currentRoomCells);
     game.entryCell = portals.entry;
     game.exitCell = portals.exit;
     game.player.q = game.entryCell.q;
     game.player.r = game.entryCell.r;
     game.message = 'A new chamber opens. Find the exit.';
 
-    for (let q = -HEX_RADIUS; q <= HEX_RADIUS; q++) {
-        const rMin = Math.max(-HEX_RADIUS, -q - HEX_RADIUS);
-        const rMax = Math.min(HEX_RADIUS, -q + HEX_RADIUS);
-
-        for (let r = rMin; r <= rMax; r++) {
-            game.cells.push({
-                q,
-                r,
-                object: randomObjectFor(q, r, game.entryCell, game.exitCell),
-                visited: false,
-                revealed: false,
-                nextAttackAt: 0,
-                nextAuraAt: 0,
-                hits: 0
-            });
-        }
-    }
+    game.currentRoomCells.forEach(({ q, r }) => {
+        game.cells.push({
+            q,
+            r,
+            object: randomObjectFor(q, r, game.entryCell, game.exitCell),
+            visited: false,
+            revealed: false,
+            nextAttackAt: 0,
+            nextAuraAt: 0,
+            hits: 0
+        });
+    });
 
     placeBats();
     const startCell = getCell(game.player.q, game.player.r);
     if (startCell) startCell.visited = true;
+    runRelicHook('onRoomStart');
     revealAroundPlayer();
 
     if (reason === 'restart') {
@@ -280,12 +371,57 @@ function generateRoom(reason) {
     draw();
 }
 
-function choosePortalCells() {
-    const cells = getAllCoordinates();
-    const outerCells = cells.filter((cell) => hexDistance(0, 0, cell.q, cell.r) >= HEX_RADIUS - 1);
+function generateCaveBlob(targetCount) {
+    const cells = new Map();
+    const frontier = [{ q: 0, r: 0 }];
+    cells.set(cellKey(0, 0), { q: 0, r: 0 });
+
+    while (cells.size < targetCount) {
+        const origin = randomFrom(frontier);
+        const shuffled = [...HEX_DIRECTIONS].sort(() => Math.random() - 0.5);
+
+        shuffled.forEach((direction) => {
+            if (cells.size >= targetCount) return;
+            const q = origin.q + direction.q;
+            const r = origin.r + direction.r;
+            const key = cellKey(q, r);
+            if (cells.has(key)) return;
+
+            const neighborCount = HEX_DIRECTIONS.filter((neighbor) => (
+                cells.has(cellKey(q + neighbor.q, r + neighbor.r))
+            )).length;
+            const acceptance = neighborCount >= 2 ? 0.92 : 0.58;
+
+            if (Math.random() < acceptance) {
+                const cell = { q, r };
+                cells.set(key, cell);
+                frontier.push(cell);
+            }
+        });
+
+        if (Math.random() < 0.12) {
+            frontier.push(randomFrom([...cells.values()]));
+        }
+    }
+
+    return [...cells.values()];
+}
+
+function cellKey(q, r) {
+    return `${q},${r}`;
+}
+
+function choosePortalCells(cells) {
+    const centerSorted = [...cells].sort((a, b) => (
+        hexDistance(0, 0, b.q, b.r) - hexDistance(0, 0, a.q, a.r)
+    ));
+    const outerCells = centerSorted.slice(0, Math.max(12, Math.floor(cells.length * 0.22)));
     const entry = randomFrom(outerCells);
-    const exitOptions = outerCells.filter((cell) => hexDistance(entry.q, entry.r, cell.q, cell.r) >= HEX_RADIUS);
-    const exit = randomFrom(exitOptions.length ? exitOptions : outerCells.filter((cell) => cell !== entry));
+    const exit = [...outerCells]
+        .filter((cell) => cell !== entry)
+        .sort((a, b) => (
+            hexDistance(entry.q, entry.r, b.q, b.r) - hexDistance(entry.q, entry.r, a.q, a.r)
+        ))[0];
     return {
         entry,
         exit
@@ -328,10 +464,100 @@ function placeBats() {
 
 function revealAroundPlayer() {
     game.cells.forEach((cell) => {
-        if (hexDistance(game.player.q, game.player.r, cell.q, cell.r) <= 2) {
+        if (hexDistance(game.player.q, game.player.r, cell.q, cell.r) <= game.revealRadius) {
             cell.revealed = true;
         }
     });
+}
+
+function getRelic(id) {
+    return RELICS.find((relic) => relic.id === id);
+}
+
+function hasRelic(id) {
+    return game.relics.includes(id);
+}
+
+function runRelicHook(hookName, ...args) {
+    game.relics.forEach((id) => {
+        const relic = getRelic(id);
+        if (typeof relic?.[hookName] === 'function') {
+            relic[hookName](game, ...args);
+        }
+    });
+}
+
+function addShield(amount, source) {
+    game.player.upgrades += amount;
+    addStatPopups(game.player.q, game.player.r, [{ stat: 'upgrades', amount }]);
+    addLog(source, `Gained +${amount} shield.`);
+}
+
+function revealExitHint() {
+    if (!game.exitCell) return;
+    const exit = getCell(game.exitCell.q, game.exitCell.r);
+    if (exit) {
+        exit.revealed = true;
+        addLog('Golden Antennae', 'The exit glows through the mist.');
+    }
+}
+
+function openRelicChoice() {
+    game.mode = 'relicChoice';
+    game.pendingNextRoomReason = 'exit';
+    game.relicChoices = chooseRelicRewards();
+    game.message = 'Choose a relic before entering the next chamber.';
+    renderRelicChoices();
+    relicScreen.classList.add('visible');
+    draw();
+}
+
+function chooseRelicRewards() {
+    const available = RELICS.filter((relic) => (
+        relic.minDepth <= game.roomDepth && !hasRelic(relic.id)
+    ));
+    const pool = available.length >= 3 ? available : RELICS.filter((relic) => relic.minDepth <= game.roomDepth);
+    return [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+}
+
+function renderRelicChoices() {
+    relicChoicesNode.innerHTML = game.relicChoices.map((relic) => (
+        `<button class="relic-card" type="button" data-relic-id="${relic.id}">
+            <strong>${relic.name}</strong>
+            <span>${relic.description}</span>
+        </button>`
+    )).join('');
+}
+
+function chooseRelic(id) {
+    const relic = getRelic(id);
+    if (!relic || game.mode !== 'relicChoice') return;
+
+    if (!hasRelic(id)) {
+        game.relics.push(id);
+    }
+    if (typeof relic.apply === 'function') {
+        relic.apply(game);
+    }
+    renderRelics();
+    addLog('Relic Chosen', `${relic.name}: ${relic.description}`);
+    relicScreen.classList.remove('visible');
+    game.relicChoices = [];
+    game.pendingNextRoomReason = null;
+    game.roomDepth += 1;
+    generateRoom('exit');
+}
+
+function renderRelics() {
+    if (!relicListNode) return;
+    if (!game.relics.length) {
+        relicListNode.innerHTML = '<span class="relic-empty">None yet</span>';
+        return;
+    }
+    relicListNode.innerHTML = game.relics.map((id) => {
+        const relic = getRelic(id);
+        return `<span class="relic-chip">${relic?.name || id}</span>`;
+    }).join('');
 }
 
 function generateDanceRoom() {
@@ -520,8 +746,10 @@ function resizeCanvas() {
 
 function layout() {
     const rect = canvas.getBoundingClientRect();
-    const padding = 28;
-    const hexes = game.cells.length ? game.cells : [{ q: -HEX_RADIUS, r: 0 }, { q: HEX_RADIUS, r: 0 }];
+    const padding = game.mode === 'dance' ? 18 : 28;
+    const hexes = game.mode === 'dance' && game.cells.length
+        ? game.cells
+        : getAllCoordinatesForRadius(VISIBLE_RADIUS);
     const unitPoints = hexes.flatMap((cell) => hexCornerPoints(cell.q, cell.r, 1));
     const minX = Math.min(...unitPoints.map((point) => point.x));
     const maxX = Math.max(...unitPoints.map((point) => point.x));
@@ -534,20 +762,68 @@ function layout() {
         (rect.height - padding * 2) / unitHeight
     ));
 
+    if (game.mode === 'dance') {
+        return {
+            width: rect.width,
+            height: rect.height,
+            size,
+            originX: rect.width / 2 - (minX + unitWidth / 2) * size,
+            originY: rect.height / 2 - (minY + unitHeight / 2) * size
+        };
+    }
+
+    const camera = getCameraWorldPosition();
+    const cameraPixel = axialToWorld(camera.q, camera.r, size);
+
     return {
         width: rect.width,
         height: rect.height,
         size,
-        originX: rect.width / 2 - (minX + unitWidth / 2) * size,
-        originY: rect.height / 2 - (minY + unitHeight / 2) * size
+        originX: rect.width / 2 - cameraPixel.x,
+        originY: rect.height / 2 - cameraPixel.y
     };
 }
 
 function hexToPixel(q, r) {
     const board = layout();
-    const x = board.originX + board.size * Math.sqrt(3) * (q + r / 2);
-    const y = board.originY + board.size * 1.5 * r;
+    const world = axialToWorld(q, r, board.size);
+    const x = board.originX + world.x;
+    const y = board.originY + world.y;
     return { x, y, size: board.size };
+}
+
+function getAllCoordinatesForRadius(radius) {
+    const coordinates = [];
+    for (let q = -radius; q <= radius; q++) {
+        const rMin = Math.max(-radius, -q - radius);
+        const rMax = Math.min(radius, -q + radius);
+
+        for (let r = rMin; r <= rMax; r++) {
+            coordinates.push({ q, r });
+        }
+    }
+    return coordinates;
+}
+
+function getCameraWorldPosition() {
+    const motion = game.playerMotion;
+    if (!motion) {
+        return { q: game.player.q, r: game.player.r };
+    }
+
+    const progress = Math.min(1, (performance.now() - motion.startedAt) / motion.duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    return {
+        q: motion.fromQ + (motion.toQ - motion.fromQ) * eased,
+        r: motion.fromR + (motion.toR - motion.fromR) * eased
+    };
+}
+
+function axialToWorld(q, r, size) {
+    return {
+        x: size * Math.sqrt(3) * (q + r / 2),
+        y: size * 1.5 * r
+    };
 }
 
 function hexCornerPoints(q, r, size) {
@@ -587,7 +863,7 @@ function draw() {
     if (!canvas.width || !canvas.height) return;
     if (game.mode === 'dance') {
         updateDanceArrow();
-    } else {
+    } else if (game.mode === 'dungeon') {
         updateEnemyAuras();
         updateBatAttacks();
     }
@@ -771,6 +1047,53 @@ function drawDanceArrow() {
         ctx.fillText(String(move.clicksLeft), target.x, target.y);
         ctx.restore();
     }
+
+    drawDanceStepReference(target, move, active, color);
+}
+
+function drawDanceStepReference(target, move, active, color) {
+    const label = getDanceStepLabel(move);
+    if (!label) return;
+
+    const holdProgress = active.holdStartedAt
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / DANCE_HOLD_MS)
+        : 0;
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(target.size * 1.28, 86);
+    const height = 26;
+    const x = Math.max(8, Math.min(target.x - width / 2, rect.width - width - 8));
+    const y = Math.max(8, Math.min(target.y - target.size * 0.95, rect.height - height - 8));
+    const centerX = x + width / 2;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(17, 22, 19, 0.88)';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, 7);
+    ctx.fill();
+    ctx.stroke();
+
+    if (move?.type === 'hold') {
+        ctx.fillStyle = `${color}88`;
+        ctx.fillRect(x + 4, y + height - 6, (width - 8) * holdProgress, 3);
+    }
+
+    ctx.fillStyle = '#f3f0df';
+    ctx.font = '800 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, centerX, y + height / 2 - 1);
+    ctx.restore();
+}
+
+function getDanceStepLabel(move) {
+    if (!move) return '';
+    if (move.type === 'hold') return 'HOLD';
+    if (move.type === 'multiClick') return `CLICK x${move.clicksLeft}`;
+    if (move.type === 'fastSequence') return 'CLICK FAST';
+    if (move.type === 'spreadSequence') return 'CLICK PATH';
+    return 'CLICK';
 }
 
 function drawDancePreviewArrows() {
@@ -1141,6 +1464,7 @@ function drawPlayer() {
 
     if (spritesReady) {
         drawSprite('player', x, y, size * 1.1);
+        drawPlayerCooldownOverlay(x, y, size);
         return;
     }
 
@@ -1171,6 +1495,39 @@ function drawPlayer() {
     ctx.arc(size * 0.19, -size * 0.03, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    drawPlayerCooldownOverlay(x, y, size);
+}
+
+function drawPlayerCooldownOverlay(x, y, size) {
+    const remaining = getAttackCooldownRemaining();
+    if (remaining <= 0 || game.mode !== 'dungeon' || game.ended) return;
+
+    const progress = 1 - remaining / game.player.attackCooldownMs;
+    const badgeX = x + size * 0.46;
+    const badgeY = y - size * 0.46;
+    const radius = Math.max(13, size * 0.2);
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(17, 22, 19, 0.88)';
+    ctx.strokeStyle = '#ff8a72';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#f5c84b';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(badgeX, badgeY, radius + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ff8a72';
+    ctx.font = `800 ${Math.round(radius * 0.88)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('X', badgeX, badgeY + 1);
+    ctx.restore();
 }
 
 function getPlayerDrawPosition() {
@@ -1189,17 +1546,21 @@ function getPlayerDrawPosition() {
         return current;
     }
 
+    const from = hexToPixel(motion.fromQ, motion.fromR);
+    const to = hexToPixel(motion.toQ, motion.toR);
     return {
-        x: motion.from.x + (motion.to.x - motion.from.x) * eased,
-        y: motion.from.y + (motion.to.y - motion.from.y) * eased,
+        x: from.x + (to.x - from.x) * eased,
+        y: from.y + (to.y - from.y) * eased,
         size: current.size
     };
 }
 
 function startPlayerMotion(fromQ, fromR, toQ, toR) {
     game.playerMotion = {
-        from: hexToPixel(fromQ, fromR),
-        to: hexToPixel(toQ, toR),
+        fromQ,
+        fromR,
+        toQ,
+        toR,
         startedAt: performance.now(),
         duration: 220
     };
@@ -1225,10 +1586,50 @@ function drawStatPopups() {
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'rgba(17, 22, 19, 0.82)';
         ctx.fillStyle = popup.color;
-        ctx.strokeText(popup.label, popup.x, popup.y - lift + popup.offsetY);
-        ctx.fillText(popup.label, popup.x, popup.y - lift + popup.offsetY);
+        const iconX = popup.x - popup.textWidth / 2 - 15;
+        const textY = popup.y - lift + popup.offsetY;
+        if (popup.icon === 'heart') {
+            drawHeartIcon(iconX, textY, 11, popup.color);
+        } else if (popup.icon === 'shield') {
+            drawShieldIcon(iconX, textY, 12, popup.color);
+        }
+        ctx.strokeText(popup.label, popup.x, textY);
+        ctx.fillText(popup.label, popup.x, textY);
         ctx.restore();
     });
+}
+
+function drawHeartIcon(x, y, size, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'rgba(17, 22, 19, 0.82)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + size * 0.42);
+    ctx.bezierCurveTo(x - size * 1.1, y - size * 0.24, x - size * 0.6, y - size * 1.08, x, y - size * 0.48);
+    ctx.bezierCurveTo(x + size * 0.6, y - size * 1.08, x + size * 1.1, y - size * 0.24, x, y + size * 0.42);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawShieldIcon(x, y, size, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = 'rgba(17, 22, 19, 0.82)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y - size);
+    ctx.lineTo(x + size * 0.72, y - size * 0.62);
+    ctx.lineTo(x + size * 0.58, y + size * 0.4);
+    ctx.lineTo(x, y + size);
+    ctx.lineTo(x - size * 0.58, y + size * 0.4);
+    ctx.lineTo(x - size * 0.72, y - size * 0.62);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
 }
 
 function drawStar(x, y, outerRadius, innerRadius, points) {
@@ -1257,6 +1658,10 @@ function moveTo(cell) {
         return;
     }
 
+    if (game.mode !== 'dungeon') {
+        return;
+    }
+
     if (!isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
         return;
     }
@@ -1278,8 +1683,7 @@ function moveTo(cell) {
 
     if (targetObject === 'exit') {
         game.roomStack.push(createRoomSnapshot());
-        game.roomDepth += 1;
-        generateRoom('exit');
+        openRelicChoice();
         return;
     }
 
@@ -1425,7 +1829,12 @@ function registerDanceMiss(reason) {
 
 function resolveInteraction(object, cell) {
     if (object === 'enemy' || object === 'bat') {
-        game.player.attackReadyAt = performance.now() + game.player.attackCooldownMs;
+        if (game.roomFirstStingAvailable) {
+            game.roomFirstStingAvailable = false;
+            game.player.attackReadyAt = performance.now();
+        } else {
+            game.player.attackReadyAt = performance.now() + game.player.attackCooldownMs;
+        }
         game.player.attackAnimationUntil = performance.now() + 520;
         const usesDoubleSting = object === 'bat' && game.player.stingCharges > 0;
         const hitPower = usesDoubleSting ? 2 : 1;
@@ -1497,9 +1906,24 @@ function resolveInteraction(object, cell) {
     if (object === 'pollen') {
         game.player.pollen += 1;
         game.runStats.pollen += 1;
+        const deltas = [{ stat: 'pollen', amount: 1 }];
+        let message = 'Collected a pollen bundle.';
+        if (hasRelic('royalJelly')) {
+            game.royalJellyPollen += 1;
+            if (game.royalJellyPollen >= 3) {
+                game.royalJellyPollen = 0;
+                const previousHealth = game.player.health;
+                game.player.health = Math.min(100, game.player.health + 3);
+                const healthDelta = game.player.health - previousHealth;
+                if (healthDelta > 0) {
+                    deltas.push({ stat: 'health', amount: healthDelta });
+                    message = 'Collected pollen. Royal Jelly healed the bee.';
+                }
+            }
+        }
         return {
-            message: 'Collected a pollen bundle.',
-            deltas: [{ stat: 'pollen', amount: 1 }],
+            message,
+            deltas,
             consume: true
         };
     }
@@ -1745,16 +2169,25 @@ function addStatPopups(q, r, deltas) {
 
     const point = hexToPixel(q, r);
     deltas.forEach((delta, index) => {
+        const label = formatDelta(delta);
         game.statPopups.push({
             x: point.x,
             y: point.y - point.size * 0.62,
             offsetY: index * 22,
-            label: formatDelta(delta),
+            label,
+            textWidth: Math.max(28, label.length * 9),
+            icon: getDeltaIcon(delta),
             color: delta.stat === 'blocked' ? '#b8b8b8' : delta.amount < 0 ? '#ff8a72' : '#fff2a7',
             createdAt: performance.now() + index * 70,
             duration: 920
         });
     });
+}
+
+function getDeltaIcon(delta) {
+    if (delta.stat === 'health' && delta.amount > 0) return 'heart';
+    if ((delta.stat === 'upgrades' && delta.amount > 0) || delta.stat === 'blocked') return 'shield';
+    return null;
 }
 
 function formatDelta(delta) {
@@ -1812,9 +2245,10 @@ function renderCooldown() {
     const progress = ready ? 100 : Math.max(0, Math.min(100, 100 - remaining / total * 100));
 
     cooldownWidget.classList.toggle('ready', ready);
+    cooldownWidget.classList.toggle('locked', !ready);
     cooldownWidget.style.setProperty('--cooldown-progress', `${progress}%`);
-    cooldownText.textContent = ready ? 'Sting ready' : `Sting ${(remaining / 1000).toFixed(1)}s`;
-    cooldownHint.textContent = `Cooldown ${(total / 1000).toFixed(1)}s`;
+    cooldownText.textContent = ready ? 'Sting ready' : `Sting locked ${(remaining / 1000).toFixed(1)}s`;
+    cooldownHint.textContent = ready ? `Cooldown ${(total / 1000).toFixed(1)}s` : 'Avoid enemy cells until it refills';
 }
 
 function renderLog() {
@@ -1834,6 +2268,8 @@ function renderMessage() {
         ? 'The run is over. Restart the draft.'
         : game.mode === 'dance'
         ? 'Click the colored arrow before it fades.'
+        : game.mode === 'relicChoice'
+        ? 'Choose one relic to shape the next chamber.'
         : 'Choose a highlighted neighboring cell.';
 }
 
@@ -1869,10 +2305,18 @@ canvas.addEventListener('pointerleave', () => {
 
 restartButton.addEventListener('click', createGrid);
 endRestartButton.addEventListener('click', createGrid);
+endMenuButton.addEventListener('click', showMainMenu);
 newRunButton.addEventListener('click', createGrid);
 testDanceButton.addEventListener('click', testDanceRun);
+relicChoicesNode.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-relic-id]');
+    if (button) {
+        chooseRelic(button.dataset.relicId);
+    }
+});
 window.addEventListener('resize', resizeCanvas);
 
 renderStats();
+renderRelics();
 resizeCanvas();
 requestAnimationFrame(animate);
