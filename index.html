@@ -225,6 +225,23 @@
             filter: brightness(1.06);
         }
 
+        select,
+        input,
+        textarea {
+            width: 100%;
+            min-height: 38px;
+            border: 1px solid rgba(243, 240, 223, 0.18);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text);
+            padding: 8px 10px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 74px;
+            resize: vertical;
+        }
+
         .end-screen {
             position: fixed;
             inset: 0;
@@ -358,6 +375,50 @@
             gap: 10px;
         }
 
+        .menu-options {
+            display: none;
+            gap: 14px;
+            padding-top: 4px;
+            border-top: 1px solid rgba(243, 240, 223, 0.12);
+        }
+
+        .menu-options.visible {
+            display: grid;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .editor-panel {
+            display: grid;
+            gap: 10px;
+            padding: 12px;
+            border: 1px solid rgba(243, 240, 223, 0.14);
+            background: rgba(243, 240, 223, 0.05);
+        }
+
+        .editor-fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .editor-fields label,
+        .settings-grid label,
+        .editor-panel > label {
+            display: grid;
+            gap: 5px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .editor-fields label.wide {
+            grid-column: 1 / -1;
+        }
+
         @media (max-width: 980px) {
             .shell {
                 grid-template-columns: 180px minmax(0, 1fr) 220px;
@@ -383,12 +444,12 @@
     <main class="shell">
         <aside class="side-panel">
             <div>
-                <h1>Honeycomb Wayfinder</h1>
+                <h1 data-i18n="title">Honeycomb Wayfinder</h1>
                 <p id="turnText">Choose a highlighted neighboring cell.</p>
             </div>
 
             <section>
-                <h2>Bee Stats</h2>
+                <h2 data-i18n="beeStats">Bee Stats</h2>
                 <div class="stats" id="stats"></div>
             </section>
 
@@ -401,11 +462,11 @@
             </section>
 
             <section>
-                <h2>Relics</h2>
+                <h2 data-i18n="relics">Relics</h2>
                 <div class="relic-list" id="relicList"></div>
             </section>
 
-            <button id="restartButton" type="button">Restart Draft</button>
+            <button id="restartButton" type="button" data-i18n="restart">Restart Draft</button>
         </aside>
 
         <section class="board-wrap" aria-label="Hexagonal game board">
@@ -413,38 +474,73 @@
         </section>
 
         <aside class="side-panel">
-            <h2>Game Log</h2>
+            <h2 data-i18n="gameLog">Game Log</h2>
             <div class="log-list" id="logList" aria-live="polite"></div>
         </aside>
     </main>
 
     <section class="start-screen" id="startScreen" aria-live="polite">
         <div class="start-panel">
-            <h2>Honeycomb Wayfinder</h2>
-            <p>Guide the bee through misty honeycomb chambers, collect pollen, water, shields, and relics, survive wasps, bats, and vines, then finish the run by completing the final food dance.</p>
+            <h2 data-i18n="title">Honeycomb Wayfinder</h2>
+            <p data-i18n="objective">Guide the bee through misty honeycomb chambers, collect pollen, water, shields, and relics, survive wasps, bats, and vines, then finish the run by completing the final food dance.</p>
+            <label>
+                <span data-i18n="language">Language</span>
+                <select id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="es-419">Español Latinoamérica</option>
+                </select>
+            </label>
             <div class="menu-actions">
-                <button id="newRunButton" type="button">New Run</button>
-                <button id="testDanceButton" type="button">Test Dance</button>
+                <button id="newRunButton" type="button" data-i18n="newRun">New Run</button>
+                <button id="testDanceButton" type="button" data-i18n="testDance">Test Dance</button>
+                <button id="optionsButton" type="button" data-i18n="options">Options</button>
+            </div>
+            <div class="menu-options" id="optionsPanel">
+                <section>
+                    <h2 data-i18n="languageSettings">Language Settings</h2>
+                    <div class="settings-grid">
+                        <label>
+                            <span data-i18n="language">Language</span>
+                            <select id="menuLanguageSelect">
+                                <option value="en">English</option>
+                                <option value="es-419">Español Latinoamérica</option>
+                            </select>
+                        </label>
+                    </div>
+                </section>
+                <section class="editor-panel">
+                    <h2 data-i18n="objectEditor">Object Editor</h2>
+                    <p data-i18n="objectEditorCopy">Tune objects and enemies locally. Changes are saved on this device.</p>
+                    <label>
+                        <span data-i18n="objectToEdit">Object to edit</span>
+                        <select id="objectEditorSelect"></select>
+                    </label>
+                    <div class="editor-fields" id="objectEditorFields"></div>
+                    <div class="menu-actions">
+                        <button id="saveObjectButton" type="button" data-i18n="saveObject">Save Object</button>
+                        <button id="resetObjectButton" type="button" data-i18n="resetObject">Reset Object</button>
+                    </div>
+                </section>
             </div>
         </div>
     </section>
 
     <section class="relic-screen" id="relicScreen" aria-live="polite">
         <div class="relic-panel">
-            <h2>Choose a Relic</h2>
-            <p>The next chamber forms after the bee claims one reward.</p>
+            <h2 data-i18n="chooseRelic">Choose a Relic</h2>
+            <p data-i18n="chooseRelicCopy">The next chamber forms after the bee claims one reward.</p>
             <div class="relic-choices" id="relicChoices"></div>
         </div>
     </section>
 
     <section class="end-screen" id="endScreen" aria-live="polite">
         <div class="end-panel">
-            <h2>Run Complete</h2>
-            <p>The bee found the final exit.</p>
+            <h2 data-i18n="runComplete">Run Complete</h2>
+            <p data-i18n="runCompleteCopy">The bee found the final exit.</p>
             <div class="end-stats" id="endStats"></div>
             <div class="menu-actions">
-                <button id="endRestartButton" type="button">Start New Run</button>
-                <button id="endMenuButton" type="button">Main Menu</button>
+                <button id="endRestartButton" type="button" data-i18n="startNewRun">Start New Run</button>
+                <button id="endMenuButton" type="button" data-i18n="mainMenu">Main Menu</button>
             </div>
         </div>
     </section>
