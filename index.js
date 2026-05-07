@@ -58,22 +58,7 @@ const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const BASE_XP_TO_LEVEL = 24;
 const GAMEPLAY_MUSIC_SRC = 'assets/main_song.mp3';
-const DANCE_MUSIC_SRC = 'assets/dancefloor.mp3';
 const GAMEPLAY_MUSIC_VOLUME = 0.45;
-const DANCE_MUSIC_VOLUME = 0.56;
-const DANCE_MISS_VOLUME = 0.18;
-const DANCE_MUSIC_START_AT = 48;
-const DANCE_MOVES_REQUIRED = 12;
-const DANCE_ARROW_MS = 1000;
-const DANCE_CLICK_WINDOW_MS = 1200;
-const DANCE_PERFECT_START_MS = 1000;
-const DANCE_HOLD_PERFECT_PROGRESS = 0.85;
-const DANCE_HOLD_MIN_MS = 1000;
-const DANCE_HOLD_MAX_MS = 3000;
-const DANCE_SEQUENCE_MIN_LENGTH = 3;
-const DANCE_SEQUENCE_MAX_LENGTH = 6;
-const DANCE_MULTI_MAX_CLICKS = 5;
-const DANCE_MAX_MISSES = 3;
 const HEX_DIRECTIONS = [
     { q: 1, r: 0 },
     { q: 1, r: -1 },
@@ -223,18 +208,10 @@ const hudRenderer = window.HW_HUD.createHudRenderer({
 
 let itemSystem = null;
 let enemySystem = null;
+let danceSystem = null;
 const gameplayMusic = new Audio(GAMEPLAY_MUSIC_SRC);
 gameplayMusic.loop = true;
 gameplayMusic.volume = GAMEPLAY_MUSIC_VOLUME;
-const danceMusic = new Audio(DANCE_MUSIC_SRC);
-danceMusic.loop = false;
-danceMusic.volume = DANCE_MUSIC_VOLUME;
-let danceVolumeTimer = 0;
-danceMusic.addEventListener('ended', () => {
-    if (game.mode !== 'dance' || game.ended) return;
-    danceMusic.currentTime = DANCE_MUSIC_START_AT;
-    danceMusic.play().catch(() => {});
-});
 
 const OBJECT_UNLOCK_LEVELS = {
     empty: 1,
@@ -386,6 +363,7 @@ const game = {
     },
     lastDamageSource: null,
     deathTip: '',
+    danceFeedback: [],
     revealRadius: 2,
     roomFirstStingAvailable: false,
     royalJellyPollen: 0,
@@ -455,6 +433,30 @@ enemySystem = window.HW_ENEMIES.createEnemySystem({
         hexDistance,
         recordReplayEvent,
         seededRandom
+    }
+});
+
+danceSystem = window.HW_DANCE.createDanceSystem({
+    game,
+    helpers: {
+        canvas,
+        ctx,
+        directions: HEX_DIRECTIONS,
+        xpRewards: XP_REWARDS,
+        getLanguage: () => currentLanguage,
+        randomFrom,
+        seededRandom,
+        getCell,
+        hexDistance,
+        hexToPixel,
+        drawHexPath,
+        startPlayerMotion,
+        awardXp,
+        addLog,
+        showTutorialCallout,
+        stopGameplayMusic,
+        endRun,
+        draw
     }
 });
 
@@ -732,7 +734,7 @@ function saveProgression() {
 }
 
 function startGameplayMusic() {
-    stopDanceMusic();
+    danceSystem?.stopMusic();
     if (!gameplayMusic.paused) return;
     gameplayMusic.currentTime = gameplayMusic.currentTime || 0;
     gameplayMusic.play().catch(() => {
@@ -745,35 +747,9 @@ function stopGameplayMusic() {
     gameplayMusic.currentTime = 0;
 }
 
-function startDanceMusic() {
-    stopGameplayMusic();
-    window.clearTimeout(danceVolumeTimer);
-    danceMusic.volume = DANCE_MUSIC_VOLUME;
-    if (!danceMusic.paused) return;
-    danceMusic.currentTime = DANCE_MUSIC_START_AT;
-    danceMusic.play().catch(() => {
-        // Browsers may block audio until a direct user gesture. The next dance click will try again.
-    });
-}
-
-function stopDanceMusic() {
-    window.clearTimeout(danceVolumeTimer);
-    danceMusic.pause();
-    danceMusic.currentTime = 0;
-    danceMusic.volume = DANCE_MUSIC_VOLUME;
-}
-
 function stopAllMusic() {
     stopGameplayMusic();
-    stopDanceMusic();
-}
-
-function duckDanceMusic() {
-    window.clearTimeout(danceVolumeTimer);
-    danceMusic.volume = DANCE_MISS_VOLUME;
-    danceVolumeTimer = window.setTimeout(() => {
-        danceMusic.volume = DANCE_MUSIC_VOLUME;
-    }, 900);
+    danceSystem?.stopMusic();
 }
 
 function seededRandom() {
@@ -947,6 +923,7 @@ function startRunState() {
     game.objectiveProgress = createObjectiveProgress();
     game.lastDamageSource = null;
     game.deathTip = '';
+    game.danceFeedback = [];
     game.revealRadius = 2;
     game.roomFirstStingAvailable = false;
     game.royalJellyPollen = 0;
@@ -1025,6 +1002,7 @@ function generateRoom(reason) {
     game.dance = null;
     game.cells = [];
     game.statPopups = [];
+    game.danceFeedback = [];
     game.cameraPan = { x: 0, y: 0 };
     game.roomProfile = getRoomProfile();
     game.roomObjective = chooseRoomObjective();
@@ -1559,204 +1537,7 @@ function renderRelics() {
 }
 
 function generateDanceRoom() {
-    startDanceMusic();
-    showTutorialCallout(
-        'dance',
-        currentLanguage === 'es-419' ? 'Baile final' : 'Final Dance',
-        currentLanguage === 'es-419'
-            ? 'Sigue los pasos antes de que se acabe el tiempo. Fallar baja el volumen y el multiplicador.'
-            : 'Follow the steps before time runs out. Misses duck the music and reduce the multiplier.'
-    );
-    game.mode = 'dance';
-    game.playerMotion = null;
-    game.cells = [];
-    game.statPopups = [];
-    game.entryCell = null;
-    game.exitCell = null;
-    game.message = 'Final dance: follow the arrows to reveal the good stuff.';
-
-    for (let q = -HEX_RADIUS; q <= HEX_RADIUS; q++) {
-        const rMin = Math.max(-HEX_RADIUS, -q - HEX_RADIUS);
-        const rMax = Math.min(HEX_RADIUS, -q + HEX_RADIUS);
-
-        for (let r = rMin; r <= rMax; r++) {
-            game.cells.push({
-                q,
-                r,
-                object: 'empty',
-                visited: false,
-                nextAttackAt: 0,
-                nextAuraAt: 0,
-                hits: 0
-            });
-        }
-    }
-
-    const start = randomFrom(game.cells);
-    game.player.q = start.q;
-    game.player.r = start.r;
-    start.visited = true;
-    game.dance = {
-        completed: 0,
-        misses: 0,
-        multiplier: 1,
-        pairScores: [],
-        moveQualitySum: 0,
-        moveQualityCount: 0,
-        lastQuality: '',
-        rewardApplied: false,
-        move: null,
-        active: null,
-        holding: false,
-        lastType: null
-    };
-    addLog('Final Dance', 'Follow 12 dance moves. Clean pairs increase the pollen and water multiplier up to x4.');
-    spawnDanceMove();
-    draw();
-}
-
-function spawnDanceMove() {
-    if (!game.dance || game.ended) return;
-
-    const types = ['fastSequence', 'hold', 'multiClick', 'spreadSequence'];
-    const options = types.filter((type) => type !== game.dance.lastType);
-    const type = randomFrom(options);
-    game.dance.lastType = type;
-    game.dance.holding = false;
-    game.dance.moveQualitySum = 0;
-    game.dance.moveQualityCount = 0;
-    game.dance.lastQuality = '';
-
-    if (type === 'fastSequence') {
-        const length = DANCE_SEQUENCE_MIN_LENGTH + Math.floor(seededRandom() * (DANCE_SEQUENCE_MAX_LENGTH - DANCE_SEQUENCE_MIN_LENGTH + 1));
-        game.dance.move = {
-            type,
-            label: `Fast ${length}-step`,
-            steps: buildAdjacentSequence(game.player.q, game.player.r, length),
-            index: 0
-        };
-        activateDanceStep();
-        return;
-    }
-
-    if (type === 'hold') {
-        const durationMs = DANCE_HOLD_MIN_MS + Math.floor(seededRandom() * (DANCE_HOLD_MAX_MS - DANCE_HOLD_MIN_MS + 1));
-        game.dance.move = {
-            type,
-            label: `Hold ${(durationMs / 1000).toFixed(1)}s`,
-            steps: [{
-                q: game.player.q,
-                r: game.player.r,
-                directionIndex: 0
-            }],
-            index: 0,
-            durationMs
-        };
-        activateDanceStep();
-        return;
-    }
-
-    if (type === 'multiClick') {
-        const step = randomAdjacentStep(game.player.q, game.player.r);
-        const clicks = 2 + Math.floor(seededRandom() * (DANCE_MULTI_MAX_CLICKS - 1));
-        game.dance.move = {
-            type,
-            label: 'Multi-click',
-            steps: [step],
-            index: 0,
-            clicksLeft: clicks
-        };
-        activateDanceStep();
-        return;
-    }
-
-    const spread = buildSpreadSequence();
-    game.dance.move = {
-        type,
-        label: 'Spread path',
-        steps: spread.steps,
-        index: 0,
-        finalStep: spread.finalStep
-    };
-    activateDanceStep();
-}
-
-function activateDanceStep() {
-    const move = game.dance?.move;
-    if (!move) {
-        spawnDanceMove();
-        return;
-    }
-
-    const next = move.steps[move.index];
-    if (!next) {
-        completeDanceMove();
-        return;
-    }
-
-    game.dance.active = {
-        q: next.q,
-        r: next.r,
-        directionIndex: next.directionIndex,
-        createdAt: performance.now(),
-        expiresAt: move.type === 'hold'
-            ? 0
-            : performance.now() + DANCE_CLICK_WINDOW_MS,
-        holdStartedAt: 0
-    };
-    game.dance.holding = false;
-}
-
-function buildAdjacentSequence(startQ, startR, length) {
-    const sequence = [];
-    let cursor = { q: startQ, r: startR };
-
-    for (let i = 0; i < length; i++) {
-        const next = randomAdjacentStep(cursor.q, cursor.r);
-        sequence.push(next);
-        cursor = next;
-    }
-
-    return sequence;
-}
-
-function randomAdjacentStep(q, r) {
-    const options = HEX_DIRECTIONS
-        .map((direction, index) => ({
-            q: q + direction.q,
-            r: r + direction.r,
-            directionIndex: index
-        }))
-        .filter((step) => getCell(step.q, step.r));
-
-    return randomFrom(options);
-}
-
-function buildSpreadSequence() {
-    const distantCells = game.cells
-        .filter((cell) => hexDistance(game.player.q, game.player.r, cell.q, cell.r) >= 3)
-        .sort(() => seededRandom() - 0.5)
-        .slice(0, 2)
-        .map((cell) => ({
-            q: cell.q,
-            r: cell.r,
-            directionIndex: directionIndexToward(game.player.q, game.player.r, cell.q, cell.r)
-        }));
-    const finalStep = randomAdjacentStep(game.player.q, game.player.r);
-
-    return {
-        steps: [...distantCells, finalStep],
-        finalStep
-    };
-}
-
-function directionIndexToward(fromQ, fromR, toQ, toR) {
-    return HEX_DIRECTIONS
-        .map((direction, index) => ({
-            index,
-            distance: hexDistance(fromQ + direction.q, fromR + direction.r, toQ, toR)
-        }))
-        .sort((a, b) => a.distance - b.distance)[0].index;
+    danceSystem.start();
 }
 
 function resizeCanvas() {
@@ -1889,7 +1670,7 @@ function draw() {
     if (game.replay) {
         // Replay snapshots advance on their own timer.
     } else if (game.mode === 'dance') {
-        updateDanceArrow();
+        danceSystem.update();
     } else if (game.mode === 'dungeon') {
         updateSleepingEnemies();
         updateEnemyAuras();
@@ -1902,14 +1683,15 @@ function draw() {
 
     game.cells.forEach(drawCell);
     if (game.mode === 'dance') {
-        drawDanceArrow();
+        danceSystem.drawArrow();
     }
     drawPlayer();
     if (game.mode === 'dance' && game.dance?.move?.type === 'hold') {
-        drawDanceHoldForeground();
+        danceSystem.drawHoldForeground();
     }
     if (game.mode === 'dance') {
-        drawDanceScoreOverlay(board);
+        danceSystem.drawScoreOverlay(board);
+        danceSystem.drawFeedbackLane(board);
     }
     drawStatPopups();
     drawDangerOverlay(board);
@@ -2195,255 +1977,6 @@ function drawMist(x, y, size) {
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.restore();
-}
-
-function drawDanceArrow() {
-    if (!game.dance?.active) return;
-
-    const active = game.dance.active;
-    const move = game.dance.move;
-    const target = hexToPixel(active.q, active.r);
-    const color = getDirectionColor(active.directionIndex);
-    const now = performance.now();
-    const remaining = Math.max(0, active.expiresAt - now);
-    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
-    const holdProgress = active.holdStartedAt
-        ? Math.min(1, (now - active.holdStartedAt) / holdDuration)
-        : 0;
-    const clickTiming = getDanceClickTiming(active, now);
-    const ringProgress = move?.type === 'hold' ? holdProgress : Math.min(1.18, clickTiming.elapsed / DANCE_PERFECT_START_MS);
-    const angle = getDirectionAngle(active.directionIndex);
-
-    drawDancePreviewArrows();
-
-    drawHexPath(target.x, target.y, target.size - 7);
-    ctx.fillStyle = `${color}44`;
-    ctx.fill();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 5;
-    ctx.stroke();
-
-    if (move?.type !== 'hold') {
-        ctx.save();
-        ctx.translate(target.x, target.y);
-        ctx.rotate(angle);
-        ctx.fillStyle = color;
-        ctx.strokeStyle = 'rgba(17, 22, 19, 0.86)';
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(target.size * 0.34, 0);
-        ctx.lineTo(-target.size * 0.12, -target.size * 0.24);
-        ctx.lineTo(-target.size * 0.05, -target.size * 0.08);
-        ctx.lineTo(-target.size * 0.36, -target.size * 0.08);
-        ctx.lineTo(-target.size * 0.36, target.size * 0.08);
-        ctx.lineTo(-target.size * 0.05, target.size * 0.08);
-        ctx.lineTo(-target.size * 0.12, target.size * 0.24);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.fill();
-        ctx.restore();
-    }
-
-    ctx.save();
-    const isPerfectWindow = move?.type !== 'hold' && clickTiming.quality === 'perfect';
-    ctx.strokeStyle = isPerfectWindow ? '#72ff9d' : color;
-    ctx.shadowColor = isPerfectWindow ? '#72ff9d' : color;
-    ctx.shadowBlur = isPerfectWindow ? 18 : 8;
-    ctx.lineWidth = isPerfectWindow ? 6 : 4;
-    ctx.beginPath();
-    ctx.arc(
-        target.x,
-        target.y,
-        target.size * (move?.type === 'hold' ? 0.35 + holdProgress * 0.19 : 0.16 + ringProgress * 0.32),
-        0,
-        Math.PI * 2
-    );
-    ctx.stroke();
-    ctx.restore();
-
-    if (move?.type === 'multiClick') {
-        ctx.save();
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = 'rgba(17, 22, 19, 0.9)';
-        ctx.lineWidth = 5;
-        ctx.font = `800 ${Math.round(target.size * 0.42)}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.strokeText(String(move.clicksLeft), target.x, target.y);
-        ctx.fillText(String(move.clicksLeft), target.x, target.y);
-        ctx.restore();
-    }
-
-    drawDanceStepReference(target, move, active, color);
-}
-
-function getDanceClickTiming(active, now = performance.now()) {
-    const elapsed = Math.max(0, now - (active?.createdAt || now));
-    if (elapsed >= DANCE_PERFECT_START_MS && elapsed <= DANCE_CLICK_WINDOW_MS) {
-        return {
-            quality: 'perfect',
-            score: 1,
-            elapsed
-        };
-    }
-    if (elapsed < DANCE_PERFECT_START_MS) {
-        return {
-            quality: 'good',
-            score: 0.6 + 0.35 * (elapsed / DANCE_PERFECT_START_MS),
-            elapsed
-        };
-    }
-    return {
-        quality: 'miss',
-        score: 0,
-        elapsed
-    };
-}
-
-function drawDanceHoldForeground() {
-    const active = game.dance?.active;
-    const move = game.dance?.move;
-    if (!active || move?.type !== 'hold') return;
-
-    const target = hexToPixel(active.q, active.r);
-    const holdDuration = move.durationMs || DANCE_HOLD_MIN_MS;
-    const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
-        : 0;
-    drawDanceHoldCountdown(target, holdDuration, holdProgress);
-}
-
-function drawDanceHoldCountdown(target, holdDuration, holdProgress) {
-    const active = game.dance?.active;
-    const remainingMs = active?.holdStartedAt
-        ? Math.max(0, holdDuration - (performance.now() - active.holdStartedAt))
-        : holdDuration;
-    const seconds = Math.ceil(remainingMs / 1000);
-
-    ctx.save();
-    ctx.fillStyle = '#fff2a7';
-    ctx.strokeStyle = 'rgba(17, 22, 19, 0.9)';
-    ctx.lineWidth = 5;
-    ctx.font = `800 ${Math.round(target.size * 0.42)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.strokeText(`${seconds}s`, target.x, target.y + target.size * 0.02);
-    ctx.fillText(`${seconds}s`, target.x, target.y + target.size * 0.02);
-
-    const perfect = holdProgress >= DANCE_HOLD_PERFECT_PROGRESS;
-    ctx.globalAlpha = 0.92;
-    ctx.strokeStyle = perfect ? '#72ff9d' : '#fff2a7';
-    ctx.shadowColor = perfect ? '#72ff9d' : '#fff2a7';
-    ctx.shadowBlur = perfect ? 18 : 8;
-    ctx.lineWidth = perfect ? 5 : 3;
-    ctx.beginPath();
-    ctx.arc(target.x, target.y, target.size * (0.35 + holdProgress * 0.18), 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-}
-
-function drawDanceStepReference(target, move, active, color) {
-    const label = getDanceStepLabel(move);
-    if (!label) return;
-
-    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
-    const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
-        : 0;
-    const rect = canvas.getBoundingClientRect();
-    const width = Math.max(target.size * 1.28, 86);
-    const height = 26;
-    const x = Math.max(8, Math.min(target.x - width / 2, rect.width - width - 8));
-    const y = Math.max(8, Math.min(target.y - target.size * 0.95, rect.height - height - 8));
-    const centerX = x + width / 2;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(17, 22, 19, 0.88)';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, 7);
-    ctx.fill();
-    ctx.stroke();
-
-    if (move?.type === 'hold') {
-        ctx.fillStyle = `${color}88`;
-        ctx.fillRect(x + 4, y + height - 6, (width - 8) * holdProgress, 3);
-    }
-
-    ctx.fillStyle = '#f3f0df';
-    ctx.font = '800 12px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, centerX, y + height / 2 - 1);
-    ctx.restore();
-}
-
-function getDanceStepLabel(move) {
-    if (!move) return '';
-    if (game.dance?.lastQuality) return game.dance.lastQuality.toUpperCase();
-    if (move.type === 'hold') return 'HOLD, RELEASE';
-    if (move.type === 'multiClick') return `CLICK x${move.clicksLeft}`;
-    if (move.type === 'fastSequence') return 'PULSE STEP';
-    if (move.type === 'spreadSequence') return 'PULSE PATH';
-    return 'CLICK';
-}
-
-function drawDancePreviewArrows() {
-    const move = game.dance?.move;
-    if (!move?.steps?.length) return;
-
-    move.steps.slice(move.index + 1).forEach((step, index) => {
-        const point = hexToPixel(step.q, step.r);
-        const color = getDirectionColor(step.directionIndex);
-        const angle = getDirectionAngle(step.directionIndex);
-
-        ctx.save();
-        ctx.globalAlpha = move.type === 'spreadSequence' ? 0.46 : index === 0 ? 0.38 : 0.22;
-        ctx.translate(point.x, point.y);
-        ctx.rotate(angle);
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(point.size * 0.22, 0);
-        ctx.lineTo(-point.size * 0.12, -point.size * 0.16);
-        ctx.lineTo(-point.size * 0.12, point.size * 0.16);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    });
-}
-
-function drawDanceScoreOverlay(board) {
-    if (!game.dance) return;
-    const text = `${game.dance.completed}/${DANCE_MOVES_REQUIRED}   x${game.dance.multiplier.toFixed(2)}   ${game.dance.misses} miss${game.dance.misses === 1 ? '' : 'es'}`;
-    const width = Math.min(board.width - 24, 300);
-    const height = 36;
-    const x = board.width / 2 - width / 2;
-    const y = board.height - height - 12;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(17, 22, 19, 0.68)';
-    ctx.strokeStyle = 'rgba(245, 200, 75, 0.56)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(x, y, width, height, 10);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#fff2a7';
-    ctx.font = '900 15px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, board.width / 2, y + height / 2);
-    ctx.restore();
-}
-
-function getDirectionColor(index) {
-    return ['#f94144', '#f8961e', '#f9c74f', '#43aa8b', '#4d96ff', '#b66dff'][index];
-}
-
-function getDirectionAngle(index) {
-    const direction = HEX_DIRECTIONS[index];
-    return Math.atan2(direction.r * 1.5, Math.sqrt(3) * (direction.q + direction.r / 2));
 }
 
 function drawHexPath(x, y, size) {
@@ -3442,11 +2975,7 @@ function openWaxDoor(cell) {
 }
 
 function handleDanceClick(cell) {
-    if (cell && isActiveDanceCell(cell)) {
-        startDanceHold(cell);
-    } else if (game.dance?.active) {
-        registerDanceMiss('Wrong cell.');
-    }
+    danceSystem.handleClick(cell);
 }
 
 function isPlayerCell(cell) {
@@ -3454,137 +2983,15 @@ function isPlayerCell(cell) {
 }
 
 function isActiveDanceCell(cell) {
-    const active = game.dance?.active;
-    return Boolean(active && cell && cell.q === active.q && cell.r === active.r);
+    return danceSystem.isActiveCell(cell);
 }
 
 function startDanceHold(cell) {
-    startDanceMusic();
-    const active = game.dance?.active;
-    const move = game.dance?.move;
-    if (!active) return;
-
-    if (cell.q !== active.q || cell.r !== active.r) {
-        registerDanceMiss('Wrong arrow.');
-        return;
-    }
-
-    if (move.type === 'hold') {
-        active.holdStartedAt = performance.now();
-        game.dance.holding = true;
-        return;
-    }
-
-    const timing = getDanceClickTiming(active);
-    if (timing.quality === 'miss') {
-        registerDanceMiss('Late step.');
-        return;
-    }
-
-    if (move.type === 'multiClick') {
-        recordDanceQuality(timing.score, timing.quality);
-        move.clicksLeft -= 1;
-        active.createdAt = performance.now();
-        active.expiresAt = active.createdAt + DANCE_CLICK_WINDOW_MS;
-        if (move.clicksLeft <= 0) {
-            completeDanceStep(0, '', false);
-        }
-        return;
-    }
-
-    completeDanceStep(timing.score, timing.quality);
+    danceSystem.startHold(cell);
 }
 
 function endDanceHold() {
-    const active = game.dance?.active;
-    const move = game.dance?.move;
-    if (!active?.holdStartedAt || game.ended) return;
-    if (move?.type !== 'hold') return;
-
-    const holdDuration = move.durationMs || DANCE_HOLD_MIN_MS;
-    const progress = Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration);
-    const perfect = progress >= DANCE_HOLD_PERFECT_PROGRESS;
-    const score = perfect ? 1 : Math.max(0.58, progress * 0.92);
-    completeDanceStep(score, perfect ? 'perfect' : 'good');
-}
-
-function completeDanceStep(score = 1, quality = 'good', recordQuality = true) {
-    const active = game.dance?.active;
-    if (!active) return;
-
-    const cell = getCell(active.q, active.r);
-    if (!cell) return;
-
-    const previousPosition = { q: game.player.q, r: game.player.r };
-    game.player.q = cell.q;
-    game.player.r = cell.r;
-    if (previousPosition.q !== cell.q || previousPosition.r !== cell.r) {
-        startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
-        game.player.steps += 1;
-    }
-    cell.visited = true;
-    game.dance.move.index += 1;
-    if (recordQuality) {
-        recordDanceQuality(score, quality);
-    }
-    awardXp(XP_REWARDS.danceStep, currentLanguage === 'es-419' ? 'Paso de baile' : 'Dance step', { silent: true });
-
-    if (game.dance.move.index >= game.dance.move.steps.length) {
-        completeDanceMove();
-        return;
-    }
-
-    activateDanceStep();
-}
-
-function recordDanceQuality(score, quality) {
-    if (!game.dance) return;
-    const boundedScore = Math.max(0, Math.min(1, score));
-    game.dance.moveQualitySum += boundedScore;
-    game.dance.moveQualityCount += 1;
-    game.dance.lastQuality = quality;
-    addWarningPopup(game.player.q, game.player.r, quality === 'perfect' ? 'Perfect' : 'Good');
-}
-
-function completeDanceMove() {
-    game.dance.completed += 1;
-    const moveScore = game.dance.moveQualityCount
-        ? game.dance.moveQualitySum / game.dance.moveQualityCount
-        : 1;
-    game.dance.pairScores.push(moveScore);
-    if (game.dance.pairScores.length >= 2) {
-        const pairScore = game.dance.pairScores.slice(-2).reduce((sum, value) => sum + value, 0) / 2;
-        const increase = 0.5 * pairScore;
-        game.dance.multiplier = Math.min(4, game.dance.multiplier + increase);
-        game.dance.pairScores = [];
-        addWarningPopup(game.player.q, game.player.r, `x${game.dance.multiplier.toFixed(2)}`);
-    }
-    awardXp(XP_REWARDS.danceMove, currentLanguage === 'es-419' ? 'Movimiento de baile' : 'Dance move', { silent: true });
-    game.message = `Dance move ${game.dance.completed}/${DANCE_MOVES_REQUIRED}: ${game.dance.move.label}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
-    addLog('Dance Move', game.message);
-
-    if (game.dance.completed >= DANCE_MOVES_REQUIRED) {
-        endRun('dance-complete');
-        return;
-    }
-
-    spawnDanceMove();
-}
-
-function updateDanceArrow() {
-    if (!game.dance?.active || game.ended) return;
-
-    const active = game.dance.active;
-    const move = game.dance.move;
-    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
-    if (move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= holdDuration) {
-        completeDanceStep(1, 'perfect');
-        return;
-    }
-
-    if (move?.type !== 'hold' && performance.now() >= active.expiresAt) {
-        registerDanceMiss('Arrow missed.');
-    }
+    danceSystem.endHold();
 }
 
 function showBlockedAction(cell, reason) {
@@ -3610,22 +3017,6 @@ function addWarningPopup(q, r, message) {
         createdAt: performance.now(),
         duration: 2600
     });
-}
-
-function registerDanceMiss(reason) {
-    if (!game.dance || game.ended) return;
-
-    game.dance.misses += 1;
-    game.dance.pairScores = [];
-    game.dance.moveQualitySum = 0;
-    game.dance.moveQualityCount = 0;
-    game.dance.lastQuality = 'miss';
-    game.dance.multiplier = Math.max(1, game.dance.multiplier - 0.5);
-    duckDanceMusic();
-    game.message = `${reason} Miss ${game.dance.misses}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
-    addLog('Dance Miss', game.message);
-    addWarningPopup(game.player.q, game.player.r, `x${game.dance.multiplier.toFixed(2)}`);
-    spawnDanceMove();
 }
 
 function getPlayerMaxHealth() {
@@ -3960,7 +3351,7 @@ function hasTimedAura(object) {
 function endRun(reason = 'final-exit') {
     if (game.ended) return;
     game.ended = true;
-    applyDanceRewards(reason);
+    danceSystem.applyRewards(reason);
     stopAllMusic();
     updateProgression();
     const survivedMs = performance.now() - game.runStartedAt;
@@ -3968,7 +3359,7 @@ function endRun(reason = 'final-exit') {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     const danceComplete = game.dance
-        ? getDanceFoodPercentage()
+        ? danceSystem.getFoodPercentage()
         : 100;
 
     game.message = reason === 'death'
@@ -4225,7 +3616,7 @@ function renderStats() {
         [statsText.shield[0], game.player.upgrades, statsText.shield[1]],
         [statsText.doubleSting[0], game.player.stingCharges, statsText.doubleSting[1]],
         [t('ui', 'stamina'), `${game.player.stamina}/${game.player.maxStamina}`, t('ui', 'staminaHint')],
-        [game.mode === 'dance' ? statsText.dance[0] : statsText.room[0], game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, game.mode === 'dance' ? `${game.dance?.misses || 0} misses | x${(game.dance?.multiplier || 1).toFixed(1)}` : statsText.room[1]],
+        [game.mode === 'dance' ? statsText.dance[0] : statsText.room[0], game.mode === 'dance' ? `${game.dance?.completed || 0}/${danceSystem.getMovesRequired()}` : game.roomDepth, game.mode === 'dance' ? `${game.dance?.misses || 0} misses | x${(game.dance?.multiplier || 1).toFixed(1)}` : statsText.room[1]],
         [statsText.steps[0], game.player.steps, statsText.steps[1]]
     ];
 
@@ -4251,7 +3642,7 @@ function renderStatsHud(statsText) {
         { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, icon: 'bolt', color: '#f5c84b' },
         { id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, fallback: 'LV', color: '#fff2a7' },
         { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' },
-        { id: 'room', value: game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, title: game.mode === 'dance' ? `${statsText.dance[0]}: ${DANCE_MAX_MISSES - (game.dance?.misses || 0)} ${statsText.dance[1]}` : `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' }
+        { id: 'room', value: game.mode === 'dance' ? `${game.dance?.completed || 0}/${danceSystem.getMovesRequired()}` : game.roomDepth, title: game.mode === 'dance' ? `${statsText.dance[0]}: ${game.dance?.misses || 0} misses` : `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' }
     ];
     hudRenderer.renderStats(items);
 }
@@ -4333,30 +3724,6 @@ function renderLog() {
         eventToastNode.innerHTML = latest
             ? `<strong>${escapeHtml(latest.title)}</strong><span>${escapeHtml(latest.message)}</span>`
             : '';
-    }
-}
-
-function getDanceFoodPercentage() {
-    const misses = game.dance?.misses || 0;
-    return Math.max(0, Math.min(100, Math.round(100 - misses * 8)));
-}
-
-function applyDanceRewards(reason) {
-    if (!game.dance || game.dance.rewardApplied || reason === 'death') return;
-    const multiplier = Math.min(4, Math.max(1, game.dance.multiplier || 1));
-    const pollenBonus = Math.max(0, Math.round(game.runStats.pollen * (multiplier - 1)));
-    const waterBonus = Math.max(0, Math.round(game.runStats.water * (multiplier - 1)));
-    if (pollenBonus > 0) {
-        game.runStats.pollen += pollenBonus;
-        game.player.pollen += pollenBonus;
-    }
-    if (waterBonus > 0) {
-        game.runStats.water += waterBonus;
-        game.player.water += waterBonus;
-    }
-    game.dance.rewardApplied = true;
-    if (pollenBonus || waterBonus) {
-        addLog('Dance Reward', `Food dance multiplied rewards: +${pollenBonus} pollen, +${waterBonus} water.`);
     }
 }
 
