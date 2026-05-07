@@ -103,6 +103,11 @@ const I18N = {
             glowPollen: ['Glow Pollen', 'Reveals a wide patch of mist around this cell.'],
             nectarCache: ['Nectar Cache', 'Grants pollen and water together.'],
             honeyDrop: ['Honey Drop', 'Restores health and adds honey for stamina recovery.'],
+            cleanWater: ['Clean Water', 'Cleanses nearby pressure and restores a little health.'],
+            smokePuff: ['Smoke Puff', 'Pauses enemy timers for a short escape window.'],
+            sunShard: ['Sun Shard', 'Reveals every enemy in the current room.'],
+            flowerMap: ['Flower Map', 'Reveals a rough route toward the exit.'],
+            royalNectar: ['Royal Nectar', 'Rare recovery. Heals now, or grants permanent health if already full.'],
             waxDoor: ['Wax Door', 'Blocks movement. Spend 1 pollen or a ready sting to open it.'],
             stickyHoney: ['Sticky Honey', 'Leaves sticky honey behind that slows nearby moving enemies.'],
             stickyTrap: ['Sticky Patch', 'Moving enemies near this patch lose momentum.'],
@@ -116,6 +121,11 @@ const I18N = {
             bat: ['Bat', 'Pursues the bee after each move. Attacks every 1s when adjacent.', 'Use Double Sting or plan two safe hits.'],
             miteSwarm: ['Mite Swarm', 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.', 'Cheap to kill, dangerous if ignored in groups.'],
             thornBeetle: ['Thorn Beetle', 'Armored blocker. Deals thorn damage while you stand near it.', 'Clear it before crossing narrow routes or it will tax your shield.'],
+            fogMoth: ['Fog Moth', 'Stationary pressure. Re-hides distant revealed cells when you linger nearby.', 'Fight it before scouting routes around it.'],
+            waxMoth: ['Wax Moth', 'Steals 1 pollen when adjacent, then tries to flee.', 'Do not carry pollen past it unless your sting is ready.'],
+            broodWasp: ['Brood Wasp', 'Spawns mite swarms if left alive too long.', 'Prioritize it before the room fills with small threats.'],
+            stagBeetle: ['Stag Beetle', 'Heavy blocker with a wider warning zone.', 'Its slow aura punishes greedy pathing through chokepoints.'],
+            falseFlower: ['False Flower', 'Looks like pollen until close, then bites with a hidden aura.', 'Inspect rewards carefully when the route feels too generous.'],
             guardWasp: ['Guard Wasp', 'Stationary guard. Its larger aura reaches 2 cells.', 'Check your route before entering its zone.'],
             sleepingBat: ['Sleeping Bat', 'Sleeps until the bee gets close, then wakes and pursues.', 'Skirt around it unless the reward is worth waking it.'],
             honeyLeech: ['Honey Leech', 'Stationary drain. Chews through shield first, then health.', 'Shield is not permanent safety near this enemy.']
@@ -231,6 +241,11 @@ const I18N = {
             glowPollen: ['Polen brillante', 'Revela una zona amplia de niebla alrededor de esta celda.'],
             nectarCache: ['Reserva de néctar', 'Otorga polen y agua juntos.'],
             honeyDrop: ['Gota de miel', 'Restaura salud y suma miel para recuperar stamina.'],
+            cleanWater: ['Agua limpia', 'Limpia presión cercana y restaura un poco de salud.'],
+            smokePuff: ['Nube de humo', 'Pausa los temporizadores enemigos por una ventana corta de escape.'],
+            sunShard: ['Fragmento solar', 'Revela todos los enemigos de la sala actual.'],
+            flowerMap: ['Mapa floral', 'Revela una ruta aproximada hacia la salida.'],
+            royalNectar: ['Néctar real', 'Recuperación rara. Cura ahora o da salud permanente si ya estás al máximo.'],
             waxDoor: ['Puerta de cera', 'Bloquea el paso. Gasta 1 polen o un aguijón listo para abrirla.'],
             stickyHoney: ['Miel pegajosa', 'Deja miel en el panal y ralentiza enemigos cercanos.'],
             stickyTrap: ['Parche pegajoso', 'Los enemigos que se mueven cerca pierden impulso.'],
@@ -244,6 +259,11 @@ const I18N = {
             bat: ['Murciélago', 'Persigue a la abeja después de cada movimiento. Ataca cada 1s si está al lado.', 'Usa Aguijón doble o planea dos golpes seguros.'],
             miteSwarm: ['Enjambre de ácaros', 'Perseguidor lento. Se mueve cada 2 pasos y muerde si está al lado.', 'Es fácil de matar, pero peligroso en grupo.'],
             thornBeetle: ['Escarabajo espinoso', 'Bloqueador con armadura. Hace daño de espinas mientras estás cerca.', 'Límpialo antes de cruzar rutas estrechas o consumirá tu escudo.'],
+            fogMoth: ['Polilla de niebla', 'Presión fija. Vuelve a ocultar celdas reveladas lejanas si te quedas cerca.', 'Derrótala antes de explorar rutas a su alrededor.'],
+            waxMoth: ['Polilla de cera', 'Roba 1 polen si está cerca y luego intenta escapar.', 'No lleves polen junto a ella salvo que el aguijón esté listo.'],
+            broodWasp: ['Avispa nodriza', 'Genera enjambres de ácaros si la ignoras demasiado.', 'Priorízala antes de que la sala se llene de amenazas pequeñas.'],
+            stagBeetle: ['Escarabajo ciervo', 'Bloqueador pesado con una zona de advertencia más amplia.', 'Su aura lenta castiga rutas codiciosas por cuellos de botella.'],
+            falseFlower: ['Flor falsa', 'Parece polen hasta que te acercas, luego muerde con un aura oculta.', 'Inspecciona las recompensas cuando la ruta parezca demasiado generosa.'],
             guardWasp: ['Avispa guardia', 'Guardia fija. Su aura más grande llega a 2 celdas.', 'Revisa tu ruta antes de entrar en su zona.'],
             sleepingBat: ['Murciélago dormido', 'Duerme hasta que la abeja se acerca, luego despierta y persigue.', 'Rodéalo salvo que la recompensa valga despertarlo.'],
             honeyLeech: ['Sanguijuela de miel', 'Drenaje fijo. Come escudo primero y luego salud.', 'El escudo no es seguridad permanente cerca de este enemigo.']
@@ -326,6 +346,12 @@ const SPRITE_DEFS = {
     enemy: { src: 'assets/wasp-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
     bat: { src: 'assets/bat-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     npc: { src: 'assets/bettle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    thornBeetle: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'TB' },
+    fogMoth: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'FM' },
+    waxMoth: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'WM' },
+    broodWasp: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'BW' },
+    stagBeetle: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'SB' },
+    falseFlower: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'FF' },
     pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
@@ -333,7 +359,12 @@ const SPRITE_DEFS = {
     vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     glowPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
     nectarCache: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
-    honeyDrop: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 230 },
+    honeyDrop: { src: '', columns: 1, rows: 1, row: 0, frameMs: 230, fallback: 'HN' },
+    cleanWater: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'CW' },
+    smokePuff: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'SM' },
+    sunShard: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'SUN' },
+    flowerMap: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'MAP' },
+    royalNectar: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'RN' },
     stickyHoney: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
     compassPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
@@ -378,13 +409,68 @@ const ENEMY_DEFS = {
     thornBeetle: {
         name: 'Thorn Beetle',
         color: '#8f6d3a',
-        sprite: 'npc',
+        sprite: 'thornBeetle',
         hp: 2,
         attack: 1,
         intervalMs: 1000,
         range: 1,
         behavior: 'Armored blocker. Deals thorn damage while you stand near it.',
         lesson: 'Clear it before crossing narrow routes or it will tax your shield.'
+    },
+    fogMoth: {
+        name: 'Fog Moth',
+        color: '#8fb8c8',
+        sprite: 'fogMoth',
+        hp: 1,
+        attack: 0,
+        intervalMs: 1200,
+        range: 2,
+        behavior: 'Stationary pressure. Re-hides distant revealed cells when you linger nearby.',
+        lesson: 'Fight it before scouting routes around it.'
+    },
+    waxMoth: {
+        name: 'Wax Moth',
+        color: '#d7c58b',
+        sprite: 'waxMoth',
+        hp: 1,
+        attack: 0,
+        intervalMs: 900,
+        range: 1,
+        behavior: 'Steals 1 pollen when adjacent, then tries to flee.',
+        lesson: 'Do not carry pollen past it unless your sting is ready.'
+    },
+    broodWasp: {
+        name: 'Brood Wasp',
+        color: '#d15a72',
+        sprite: 'broodWasp',
+        hp: 2,
+        attack: 1,
+        intervalMs: 1500,
+        range: 1,
+        behavior: 'Spawns mite swarms if left alive too long.',
+        lesson: 'Prioritize it before the room fills with small threats.'
+    },
+    stagBeetle: {
+        name: 'Stag Beetle',
+        color: '#6c5542',
+        sprite: 'stagBeetle',
+        hp: 3,
+        attack: 1,
+        intervalMs: 1400,
+        range: 2,
+        behavior: 'Heavy blocker with a wider warning zone.',
+        lesson: 'Its slow aura punishes greedy pathing through chokepoints.'
+    },
+    falseFlower: {
+        name: 'False Flower',
+        color: '#ef6f9d',
+        sprite: 'falseFlower',
+        hp: 1,
+        attack: 1,
+        intervalMs: 800,
+        range: 1,
+        behavior: 'Looks like pollen until close, then bites with a hidden aura.',
+        lesson: 'Inspect rewards carefully when the route feels too generous.'
     },
     guardWasp: {
         name: 'Guard Wasp',
@@ -447,6 +533,31 @@ const OBJECTS = {
         color: ENEMY_DEFS.thornBeetle.color,
         description: ENEMY_DEFS.thornBeetle.behavior
     },
+    fogMoth: {
+        name: ENEMY_DEFS.fogMoth.name,
+        color: ENEMY_DEFS.fogMoth.color,
+        description: ENEMY_DEFS.fogMoth.behavior
+    },
+    waxMoth: {
+        name: ENEMY_DEFS.waxMoth.name,
+        color: ENEMY_DEFS.waxMoth.color,
+        description: ENEMY_DEFS.waxMoth.behavior
+    },
+    broodWasp: {
+        name: ENEMY_DEFS.broodWasp.name,
+        color: ENEMY_DEFS.broodWasp.color,
+        description: ENEMY_DEFS.broodWasp.behavior
+    },
+    stagBeetle: {
+        name: ENEMY_DEFS.stagBeetle.name,
+        color: ENEMY_DEFS.stagBeetle.color,
+        description: ENEMY_DEFS.stagBeetle.behavior
+    },
+    falseFlower: {
+        name: ENEMY_DEFS.falseFlower.name,
+        color: ENEMY_DEFS.falseFlower.color,
+        description: ENEMY_DEFS.falseFlower.behavior
+    },
     guardWasp: {
         name: ENEMY_DEFS.guardWasp.name,
         color: ENEMY_DEFS.guardWasp.color,
@@ -507,6 +618,31 @@ const OBJECTS = {
         color: '#f2b544',
         description: 'Restores health and adds honey for stamina recovery.'
     },
+    cleanWater: {
+        name: 'Clean Water',
+        color: '#9ee7ff',
+        description: 'Cleanses nearby pressure and restores a little health.'
+    },
+    smokePuff: {
+        name: 'Smoke Puff',
+        color: '#c9ced1',
+        description: 'Pauses enemy timers for a short escape window.'
+    },
+    sunShard: {
+        name: 'Sun Shard',
+        color: '#ffd166',
+        description: 'Reveals every enemy in the current room.'
+    },
+    flowerMap: {
+        name: 'Flower Map',
+        color: '#82d173',
+        description: 'Reveals a rough route toward the exit.'
+    },
+    royalNectar: {
+        name: 'Royal Nectar',
+        color: '#ff9fcb',
+        description: 'Rare recovery. Heals now, or grants permanent health if already full.'
+    },
     waxDoor: {
         name: 'Wax Door',
         color: '#d6b25f',
@@ -556,6 +692,11 @@ const DISCOVERY_OBJECT_WEIGHTS = [
     { object: 'glowPollen', weight: 4 },
     { object: 'nectarCache', weight: 4 },
     { object: 'honeyDrop', weight: 3 },
+    { object: 'cleanWater', weight: 3 },
+    { object: 'smokePuff', weight: 2 },
+    { object: 'sunShard', weight: 1 },
+    { object: 'flowerMap', weight: 2 },
+    { object: 'royalNectar', weight: 1 },
     { object: 'waxDoor', weight: 3 },
     { object: 'stickyHoney', weight: 3 },
     { object: 'compassPollen', weight: 2 }
@@ -565,9 +706,14 @@ const ENEMY_SPAWN_WEIGHTS = [
     { object: 'enemy', minDepth: 1, weight: 7 },
     { object: 'miteSwarm', minDepth: 1, weight: 5 },
     { object: 'thornBeetle', minDepth: 1, weight: 4 },
+    { object: 'falseFlower', minDepth: 1, weight: 3 },
+    { object: 'waxMoth', minDepth: 2, weight: 4 },
+    { object: 'fogMoth', minDepth: 2, weight: 3 },
     { object: 'guardWasp', minDepth: 2, weight: 4 },
     { object: 'sleepingBat', minDepth: 2, weight: 3 },
-    { object: 'honeyLeech', minDepth: 3, weight: 4 }
+    { object: 'honeyLeech', minDepth: 3, weight: 4 },
+    { object: 'broodWasp', minDepth: 3, weight: 3 },
+    { object: 'stagBeetle', minDepth: 4, weight: 3 }
 ];
 
 window.HW_CONTENT = {
