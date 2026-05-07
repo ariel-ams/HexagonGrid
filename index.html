@@ -39,10 +39,20 @@
             height: 100vh;
             height: 100dvh;
             display: grid;
-            grid-template-columns: 260px minmax(0, 1fr) 320px;
+            grid-template-columns: minmax(0, 1fr) 320px;
             gap: 16px;
             padding: 16px;
             overflow: hidden;
+        }
+
+        #statsPanel,
+        #statsToggle {
+            display: none !important;
+        }
+
+        .mobile-toggle,
+        .replay-controls {
+            display: none;
         }
 
         .board-wrap {
@@ -52,6 +62,164 @@
             border: 1px solid rgba(243, 240, 223, 0.16);
             background: #16211c;
             overflow: hidden;
+        }
+
+        .hud-cluster {
+            position: absolute;
+            z-index: 2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-width: min(52%, 560px);
+            pointer-events: auto;
+        }
+
+        .hud-cluster.stats-hud {
+            top: 10px;
+            left: 10px;
+        }
+
+        .hud-cluster.timer-hud {
+            top: 10px;
+            right: 10px;
+            justify-content: flex-end;
+        }
+
+        .hud-pill {
+            min-width: 68px;
+            height: 52px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 5px 9px;
+            border: 2px solid rgba(243, 240, 223, 0.18);
+            background: rgba(17, 22, 19, 0.8);
+            backdrop-filter: blur(8px);
+            color: var(--text);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+            position: relative;
+        }
+
+        .hud-pill.danger {
+            border-color: rgba(231, 111, 81, 0.72);
+            box-shadow: 0 0 18px rgba(231, 111, 81, 0.28), 0 8px 18px rgba(0, 0, 0, 0.22);
+        }
+
+        .hud-pill.warning {
+            border-color: rgba(245, 200, 75, 0.72);
+        }
+
+        .hud-pill:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            width: max-content;
+            max-width: 260px;
+            padding: 9px 11px;
+            border: 2px solid var(--accent);
+            background: rgba(17, 22, 19, 0.96);
+            color: var(--text);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.35;
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.36);
+            z-index: 8;
+            white-space: normal;
+        }
+
+        .timer-hud .hud-pill:hover::after {
+            right: 0;
+            left: auto;
+        }
+
+        .hud-icon {
+            width: 36px;
+            height: 36px;
+            flex: 0 0 36px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(243, 240, 223, 0.1);
+            border: 1px solid rgba(243, 240, 223, 0.18);
+            overflow: hidden;
+            color: #111613;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .hud-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .hud-value {
+            min-width: 14px;
+            color: var(--text);
+            font-size: 19px;
+            font-weight: 900;
+            line-height: 1;
+            text-align: right;
+        }
+
+        .hud-pill.pulse .hud-icon {
+            animation: hudPulse 520ms ease;
+        }
+
+        .hud-pill.pulse {
+            animation: hudBorderPulse 680ms ease;
+        }
+
+        @keyframes hudBorderPulse {
+            0% {
+                border-color: rgba(243, 240, 223, 0.18);
+                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+            }
+            38% {
+                border-color: rgba(245, 200, 75, 0.98);
+                box-shadow: 0 0 24px rgba(245, 200, 75, 0.74), 0 8px 18px rgba(0, 0, 0, 0.22);
+            }
+            100% {
+                border-color: rgba(243, 240, 223, 0.18);
+                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+            }
+        }
+
+        @keyframes hudPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(245, 200, 75, 0);
+            }
+            42% {
+                transform: scale(1.22);
+                box-shadow: 0 0 18px rgba(245, 200, 75, 0.62);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(245, 200, 75, 0);
+            }
+        }
+
+        .replay-controls {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 7;
+            gap: 8px;
+        }
+
+        .replay-controls.visible {
+            display: flex;
+        }
+
+        .replay-controls button,
+        .mobile-toggle {
+            min-width: 44px;
+            min-height: 44px;
+            border: 1px solid rgba(243, 240, 223, 0.18);
         }
 
         canvas {
@@ -328,6 +496,40 @@
             line-height: 1.4;
         }
 
+        .camp-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .camp-action {
+            min-height: 76px;
+            padding: 12px;
+            text-align: left;
+            display: grid;
+            gap: 5px;
+            align-content: center;
+            background: rgba(243, 240, 223, 0.08);
+            color: var(--text);
+            border: 1px solid rgba(243, 240, 223, 0.16);
+        }
+
+        .camp-action strong {
+            color: var(--accent);
+        }
+
+        .camp-action span {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .camp-action:disabled {
+            cursor: not-allowed;
+            filter: grayscale(1);
+            opacity: 0.58;
+        }
+
         .relic-list {
             display: flex;
             flex-wrap: wrap;
@@ -421,7 +623,7 @@
 
         @media (max-width: 980px) {
             .shell {
-                grid-template-columns: 180px minmax(0, 1fr) 220px;
+                grid-template-columns: minmax(0, 1fr) 220px;
                 gap: 10px;
                 padding: 10px;
             }
@@ -438,11 +640,104 @@
                 font-size: 18px;
             }
         }
+
+        @media (max-width: 760px), (orientation: portrait) and (max-width: 900px) {
+            .shell {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr;
+                gap: 0;
+                padding: 0;
+            }
+
+            .board-wrap {
+                grid-column: 1;
+                grid-row: 1;
+                width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                border: 0;
+            }
+
+            .hud-cluster {
+                max-width: calc(56vw - 16px);
+                gap: 5px;
+            }
+
+            .hud-pill {
+                min-width: 54px;
+                height: 42px;
+                padding: 3px 6px;
+            }
+
+            .hud-icon {
+                width: 29px;
+                height: 29px;
+                flex-basis: 29px;
+            }
+
+            .hud-value {
+                font-size: 15px;
+            }
+
+            .side-panel {
+                position: fixed;
+                top: 58px;
+                bottom: 12px;
+                width: min(84vw, 330px);
+                z-index: 3;
+                transform: translateX(-110%);
+                transition: transform 180ms ease;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+            }
+
+            .side-panel.open {
+                transform: translateX(0);
+            }
+
+            .side-panel:last-of-type {
+                right: 12px;
+                left: auto;
+                transform: translateX(110%);
+            }
+
+            .side-panel:last-of-type.open {
+                transform: translateX(0);
+            }
+
+            .mobile-toggle {
+                display: block;
+                position: fixed;
+                top: 10px;
+                z-index: 4;
+                padding: 0 12px;
+            }
+
+            #statsToggle {
+                left: 10px;
+            }
+
+            #logToggle {
+                right: 10px;
+            }
+
+            .start-panel,
+            .end-panel,
+            .relic-panel {
+                max-height: calc(100dvh - 32px);
+                overflow-y: auto;
+            }
+        }
     </style>
 </head>
 <body>
+    <button class="mobile-toggle" id="statsToggle" type="button" data-i18n="beeStats">Stats</button>
+    <button class="mobile-toggle" id="logToggle" type="button" data-i18n="gameLog">Log</button>
+    <div class="replay-controls" id="replayControls" aria-live="polite">
+        <button id="replayPauseButton" type="button">II</button>
+        <button id="replayCloseButton" type="button">X</button>
+    </div>
     <main class="shell">
-        <aside class="side-panel">
+        <aside class="side-panel" id="statsPanel">
             <div>
                 <h1 data-i18n="title">Honeycomb Wayfinder</h1>
                 <p id="turnText">Choose a highlighted neighboring cell.</p>
@@ -470,10 +765,12 @@
         </aside>
 
         <section class="board-wrap" aria-label="Hexagonal game board">
+            <div class="hud-cluster stats-hud" id="statsHud" aria-live="polite"></div>
+            <div class="hud-cluster timer-hud" id="timerHud" aria-live="polite"></div>
             <canvas id="gameCanvas"></canvas>
         </section>
 
-        <aside class="side-panel">
+        <aside class="side-panel" id="logPanel">
             <h2 data-i18n="gameLog">Game Log</h2>
             <div class="log-list" id="logList" aria-live="polite"></div>
         </aside>
@@ -533,6 +830,15 @@
         </div>
     </section>
 
+    <section class="relic-screen" id="campScreen" aria-live="polite">
+        <div class="relic-panel">
+            <h2>Between-Room Camp</h2>
+            <p>Spend supplies before choosing a relic and opening the next chamber.</p>
+            <div class="camp-actions" id="campActions"></div>
+            <button id="campContinueButton" type="button">Choose Relic</button>
+        </div>
+    </section>
+
     <section class="end-screen" id="endScreen" aria-live="polite">
         <div class="end-panel">
             <h2 data-i18n="runComplete">Run Complete</h2>
@@ -540,11 +846,14 @@
             <div class="end-stats" id="endStats"></div>
             <div class="menu-actions">
                 <button id="endRestartButton" type="button" data-i18n="startNewRun">Start New Run</button>
+                <button id="endReplayButton" type="button" data-i18n="replay">Replay</button>
                 <button id="endMenuButton" type="button" data-i18n="mainMenu">Main Menu</button>
             </div>
         </div>
     </section>
 
+    <script src="src/data/content.js"></script>
+    <script src="src/systems/hud.js"></script>
     <script src="index.js"></script>
 </body>
 </html>

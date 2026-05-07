@@ -1,6 +1,12 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const statsPanel = document.getElementById('statsPanel');
+const logPanel = document.getElementById('logPanel');
+const statsToggle = document.getElementById('statsToggle');
+const logToggle = document.getElementById('logToggle');
 const statsNode = document.getElementById('stats');
+const statsHudNode = document.getElementById('statsHud');
+const timerHudNode = document.getElementById('timerHud');
 const logListNode = document.getElementById('logList');
 const turnTextNode = document.getElementById('turnText');
 const restartButton = document.getElementById('restartButton');
@@ -21,10 +27,17 @@ const resetObjectButton = document.getElementById('resetObjectButton');
 const relicScreen = document.getElementById('relicScreen');
 const relicChoicesNode = document.getElementById('relicChoices');
 const relicListNode = document.getElementById('relicList');
+const campScreen = document.getElementById('campScreen');
+const campActionsNode = document.getElementById('campActions');
+const campContinueButton = document.getElementById('campContinueButton');
 const endScreen = document.getElementById('endScreen');
 const endStatsNode = document.getElementById('endStats');
 const endRestartButton = document.getElementById('endRestartButton');
+const endReplayButton = document.getElementById('endReplayButton');
 const endMenuButton = document.getElementById('endMenuButton');
+const replayControls = document.getElementById('replayControls');
+const replayPauseButton = document.getElementById('replayPauseButton');
+const replayCloseButton = document.getElementById('replayCloseButton');
 
 const HEX_RADIUS = 4;
 const VISIBLE_RADIUS = 4;
@@ -33,13 +46,21 @@ const FINAL_ROOM = 5;
 const BAT_ATTACK_MS = 1000;
 const BAT_ATTACK_DAMAGE = 6;
 const WASP_AURA_MS = 500;
-const WASP_AURA_DAMAGE = 3;
-const VINE_DAMAGE = 2;
+const WASP_AURA_DAMAGE = 1;
+const VINE_DAMAGE = 1;
 const MITE_MOVE_STEP_INTERVAL = 2;
+const BASE_ATTACK_COOLDOWN_MS = 1200;
+const MIN_ATTACK_COOLDOWN_MS = 300;
+const MAX_STAMINA = 6;
+const MAX_SHIELD = 5;
+const STAMINA_REGEN_MS = 900;
+const REPLAY_STEP_MS = 520;
 const DANCE_MOVES_REQUIRED = 12;
 const DANCE_ARROW_MS = 1000;
-const DANCE_HOLD_MS = 1000;
-const DANCE_SEQUENCE_LENGTH = 3;
+const DANCE_HOLD_MIN_MS = 1000;
+const DANCE_HOLD_MAX_MS = 3000;
+const DANCE_SEQUENCE_MIN_LENGTH = 3;
+const DANCE_SEQUENCE_MAX_LENGTH = 6;
 const DANCE_MULTI_MAX_CLICKS = 5;
 const DANCE_MAX_MISSES = 3;
 const HEX_DIRECTIONS = [
@@ -53,527 +74,35 @@ const HEX_DIRECTIONS = [
 
 const LANGUAGE_STORAGE_KEY = 'honeycombLanguage';
 const OBJECT_EDITOR_STORAGE_KEY = 'honeycombObjectOverrides';
+const PROGRESSION_STORAGE_KEY = 'honeycombProgression';
 let currentLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en';
 let objectOverrides = loadObjectOverrides();
+let progression = loadProgression();
 
-const I18N = {
-    en: {
-        ui: {
-            title: 'Honeycomb Wayfinder',
-            objective: 'Guide the bee through misty honeycomb chambers, collect pollen, water, shields, and relics, survive wasps, bats, and vines, then finish the run by completing the final food dance.',
-            language: 'Language',
-            languageSettings: 'Language Settings',
-            newRun: 'New Run',
-            startNewRun: 'Start New Run',
-            testDance: 'Test Dance',
-            options: 'Options',
-            mainMenu: 'Main Menu',
-            beeStats: 'Bee Stats',
-            relics: 'Relics',
-            gameLog: 'Game Log',
-            restart: 'Restart Draft',
-            chooseRelic: 'Choose a Relic',
-            chooseRelicCopy: 'The next chamber forms after the bee claims one reward.',
-            runComplete: 'Run Complete',
-            runCompleteCopy: 'The bee found the final exit.',
-            objectEditor: 'Object Editor',
-            objectEditorCopy: 'Tune objects and enemies locally. Changes are saved on this device.',
-            objectToEdit: 'Object to edit',
-            saveObject: 'Save Object',
-            resetObject: 'Reset Object',
-            name: 'Name',
-            description: 'Description',
-            color: 'Color',
-            hp: 'HP',
-            attack: 'Attack',
-            range: 'Range',
-            intervalMs: 'Interval ms',
-            saved: 'Saved',
-            reset: 'Reset',
-            noneYet: 'None yet',
-            ready: 'Sting ready',
-            locked: 'Sting locked',
-            avoidEnemies: 'Avoid enemy cells until it refills',
-            cooldown: 'Cooldown',
-            chooseNeighbor: 'Choose a highlighted neighboring cell.',
-            relicChoiceMessage: 'Choose one relic to shape the next chamber.',
-            danceMessage: 'Click the colored arrow before it fades.',
-            runCompleteMessage: 'Run complete.',
-            deadMessage: 'The run is over. Restart the draft.',
-            blockedNotAdjacent: 'Move next to that cell first.',
-            blockedHidden: 'That cell is still hidden by mist.',
-            blockedCooldown: 'Sting is cooling down.',
-            blockedWaxDoor: 'Wax door needs 1 pollen or a ready sting.',
-            blockedGeneric: 'That action cannot be performed yet.'
-        },
-        stats: {
-            health: ['Health', 'Keep this above zero'],
-            pollen: ['Pollen', 'Trade with beetles'],
-            water: ['Water', 'Small recovery source'],
-            shield: ['Shield', 'Blocks incoming damage'],
-            doubleSting: ['Double Sting', 'One-use bat finisher'],
-            room: ['Room', 'Dungeon depth'],
-            dance: ['Dance', 'misses left'],
-            steps: ['Steps', 'Cells moved']
-        },
-        roles: {
-            safe: 'Safe movement',
-            hazard: 'Hazard',
-            trade: 'Trade | Costs 1 pollen and 1 water',
-            route: 'Route',
-            blocker: 'Blocker',
-            control: 'Control terrain',
-            item: 'Item',
-            mist: 'Mist',
-            unrevealed: 'Unrevealed cell',
-            revealHelp: 'Move closer or collect reveal items to learn what is here.'
-        },
-        actions: {
-            moveNext: 'Move next to this cell to interact.',
-            waitSting: 'Action: wait for sting cooldown.',
-            sting: 'Action: sting.',
-            openPollen: 'Action: spend 1 pollen to open.',
-            openSting: 'Action: open with a ready sting.',
-            crossHazard: 'Action: cross and take thorn damage.',
-            trade: 'Action: trade if you have pollen and water.',
-            nextRoom: 'Action: choose a relic and enter the next room.',
-            finalDance: 'Action: begin the final dance.',
-            previousRoom: 'Action: return to the previous room.',
-            move: 'Action: move.',
-            collect: 'Action: collect.'
-        },
-        objects: {
-            empty: ['Open Cell', 'Move here safely.'],
-            npc: ['Trade Beetle', 'Reduces sting cooldown.'],
-            upgrade: ['Shield Upgrade', 'Improves your scout.'],
-            stingUpgrade: ['Double Sting', 'One-use stronger sting.'],
-            pollen: ['Pollen', 'Adds pollen.'],
-            water: ['Water', 'Adds water.'],
-            vine: ['Vines', 'Persistent thorny hazard.'],
-            glowPollen: ['Glow Pollen', 'Reveals a wide patch of mist around this cell.'],
-            nectarCache: ['Nectar Cache', 'Grants pollen and water together.'],
-            waxDoor: ['Wax Door', 'Blocks movement. Spend 1 pollen or a ready sting to open it.'],
-            stickyHoney: ['Sticky Honey', 'Leaves sticky honey behind that slows nearby moving enemies.'],
-            stickyTrap: ['Sticky Patch', 'Moving enemies near this patch lose momentum.'],
-            compassPollen: ['Compass Pollen', 'Reveals the exit through the mist.'],
-            entry: ['Entry', 'Return to the previous room.'],
-            exit: ['Exit', 'Open the next room.'],
-            finalExit: ['Final Exit', 'End the run.']
-        },
-        enemies: {
-            enemy: ['Wasp', 'Stationary aura. Deals damage every 0.5s while adjacent.', 'Do not linger next to it while sting is cooling down.'],
-            bat: ['Bat', 'Pursues the bee after each move. Attacks every 1s when adjacent.', 'Use Double Sting or plan two safe hits.'],
-            miteSwarm: ['Mite Swarm', 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.', 'Cheap to kill, dangerous if ignored in groups.'],
-            guardWasp: ['Guard Wasp', 'Stationary guard. Its larger aura reaches 2 cells.', 'Check your route before entering its zone.'],
-            sleepingBat: ['Sleeping Bat', 'Sleeps until the bee gets close, then wakes and pursues.', 'Skirt around it unless the reward is worth waking it.'],
-            honeyLeech: ['Honey Leech', 'Stationary drain. Chews through shield first, then health.', 'Shield is not permanent safety near this enemy.']
-        },
-        relics: {
-            waxArmor: ['Wax Armor', 'Gain +4 shield at the start of each room.'],
-            sharpStinger: ['Sharp Stinger', 'The first sting in each room has no cooldown.'],
-            goldenAntennae: ['Golden Antennae', 'The exit direction is revealed through the mist.'],
-            royalJelly: ['Royal Jelly', 'Every 3 pollen collected heals +3 health.'],
-            mistpiercerWings: ['Mistpiercer Wings', 'Reveal radius increases from 2 to 3.'],
-            storedVenom: ['Stored Venom', 'Start each room with +1 Double Sting.']
-        }
-    },
-    'es-419': {
-        ui: {
-            title: 'Guía del Panal',
-            objective: 'Guía a la abeja por cámaras llenas de niebla, junta polen, agua, escudos y reliquias, sobrevive a avispas, murciélagos y enredaderas, y termina la partida completando el baile final hacia la comida.',
-            language: 'Idioma',
-            languageSettings: 'Configuración de idioma',
-            newRun: 'Nueva partida',
-            startNewRun: 'Empezar otra partida',
-            testDance: 'Probar baile',
-            options: 'Opciones',
-            mainMenu: 'Menú principal',
-            beeStats: 'Stats de la abeja',
-            relics: 'Reliquias',
-            gameLog: 'Registro',
-            restart: 'Reiniciar borrador',
-            chooseRelic: 'Elige una reliquia',
-            chooseRelicCopy: 'La siguiente cámara aparece cuando la abeja reclama una recompensa.',
-            runComplete: 'Partida completa',
-            runCompleteCopy: 'La abeja encontró la salida final.',
-            objectEditor: 'Editor de objetos',
-            objectEditorCopy: 'Ajusta objetos y enemigos localmente. Los cambios se guardan en este dispositivo.',
-            objectToEdit: 'Objeto a editar',
-            saveObject: 'Guardar objeto',
-            resetObject: 'Restablecer objeto',
-            name: 'Nombre',
-            description: 'Descripción',
-            color: 'Color',
-            hp: 'Vida',
-            attack: 'Ataque',
-            range: 'Rango',
-            intervalMs: 'Intervalo ms',
-            saved: 'Guardado',
-            reset: 'Restablecido',
-            noneYet: 'Todavía ninguna',
-            ready: 'Aguijón listo',
-            locked: 'Aguijón bloqueado',
-            avoidEnemies: 'Evita enemigos hasta que se recargue',
-            cooldown: 'Recarga',
-            chooseNeighbor: 'Elige una celda vecina resaltada.',
-            relicChoiceMessage: 'Elige una reliquia para definir la siguiente cámara.',
-            danceMessage: 'Haz clic en la flecha de color antes de que desaparezca.',
-            runCompleteMessage: 'Partida completa.',
-            deadMessage: 'La partida terminó. Reinicia el borrador.',
-            blockedNotAdjacent: 'Primero acércate a esa celda.',
-            blockedHidden: 'Esa celda todavía está cubierta por niebla.',
-            blockedCooldown: 'El aguijón se está recargando.',
-            blockedWaxDoor: 'La puerta de cera necesita 1 polen o un aguijón listo.',
-            blockedGeneric: 'Esa acción todavía no se puede realizar.'
-        },
-        stats: {
-            health: ['Salud', 'Mantenla arriba de cero'],
-            pollen: ['Polen', 'Sirve para comerciar'],
-            water: ['Agua', 'Recuperación pequeña'],
-            shield: ['Escudo', 'Bloquea daño recibido'],
-            doubleSting: ['Aguijón doble', 'Remata murciélagos una vez'],
-            room: ['Sala', 'Profundidad del dungeon'],
-            dance: ['Baile', 'fallos restantes'],
-            steps: ['Pasos', 'Celdas recorridas']
-        },
-        roles: {
-            safe: 'Movimiento seguro',
-            hazard: 'Peligro',
-            trade: 'Intercambio | Cuesta 1 polen y 1 agua',
-            route: 'Ruta',
-            blocker: 'Bloqueo',
-            control: 'Terreno de control',
-            item: 'Objeto',
-            mist: 'Niebla',
-            unrevealed: 'Celda sin revelar',
-            revealHelp: 'Acércate o junta objetos de revelado para saber qué hay aquí.'
-        },
-        actions: {
-            moveNext: 'Muévete junto a esta celda para interactuar.',
-            waitSting: 'Acción: espera la recarga del aguijón.',
-            sting: 'Acción: atacar con aguijón.',
-            openPollen: 'Acción: gastar 1 polen para abrir.',
-            openSting: 'Acción: abrir con un aguijón listo.',
-            crossHazard: 'Acción: cruzar y recibir daño de espinas.',
-            trade: 'Acción: comerciar si tienes polen y agua.',
-            nextRoom: 'Acción: elegir reliquia y entrar a la siguiente sala.',
-            finalDance: 'Acción: empezar el baile final.',
-            previousRoom: 'Acción: volver a la sala anterior.',
-            move: 'Acción: moverse.',
-            collect: 'Acción: recoger.'
-        },
-        objects: {
-            empty: ['Celda abierta', 'Puedes moverte aquí sin peligro.'],
-            npc: ['Escarabajo comerciante', 'Reduce la recarga del aguijón.'],
-            upgrade: ['Mejora de escudo', 'Mejora a tu exploradora.'],
-            stingUpgrade: ['Aguijón doble', 'Un aguijón más fuerte de un solo uso.'],
-            pollen: ['Polen', 'Suma polen.'],
-            water: ['Agua', 'Suma agua.'],
-            vine: ['Enredaderas', 'Peligro persistente con espinas.'],
-            glowPollen: ['Polen brillante', 'Revela una zona amplia de niebla alrededor de esta celda.'],
-            nectarCache: ['Reserva de néctar', 'Otorga polen y agua juntos.'],
-            waxDoor: ['Puerta de cera', 'Bloquea el paso. Gasta 1 polen o un aguijón listo para abrirla.'],
-            stickyHoney: ['Miel pegajosa', 'Deja miel en el panal y ralentiza enemigos cercanos.'],
-            stickyTrap: ['Parche pegajoso', 'Los enemigos que se mueven cerca pierden impulso.'],
-            compassPollen: ['Polen brújula', 'Revela la salida a través de la niebla.'],
-            entry: ['Entrada', 'Vuelve a la sala anterior.'],
-            exit: ['Salida', 'Abre la siguiente sala.'],
-            finalExit: ['Salida final', 'Termina la partida.']
-        },
-        enemies: {
-            enemy: ['Avispa', 'Aura fija. Hace daño cada 0.5s mientras estás al lado.', 'No te quedes cerca mientras el aguijón se recarga.'],
-            bat: ['Murciélago', 'Persigue a la abeja después de cada movimiento. Ataca cada 1s si está al lado.', 'Usa Aguijón doble o planea dos golpes seguros.'],
-            miteSwarm: ['Enjambre de ácaros', 'Perseguidor lento. Se mueve cada 2 pasos y muerde si está al lado.', 'Es fácil de matar, pero peligroso en grupo.'],
-            guardWasp: ['Avispa guardia', 'Guardia fija. Su aura más grande llega a 2 celdas.', 'Revisa tu ruta antes de entrar en su zona.'],
-            sleepingBat: ['Murciélago dormido', 'Duerme hasta que la abeja se acerca, luego despierta y persigue.', 'Rodéalo salvo que la recompensa valga despertarlo.'],
-            honeyLeech: ['Sanguijuela de miel', 'Drenaje fijo. Come escudo primero y luego salud.', 'El escudo no es seguridad permanente cerca de este enemigo.']
-        },
-        relics: {
-            waxArmor: ['Armadura de cera', 'Gana +4 escudo al inicio de cada sala.'],
-            sharpStinger: ['Aguijón afilado', 'El primer aguijón de cada sala no tiene recarga.'],
-            goldenAntennae: ['Antenas doradas', 'La dirección de la salida se revela a través de la niebla.'],
-            royalJelly: ['Jalea real', 'Cada 3 polen recogidos cura +3 salud.'],
-            mistpiercerWings: ['Alas antiniebla', 'El radio de revelado aumenta de 2 a 3.'],
-            storedVenom: ['Veneno guardado', 'Empieza cada sala con +1 Aguijón doble.']
-        }
-    }
-};
-
-const RELICS = [
-    {
-        id: 'waxArmor',
-        name: 'Wax Armor',
-        description: 'Gain +4 shield at the start of each room.',
-        minDepth: 1,
-        rarity: 'common',
-        onRoomStart: () => addShield(4, 'Wax Armor')
-    },
-    {
-        id: 'sharpStinger',
-        name: 'Sharp Stinger',
-        description: 'The first sting in each room has no cooldown.',
-        minDepth: 1,
-        rarity: 'common',
-        apply: () => {
-            game.roomFirstStingAvailable = true;
-        },
-        onRoomStart: () => {
-            game.roomFirstStingAvailable = true;
-        }
-    },
-    {
-        id: 'goldenAntennae',
-        name: 'Golden Antennae',
-        description: 'The exit direction is revealed through the mist.',
-        minDepth: 1,
-        rarity: 'common',
-        onRoomStart: () => revealExitHint()
-    },
-    {
-        id: 'royalJelly',
-        name: 'Royal Jelly',
-        description: 'Every 3 pollen collected heals +3 health.',
-        minDepth: 1,
-        rarity: 'common'
-    },
-    {
-        id: 'mistpiercerWings',
-        name: 'Mistpiercer Wings',
-        description: 'Reveal radius increases from 2 to 3.',
-        minDepth: 1,
-        rarity: 'common',
-        apply: () => {
-            game.revealRadius = 3;
-            revealAroundPlayer();
-        }
-    },
-    {
-        id: 'storedVenom',
-        name: 'Stored Venom',
-        description: 'Start each room with +1 Double Sting.',
-        minDepth: 1,
-        rarity: 'common',
-        onRoomStart: () => {
-            game.player.stingCharges += 1;
-            addLog('Stored Venom', 'Gained +1 Double Sting.');
-        }
-    }
-];
-
-const SPRITE_DEFS = {
-    playerIdle: { src: 'assets/bee-alpha.png', columns: 4, rows: 2, row: 0, frameMs: 180 },
-    playerAttack: { src: 'assets/bee-alpha.png', columns: 4, rows: 2, row: 1, frameMs: 120 },
-    enemy: { src: 'assets/wasp-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
-    bat: { src: 'assets/bat-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
-    npc: { src: 'assets/bettle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
-    pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
-    water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
-    upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
-    stingUpgrade: { src: 'assets/sting-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
-    vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
-    glowPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
-    nectarCache: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
-    stickyHoney: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
-    compassPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
-    entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
-    exit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
-    finalExit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 140 }
-};
+const {
+    I18N,
+    RELICS,
+    SPRITE_DEFS,
+    ENEMY_DEFS,
+    OBJECTS,
+    DEFAULT_OBJECT_COLORS,
+    DEFAULT_ENEMY_NUMBERS,
+    DISCOVERY_OBJECT_WEIGHTS,
+    ENEMY_SPAWN_WEIGHTS
+} = window.HW_CONTENT;
 
 const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
 loadSprites();
 
-const ENEMY_DEFS = {
-    enemy: {
-        name: 'Wasp',
-        color: '#d95c50',
-        sprite: 'enemy',
-        hp: 1,
-        attack: 3,
-        intervalMs: 500,
-        range: 1,
-        behavior: 'Stationary aura. Deals damage every 0.5s while adjacent.',
-        lesson: 'Do not linger next to it while sting is cooling down.'
-    },
-    bat: {
-        name: 'Bat',
-        color: '#8b6bd6',
-        sprite: 'bat',
-        hp: 2,
-        attack: 6,
-        intervalMs: 1000,
-        range: 1,
-        behavior: 'Pursues the bee after each move. Attacks every 1s when adjacent.',
-        lesson: 'Use Double Sting or plan two safe hits.'
-    },
-    miteSwarm: {
-        name: 'Mite Swarm',
-        color: '#c98954',
-        sprite: 'enemy',
-        hp: 1,
-        attack: 2,
-        intervalMs: 900,
-        range: 1,
-        behavior: 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.',
-        lesson: 'Cheap to kill, dangerous if ignored in groups.'
-    },
-    guardWasp: {
-        name: 'Guard Wasp',
-        color: '#b83f4a',
-        sprite: 'enemy',
-        hp: 2,
-        attack: 5,
-        intervalMs: 1200,
-        range: 2,
-        behavior: 'Stationary guard. Its larger aura reaches 2 cells.',
-        lesson: 'Check your route before entering its zone.'
-    },
-    sleepingBat: {
-        name: 'Sleeping Bat',
-        color: '#6c5a9d',
-        sprite: 'bat',
-        hp: 2,
-        attack: 5,
-        intervalMs: 1000,
-        range: 1,
-        behavior: 'Sleeps until the bee gets close, then wakes and pursues.',
-        lesson: 'Skirt around it unless the reward is worth waking it.'
-    },
-    honeyLeech: {
-        name: 'Honey Leech',
-        color: '#9467a8',
-        sprite: 'enemy',
-        hp: 2,
-        attack: 4,
-        intervalMs: 850,
-        range: 1,
-        behavior: 'Stationary drain. Chews through shield first, then health.',
-        lesson: 'Shield is not permanent safety near this enemy.'
-    }
-};
-
-const OBJECTS = {
-    empty: {
-        name: 'Open Cell',
-        color: '#3c544d',
-        description: 'Move here safely.'
-    },
-    enemy: {
-        name: ENEMY_DEFS.enemy.name,
-        color: ENEMY_DEFS.enemy.color,
-        description: ENEMY_DEFS.enemy.behavior
-    },
-    bat: {
-        name: ENEMY_DEFS.bat.name,
-        color: ENEMY_DEFS.bat.color,
-        description: ENEMY_DEFS.bat.behavior
-    },
-    miteSwarm: {
-        name: ENEMY_DEFS.miteSwarm.name,
-        color: ENEMY_DEFS.miteSwarm.color,
-        description: ENEMY_DEFS.miteSwarm.behavior
-    },
-    guardWasp: {
-        name: ENEMY_DEFS.guardWasp.name,
-        color: ENEMY_DEFS.guardWasp.color,
-        description: ENEMY_DEFS.guardWasp.behavior
-    },
-    sleepingBat: {
-        name: ENEMY_DEFS.sleepingBat.name,
-        color: ENEMY_DEFS.sleepingBat.color,
-        description: ENEMY_DEFS.sleepingBat.behavior
-    },
-    honeyLeech: {
-        name: ENEMY_DEFS.honeyLeech.name,
-        color: ENEMY_DEFS.honeyLeech.color,
-        description: ENEMY_DEFS.honeyLeech.behavior
-    },
-    npc: {
-        name: 'Trade Beetle',
-        color: '#64b5f6',
-        description: 'Reduces sting cooldown.'
-    },
-    upgrade: {
-        name: 'Shield Upgrade',
-        color: '#b787f4',
-        description: 'Improves your scout.'
-    },
-    stingUpgrade: {
-        name: 'Double Sting',
-        color: '#f28f3b',
-        description: 'One-use stronger sting.'
-    },
-    pollen: {
-        name: 'Pollen',
-        color: '#5fc77e',
-        description: 'Adds pollen.'
-    },
-    water: {
-        name: 'Water',
-        color: '#4bb6f2',
-        description: 'Adds water.'
-    },
-    vine: {
-        name: 'Vines',
-        color: '#547b3d',
-        description: 'Persistent thorny hazard.'
-    },
-    glowPollen: {
-        name: 'Glow Pollen',
-        color: '#7ee6a5',
-        description: 'Reveals a wide patch of mist around this cell.'
-    },
-    nectarCache: {
-        name: 'Nectar Cache',
-        color: '#f0a64f',
-        description: 'Grants pollen and water together.'
-    },
-    waxDoor: {
-        name: 'Wax Door',
-        color: '#d6b25f',
-        description: 'Blocks movement. Spend 1 pollen or a ready sting to open it.'
-    },
-    stickyHoney: {
-        name: 'Sticky Honey',
-        color: '#d68c39',
-        description: 'Leaves sticky honey behind that slows nearby moving enemies.'
-    },
-    stickyTrap: {
-        name: 'Sticky Patch',
-        color: '#9a6a32',
-        description: 'Moving enemies near this patch lose momentum.'
-    },
-    compassPollen: {
-        name: 'Compass Pollen',
-        color: '#f7df72',
-        description: 'Reveals the exit through the mist.'
-    },
-    entry: {
-        name: 'Entry',
-        color: '#45b17a',
-        description: 'Return to the previous room.'
-    },
-    exit: {
-        name: 'Exit',
-        color: '#f2bd4b',
-        description: 'Open the next room.'
-    },
-    finalExit: {
-        name: 'Final Exit',
-        color: '#fff2a7',
-        description: 'End the run.'
-    }
-};
-
-const DEFAULT_OBJECT_COLORS = Object.fromEntries(Object.entries(OBJECTS).map(([id, object]) => [id, object.color]));
-const DEFAULT_ENEMY_NUMBERS = Object.fromEntries(Object.entries(ENEMY_DEFS).map(([id, enemy]) => [id, {
-    hp: enemy.hp,
-    attack: enemy.attack,
-    range: enemy.range,
-    intervalMs: enemy.intervalMs
-}]));
+const hudRenderer = window.HW_HUD.createHudRenderer({
+    statsNode: statsHudNode,
+    timerNode: timerHudNode,
+    spriteDefs: SPRITE_DEFS,
+    escapeHtml,
+    escapeAttr
+});
 
 const game = {
     cells: [],
@@ -589,9 +118,22 @@ const game = {
     mode: 'dungeon',
     dance: null,
     playerMotion: null,
+    runSeed: 1,
+    rngState: 1,
+    replayEvents: [],
+    replay: null,
+    cameraPan: { x: 0, y: 0 },
+    pointer: null,
+    dragAction: null,
+    suppressNextClick: false,
+    lastStaminaRegenAt: 0,
     relics: [],
     relicChoices: [],
     pendingNextRoomReason: null,
+    campBuffs: {},
+    campRelicRerolls: 0,
+    lastDamageSource: null,
+    deathTip: '',
     revealRadius: 2,
     roomFirstStingAvailable: false,
     royalJellyPollen: 0,
@@ -599,19 +141,25 @@ const game = {
     runStats: {
         kills: 0,
         pollen: 0,
-        water: 0
+        water: 0,
+        honey: 0
     },
     player: {
         q: 0,
         r: 0,
-        health: 100,
+        health: 7,
+        maxHealth: 7,
         pollen: 0,
         water: 0,
-        upgrades: 0,
+        honey: 0,
+        upgrades: 1,
+        maxShield: MAX_SHIELD,
         stingCharges: 0,
         batHits: 0,
         steps: 0,
-        attackCooldownMs: 3000,
+        stamina: MAX_STAMINA,
+        maxStamina: MAX_STAMINA,
+        attackCooldownMs: BASE_ATTACK_COOLDOWN_MS,
         attackReadyAt: 0,
         attackAnimationUntil: 0
     },
@@ -831,11 +379,11 @@ function randomObjectFor(q, r, entryCell, exitCell) {
     }
 
     const distance = hexDistance(entryCell.q, entryCell.r, q, r);
-    const roll = Math.random();
+    const roll = seededRandom();
 
     if (distance === 1 && roll < 0.28) return 'pollen';
     if (distance === 1 && roll < 0.50) return 'water';
-    if (distance <= 1 && roll < 0.45) return 'empty';
+    if (distance <= 1) return 'empty';
     if (roll < 0.19) return chooseEnemyObject();
     if (roll < 0.25) return chooseDiscoveryObject();
     if (roll < 0.32) return 'npc';
@@ -849,35 +397,49 @@ function randomObjectFor(q, r, entryCell, exitCell) {
 }
 
 function chooseDiscoveryObject() {
-    const options = [
-        { object: 'glowPollen', weight: 4 },
-        { object: 'nectarCache', weight: 4 },
-        { object: 'waxDoor', weight: 3 },
-        { object: 'stickyHoney', weight: 3 },
-        { object: 'compassPollen', weight: 2 }
-    ];
-    const total = options.reduce((sum, option) => sum + option.weight, 0);
-    let roll = Math.random() * total;
+    return chooseWeightedObject(DISCOVERY_OBJECT_WEIGHTS, 'glowPollen');
+}
 
-    for (const option of options) {
-        roll -= option.weight;
-        if (roll <= 0) return option.object;
+function loadProgression() {
+    try {
+        return {
+            lifetimePollen: 0,
+            lifetimeHoney: 0,
+            bestRoom: 1,
+            encyclopedia: [],
+            ...JSON.parse(localStorage.getItem(PROGRESSION_STORAGE_KEY) || '{}')
+        };
+    } catch {
+        return {
+            lifetimePollen: 0,
+            lifetimeHoney: 0,
+            bestRoom: 1,
+            encyclopedia: []
+        };
     }
+}
 
-    return 'glowPollen';
+function saveProgression() {
+    localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(progression));
+}
+
+function seededRandom() {
+    game.rngState = (game.rngState * 1664525 + 1013904223) >>> 0;
+    return game.rngState / 4294967296;
 }
 
 function chooseEnemyObject() {
     const depth = game.roomDepth;
-    const options = [
-        { object: 'enemy', weight: 7 },
-        { object: 'miteSwarm', weight: depth >= 1 ? 5 : 0 },
-        { object: 'guardWasp', weight: depth >= 2 ? 4 : 0 },
-        { object: 'sleepingBat', weight: depth >= 2 ? 3 : 0 },
-        { object: 'honeyLeech', weight: depth >= 3 ? 4 : 0 }
-    ].filter((option) => option.weight > 0);
+    const options = ENEMY_SPAWN_WEIGHTS
+        .filter((option) => depth >= option.minDepth)
+        .map((option) => ({ object: option.object, weight: option.weight }));
+
+    return chooseWeightedObject(options, 'enemy');
+}
+
+function chooseWeightedObject(options, fallback) {
     const total = options.reduce((sum, option) => sum + option.weight, 0);
-    let roll = Math.random() * total;
+    let roll = seededRandom() * total;
 
     for (const option of options) {
         roll -= option.weight;
@@ -886,7 +448,7 @@ function chooseEnemyObject() {
         }
     }
 
-    return 'enemy';
+    return fallback;
 }
 
 function createGrid() {
@@ -902,11 +464,25 @@ function startRunState() {
     game.runStartedAt = performance.now();
     game.ended = false;
     game.mode = 'dungeon';
+    game.runSeed = Date.now() >>> 0;
+    game.rngState = game.runSeed;
+    game.replayEvents = [];
+    game.replay = null;
+    game.cameraPan = { x: 0, y: 0 };
+    game.pointer = null;
+    game.dragAction = null;
+    hudRenderer.reset();
+    game.suppressNextClick = false;
+    game.lastStaminaRegenAt = performance.now();
     game.dance = null;
     game.playerMotion = null;
     game.relics = [];
     game.relicChoices = [];
     game.pendingNextRoomReason = null;
+    game.campBuffs = {};
+    game.campRelicRerolls = 0;
+    game.lastDamageSource = null;
+    game.deathTip = '';
     game.revealRadius = 2;
     game.roomFirstStingAvailable = false;
     game.royalJellyPollen = 0;
@@ -914,11 +490,14 @@ function startRunState() {
     game.runStats = {
         kills: 0,
         pollen: 0,
-        water: 0
+        water: 0,
+        honey: 0
     };
     game.player = createFreshPlayer();
     relicScreen.classList.remove('visible');
+    campScreen.classList.remove('visible');
     endScreen.classList.remove('visible');
+    replayControls.classList.remove('visible');
     renderRelics();
 }
 
@@ -935,6 +514,7 @@ function showMainMenu() {
     game.dance = null;
     game.playerMotion = null;
     relicScreen.classList.remove('visible');
+    campScreen.classList.remove('visible');
     endScreen.classList.remove('visible');
     startScreen.classList.remove('hidden');
     renderMessage();
@@ -944,14 +524,19 @@ function createFreshPlayer() {
     return {
         q: 0,
         r: 0,
-        health: 100,
+        health: 7,
+        maxHealth: 7,
         pollen: 0,
         water: 0,
-        upgrades: 0,
+        honey: 0,
+        upgrades: 1,
+        maxShield: MAX_SHIELD,
         stingCharges: 0,
         batHits: 0,
         steps: 0,
-        attackCooldownMs: 3000,
+        stamina: MAX_STAMINA,
+        maxStamina: MAX_STAMINA,
+        attackCooldownMs: BASE_ATTACK_COOLDOWN_MS,
         attackReadyAt: 0,
         attackAnimationUntil: 0
     };
@@ -967,6 +552,7 @@ function generateRoom(reason) {
     game.dance = null;
     game.cells = [];
     game.statPopups = [];
+    game.cameraPan = { x: 0, y: 0 };
     game.currentRoomCells = generateCaveBlob(DUNGEON_CELL_TARGET);
     const portals = choosePortalCells(game.currentRoomCells);
     game.entryCell = portals.entry;
@@ -992,6 +578,7 @@ function generateRoom(reason) {
     const startCell = getCell(game.player.q, game.player.r);
     if (startCell) startCell.visited = true;
     runRelicHook('onRoomStart');
+    applyCampRoomBuffs();
     revealAroundPlayer();
 
     if (reason === 'restart') {
@@ -999,6 +586,7 @@ function generateRoom(reason) {
     } else {
         addLog('Exit', `Entered chamber ${game.roomDepth}.`);
     }
+    recordReplayEvent('roomStart', { reason, depth: game.roomDepth });
     draw();
 }
 
@@ -1009,7 +597,7 @@ function generateCaveBlob(targetCount) {
 
     while (cells.size < targetCount) {
         const origin = randomFrom(frontier);
-        const shuffled = [...HEX_DIRECTIONS].sort(() => Math.random() - 0.5);
+        const shuffled = [...HEX_DIRECTIONS].sort(() => seededRandom() - 0.5);
 
         shuffled.forEach((direction) => {
             if (cells.size >= targetCount) return;
@@ -1023,14 +611,14 @@ function generateCaveBlob(targetCount) {
             )).length;
             const acceptance = neighborCount >= 2 ? 0.92 : 0.58;
 
-            if (Math.random() < acceptance) {
+            if (seededRandom() < acceptance) {
                 const cell = { q, r };
                 cells.set(key, cell);
                 frontier.push(cell);
             }
         });
 
-        if (Math.random() < 0.12) {
+        if (seededRandom() < 0.12) {
             frontier.push(randomFrom([...cells.values()]));
         }
     }
@@ -1073,11 +661,11 @@ function getAllCoordinates() {
 }
 
 function randomFrom(items) {
-    return items[Math.floor(Math.random() * items.length)];
+    return items[Math.floor(seededRandom() * items.length)];
 }
 
 function placeBats() {
-    const batCount = Math.random() < 0.5 ? 1 : 2;
+    const batCount = seededRandom() < 0.5 ? 1 : 2;
     const candidates = game.cells.filter((cell) => (
         cell.object === 'empty'
         && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 2
@@ -1085,7 +673,7 @@ function placeBats() {
     ));
 
     for (let i = 0; i < batCount && candidates.length; i++) {
-        const index = Math.floor(Math.random() * candidates.length);
+        const index = Math.floor(seededRandom() * candidates.length);
         const [cell] = candidates.splice(index, 1);
         cell.object = 'bat';
         cell.nextAttackAt = 0;
@@ -1146,10 +734,123 @@ function slowNearbyEnemies(q, r) {
         });
 }
 
+function openCampChoice() {
+    game.mode = 'camp';
+    game.pendingNextRoomReason = 'exit';
+    game.message = 'Camp between rooms: spend supplies or continue to relic choice.';
+    renderCampChoices();
+    campScreen.classList.add('visible');
+    draw();
+}
+
+function renderCampChoices() {
+    const actions = getCampActions();
+    campActionsNode.innerHTML = actions.map((action) => (
+        `<button class="camp-action" type="button" data-camp-action="${action.id}" ${action.available ? '' : 'disabled'}>
+            <strong>${action.name}</strong>
+            <span>${action.description}</span>
+        </button>`
+    )).join('');
+}
+
+function getCampActions() {
+    const missingHealth = Math.max(0, getPlayerMaxHealth() - game.player.health);
+    const missingShield = Math.max(0, game.player.maxShield - game.player.upgrades);
+    return [
+        {
+            id: 'heal',
+            name: 'Drink Water',
+            description: 'Cost: 1 water. Heal +2 health.',
+            available: game.player.water > 0 && missingHealth > 0
+        },
+        {
+            id: 'shield',
+            name: 'Pack Wax',
+            description: 'Cost: 1 pollen. Repair +1 shield.',
+            available: game.player.pollen > 0 && missingShield > 0
+        },
+        {
+            id: 'map',
+            name: 'Study Map',
+            description: 'Cost: 1 honey. Reveal exit route next room.',
+            available: game.player.honey > 0
+        },
+        {
+            id: 'guard',
+            name: 'Guard Comb',
+            description: 'Cost: 1 pollen + 1 water. Start next room with +1 shield.',
+            available: game.player.pollen > 0 && game.player.water > 0
+        },
+        {
+            id: 'reroll',
+            name: 'Sweet Bargain',
+            description: 'Cost: 1 honey. Reroll upcoming relic choices.',
+            available: game.player.honey > 0
+        }
+    ];
+}
+
+function applyCampAction(id) {
+    if (game.mode !== 'camp') return;
+    if (id === 'heal' && game.player.water > 0 && game.player.health < getPlayerMaxHealth()) {
+        game.player.water -= 1;
+        const healed = healPlayer(2);
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'water', amount: -1 }, { stat: 'health', amount: healed }]);
+        addLog('Camp', 'Spent water to recover health.');
+    } else if (id === 'shield' && game.player.pollen > 0 && game.player.upgrades < game.player.maxShield) {
+        game.player.pollen -= 1;
+        game.player.upgrades += 1;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'upgrades', amount: 1 }]);
+        addLog('Camp', 'Spent pollen to repair shield.');
+    } else if (id === 'map' && game.player.honey > 0) {
+        game.player.honey -= 1;
+        game.campBuffs.revealRoute = true;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'honey', amount: -1 }]);
+        addLog('Camp', 'Spent honey to reveal the next exit route.');
+    } else if (id === 'guard' && game.player.pollen > 0 && game.player.water > 0) {
+        game.player.pollen -= 1;
+        game.player.water -= 1;
+        game.campBuffs.nextRoomShield = (game.campBuffs.nextRoomShield || 0) + 1;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'water', amount: -1 }]);
+        addLog('Camp', 'Prepared wax guard for the next room.');
+    } else if (id === 'reroll' && game.player.honey > 0) {
+        game.player.honey -= 1;
+        game.campRelicRerolls += 1;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'honey', amount: -1 }]);
+        addLog('Camp', 'Spent honey to stir new relic options.');
+    }
+    renderCampChoices();
+    renderStats();
+}
+
+function continueFromCamp() {
+    if (game.mode !== 'camp') return;
+    campScreen.classList.remove('visible');
+    openRelicChoice();
+}
+
+function applyCampRoomBuffs() {
+    if (game.campBuffs.nextRoomShield) {
+        const amount = game.campBuffs.nextRoomShield;
+        game.player.upgrades = Math.min(game.player.maxShield, game.player.upgrades + amount);
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'upgrades', amount }]);
+        addLog('Camp Guard', `Started with +${amount} shield from camp prep.`);
+    }
+    if (game.campBuffs.revealRoute) {
+        revealRouteToExit();
+        addLog('Camp Map', 'The camp map revealed a path toward the exit.');
+    }
+    game.campBuffs = {};
+}
+
 function openRelicChoice() {
     game.mode = 'relicChoice';
     game.pendingNextRoomReason = 'exit';
     game.relicChoices = chooseRelicRewards();
+    for (let i = 0; i < game.campRelicRerolls; i++) {
+        game.relicChoices = chooseRelicRewards();
+    }
+    game.campRelicRerolls = 0;
     game.message = 'Choose a relic before entering the next chamber.';
     renderRelicChoices();
     relicScreen.classList.add('visible');
@@ -1161,7 +862,7 @@ function chooseRelicRewards() {
         relic.minDepth <= game.roomDepth && !hasRelic(relic.id)
     ));
     const pool = available.length >= 3 ? available : RELICS.filter((relic) => relic.minDepth <= game.roomDepth);
-    return [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    return [...pool].sort(() => seededRandom() - 0.5).slice(0, 3);
 }
 
 function renderRelicChoices() {
@@ -1257,10 +958,11 @@ function spawnDanceMove() {
     game.dance.holding = false;
 
     if (type === 'fastSequence') {
+        const length = DANCE_SEQUENCE_MIN_LENGTH + Math.floor(seededRandom() * (DANCE_SEQUENCE_MAX_LENGTH - DANCE_SEQUENCE_MIN_LENGTH + 1));
         game.dance.move = {
             type,
-            label: 'Fast 3-step',
-            steps: buildAdjacentSequence(game.player.q, game.player.r, DANCE_SEQUENCE_LENGTH),
+            label: `Fast ${length}-step`,
+            steps: buildAdjacentSequence(game.player.q, game.player.r, length),
             index: 0
         };
         activateDanceStep();
@@ -1268,12 +970,17 @@ function spawnDanceMove() {
     }
 
     if (type === 'hold') {
-        const step = randomAdjacentStep(game.player.q, game.player.r);
+        const durationMs = DANCE_HOLD_MIN_MS + Math.floor(seededRandom() * (DANCE_HOLD_MAX_MS - DANCE_HOLD_MIN_MS + 1));
         game.dance.move = {
             type,
-            label: 'Hold',
-            steps: [step],
-            index: 0
+            label: `Hold ${(durationMs / 1000).toFixed(1)}s`,
+            steps: [{
+                q: game.player.q,
+                r: game.player.r,
+                directionIndex: 0
+            }],
+            index: 0,
+            durationMs
         };
         activateDanceStep();
         return;
@@ -1281,7 +988,7 @@ function spawnDanceMove() {
 
     if (type === 'multiClick') {
         const step = randomAdjacentStep(game.player.q, game.player.r);
-        const clicks = 2 + Math.floor(Math.random() * (DANCE_MULTI_MAX_CLICKS - 1));
+        const clicks = 2 + Math.floor(seededRandom() * (DANCE_MULTI_MAX_CLICKS - 1));
         game.dance.move = {
             type,
             label: 'Multi-click',
@@ -1321,7 +1028,9 @@ function activateDanceStep() {
         q: next.q,
         r: next.r,
         directionIndex: next.directionIndex,
-        expiresAt: performance.now() + DANCE_ARROW_MS,
+        expiresAt: move.type === 'hold'
+            ? 0
+            : performance.now() + DANCE_ARROW_MS,
         holdStartedAt: 0
     };
     game.dance.holding = false;
@@ -1355,7 +1064,7 @@ function randomAdjacentStep(q, r) {
 function buildSpreadSequence() {
     const distantCells = game.cells
         .filter((cell) => hexDistance(game.player.q, game.player.r, cell.q, cell.r) >= 3)
-        .sort(() => Math.random() - 0.5)
+        .sort(() => seededRandom() - 0.5)
         .slice(0, 2)
         .map((cell) => ({
             q: cell.q,
@@ -1423,8 +1132,8 @@ function layout() {
         width: rect.width,
         height: rect.height,
         size,
-        originX: rect.width / 2 - cameraPixel.x,
-        originY: rect.height / 2 - cameraPixel.y
+        originX: rect.width / 2 - cameraPixel.x + game.cameraPan.x,
+        originY: rect.height / 2 - cameraPixel.y + game.cameraPan.y
     };
 }
 
@@ -1505,7 +1214,10 @@ function pixelToClosestHex(x, y) {
 
 function draw() {
     if (!canvas.width || !canvas.height) return;
-    if (game.mode === 'dance') {
+    updateStamina();
+    if (game.replay) {
+        // Replay snapshots advance on their own timer.
+    } else if (game.mode === 'dance') {
         updateDanceArrow();
     } else if (game.mode === 'dungeon') {
         updateSleepingEnemies();
@@ -1522,7 +1234,11 @@ function draw() {
         drawDanceArrow();
     }
     drawPlayer();
+    if (game.mode === 'dance' && game.dance?.move?.type === 'hold') {
+        drawDanceHoldForeground();
+    }
     drawStatPopups();
+    drawDangerOverlay(board);
     drawHoverTooltip();
     renderStats();
     renderCooldown();
@@ -1564,7 +1280,7 @@ function drawDiscoFloor(board) {
         const pulse = (Math.sin(now / 180 + index * 0.9) + 1) / 2;
         drawHexPath(x, y, size - 4);
         ctx.fillStyle = colors[(index + Math.floor(now / 260)) % colors.length];
-        ctx.globalAlpha = 0.16 + pulse * 0.16;
+        ctx.globalAlpha = 0.26 + pulse * 0.2;
         ctx.fill();
     });
 
@@ -1574,24 +1290,24 @@ function drawDiscoFloor(board) {
 function drawCell(cell) {
     const isPlayer = cell.q === game.player.q && cell.r === game.player.r;
     const { x, y, size } = hexToPixel(cell.q, cell.r);
-    const object = OBJECTS[cell.object];
     const hidden = game.mode !== 'dance' && !cell.revealed;
+    const visibleObject = getVisibleCellObject(cell, hidden);
+    const object = OBJECTS[visibleObject] || OBJECTS.empty;
+    const disguised = visibleObject !== cell.object;
+
+    drawCellBackground(cell, x, y, size, hidden);
+    if (!hidden) {
+        drawThreatPreview(cell, x, y, size);
+    }
 
     drawHexPath(x, y, size - 2);
-    ctx.fillStyle = hidden ? '#17211d' : cell.visited ? shade(object.color, -18) : object.color;
-    ctx.globalAlpha = hidden ? 0.96 : game.mode === 'dance'
-        ? (cell.visited ? 0.54 : 0.34)
-        : (cell.visited ? 0.78 : 0.96);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(243, 240, 223, 0.32)';
+    ctx.lineWidth = visibleObject !== 'empty' && !hidden ? 3 : 1.5;
+    ctx.strokeStyle = visibleObject !== 'empty' && !hidden ? object.color : 'rgba(243, 240, 223, 0.32)';
     ctx.stroke();
 
-    if (!hidden && cell.object !== 'empty') {
-        drawSprite(cell.object, x, y, size);
-        if (isEnemyObject(cell.object)) {
+    if (!hidden && visibleObject !== 'empty') {
+        drawSprite(visibleObject, x, y, size);
+        if (!disguised && isEnemyObject(cell.object)) {
             drawEnemyHealthPips(cell, x, y, size);
             drawEnemyTypeBadge(cell.object, x, y, size);
         }
@@ -1601,13 +1317,134 @@ function drawCell(cell) {
         drawBatAttackTimer(cell, x, y, size);
     }
 
-    if (!hidden && hasTimedAura(cell.object)) {
+    if (!hidden && !disguised && hasTimedAura(cell.object)) {
         drawEnemyAuraTimer(cell, x, y, size);
     }
 
     if (hidden) {
         drawMist(x, y, size);
     }
+}
+
+function getVisibleCellObject(cell, hidden) {
+    if (hidden) return cell.object;
+    if (cell.object === 'falseFlower' && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 1) {
+        return 'pollen';
+    }
+    return cell.object;
+}
+
+function drawThreatPreview(cell, x, y, size) {
+    const threat = getThreatAtCell(cell.q, cell.r);
+    if (!threat) return;
+
+    const pulse = (Math.sin(performance.now() / 180) + 1) / 2;
+    ctx.save();
+    drawHexPath(x, y, size - 8);
+    ctx.strokeStyle = threat.imminent
+        ? `rgba(231, 111, 81, ${0.42 + pulse * 0.28})`
+        : 'rgba(231, 111, 81, 0.22)';
+    ctx.lineWidth = threat.imminent ? 4 : 2;
+    ctx.stroke();
+    ctx.restore();
+}
+
+function getThreatAtCell(q, r) {
+    if (game.mode !== 'dungeon') return null;
+    let strongest = null;
+    const now = performance.now();
+    game.cells
+        .filter((cell) => isEnemyObject(cell.object))
+        .forEach((enemyCell) => {
+            const enemy = getEnemyDef(enemyCell.object);
+            const inAura = hasTimedAura(enemyCell.object) && hexDistance(enemyCell.q, enemyCell.r, q, r) <= enemy.range;
+            const inBat = (enemyCell.object === 'bat' || (enemyCell.object === 'sleepingBat' && enemyCell.awake))
+                && isAdjacent(enemyCell.q, enemyCell.r, q, r);
+            if (!inAura && !inBat) return;
+            const timer = inBat ? enemyCell.nextAttackAt : enemyCell.nextAuraAt;
+            const remaining = timer ? Math.max(0, timer - now) : enemy.intervalMs;
+            const imminent = remaining <= 850;
+            strongest = {
+                enemy: enemyCell.object,
+                imminent: strongest?.imminent || imminent,
+                damage: Math.max(strongest?.damage || 0, enemy.attack || 0)
+            };
+        });
+    return strongest;
+}
+
+function getCurrentDangerState() {
+    const threat = getThreatAtCell(game.player.q, game.player.r);
+    const lowHealth = game.player.health <= 2 && game.mode === 'dungeon' && !game.ended;
+    return {
+        active: Boolean(lowHealth || threat?.imminent),
+        lowHealth,
+        imminent: Boolean(threat?.imminent),
+        threat
+    };
+}
+
+function drawDangerOverlay(board) {
+    const danger = getCurrentDangerState();
+    if (!danger.active) return;
+
+    const pulse = (Math.sin(performance.now() / 120) + 1) / 2;
+    const intensity = danger.lowHealth ? 0.22 + pulse * 0.16 : 0.12 + pulse * 0.12;
+    ctx.save();
+    const gradient = ctx.createRadialGradient(
+        board.width / 2,
+        board.height / 2,
+        Math.min(board.width, board.height) * 0.22,
+        board.width / 2,
+        board.height / 2,
+        Math.max(board.width, board.height) * 0.72
+    );
+    gradient.addColorStop(0, 'rgba(231, 111, 81, 0)');
+    gradient.addColorStop(1, `rgba(231, 38, 38, ${intensity})`);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, board.width, board.height);
+
+    ctx.strokeStyle = `rgba(231, 111, 81, ${0.34 + pulse * 0.28})`;
+    ctx.lineWidth = danger.lowHealth ? 10 : 6;
+    ctx.strokeRect(4, 4, board.width - 8, board.height - 8);
+    ctx.restore();
+}
+
+function updateStamina() {
+    if (game.mode !== 'dungeon' || game.ended || game.replay) return;
+    const now = performance.now();
+    if (game.player.stamina >= game.player.maxStamina) {
+        game.lastStaminaRegenAt = now;
+        return;
+    }
+    const ticks = Math.floor((now - game.lastStaminaRegenAt) / STAMINA_REGEN_MS);
+    if (ticks <= 0) return;
+    game.player.stamina = Math.min(game.player.maxStamina, game.player.stamina + ticks);
+    game.lastStaminaRegenAt += ticks * STAMINA_REGEN_MS;
+}
+
+function drawCellBackground(cell, x, y, size, hidden) {
+    drawHexPath(x, y, size - 2);
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = hidden ? '#17211d' : cell.visited ? '#33433d' : '#3f4e48';
+    ctx.globalAlpha = hidden ? 0.96 : game.mode === 'dance'
+        ? (cell.visited ? 0.52 : 0.34)
+        : 0.9;
+    ctx.fill();
+
+    if (!hidden && cell.object !== 'empty') {
+        ctx.fillStyle = objectTint(cell.object);
+        ctx.globalAlpha = 0.22;
+        ctx.fill();
+    }
+
+    ctx.restore();
+    ctx.globalAlpha = 1;
+}
+
+function objectTint(object) {
+    return OBJECTS[object]?.color || '#3c544d';
 }
 
 function drawEnemyHealthPips(cell, x, y, size) {
@@ -1638,6 +1475,12 @@ function drawEnemyTypeBadge(object, x, y, size) {
     const enemy = getEnemyDef(object);
     const labels = {
         miteSwarm: 'M',
+        thornBeetle: 'T',
+        fogMoth: 'F',
+        waxMoth: 'W',
+        broodWasp: 'B',
+        stagBeetle: 'S',
+        falseFlower: '!',
         guardWasp: 'G',
         sleepingBat: 'Z',
         honeyLeech: 'L'
@@ -1680,10 +1523,11 @@ function drawDanceArrow() {
     const target = hexToPixel(active.q, active.r);
     const color = getDirectionColor(active.directionIndex);
     const remaining = Math.max(0, active.expiresAt - performance.now());
+    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
     const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / DANCE_HOLD_MS)
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
         : 0;
-    const timeoutProgress = remaining / DANCE_ARROW_MS;
+    const timeoutProgress = move?.type === 'hold' ? holdProgress : remaining / DANCE_ARROW_MS;
     const angle = getDirectionAngle(active.directionIndex);
 
     drawDancePreviewArrows();
@@ -1695,24 +1539,26 @@ function drawDanceArrow() {
     ctx.lineWidth = 5;
     ctx.stroke();
 
-    ctx.save();
-    ctx.translate(target.x, target.y);
-    ctx.rotate(angle);
-    ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(17, 22, 19, 0.86)';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(target.size * 0.34, 0);
-    ctx.lineTo(-target.size * 0.12, -target.size * 0.24);
-    ctx.lineTo(-target.size * 0.05, -target.size * 0.08);
-    ctx.lineTo(-target.size * 0.36, -target.size * 0.08);
-    ctx.lineTo(-target.size * 0.36, target.size * 0.08);
-    ctx.lineTo(-target.size * 0.05, target.size * 0.08);
-    ctx.lineTo(-target.size * 0.12, target.size * 0.24);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fill();
-    ctx.restore();
+    if (move?.type !== 'hold') {
+        ctx.save();
+        ctx.translate(target.x, target.y);
+        ctx.rotate(angle);
+        ctx.fillStyle = color;
+        ctx.strokeStyle = 'rgba(17, 22, 19, 0.86)';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(target.size * 0.34, 0);
+        ctx.lineTo(-target.size * 0.12, -target.size * 0.24);
+        ctx.lineTo(-target.size * 0.05, -target.size * 0.08);
+        ctx.lineTo(-target.size * 0.36, -target.size * 0.08);
+        ctx.lineTo(-target.size * 0.36, target.size * 0.08);
+        ctx.lineTo(-target.size * 0.05, target.size * 0.08);
+        ctx.lineTo(-target.size * 0.12, target.size * 0.24);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+        ctx.restore();
+    }
 
     ctx.save();
     ctx.strokeStyle = color;
@@ -1744,12 +1590,52 @@ function drawDanceArrow() {
     drawDanceStepReference(target, move, active, color);
 }
 
+function drawDanceHoldForeground() {
+    const active = game.dance?.active;
+    const move = game.dance?.move;
+    if (!active || move?.type !== 'hold') return;
+
+    const target = hexToPixel(active.q, active.r);
+    const holdDuration = move.durationMs || DANCE_HOLD_MIN_MS;
+    const holdProgress = active.holdStartedAt
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
+        : 0;
+    drawDanceHoldCountdown(target, holdDuration, holdProgress);
+}
+
+function drawDanceHoldCountdown(target, holdDuration, holdProgress) {
+    const active = game.dance?.active;
+    const remainingMs = active?.holdStartedAt
+        ? Math.max(0, holdDuration - (performance.now() - active.holdStartedAt))
+        : holdDuration;
+    const seconds = Math.ceil(remainingMs / 1000);
+
+    ctx.save();
+    ctx.fillStyle = '#fff2a7';
+    ctx.strokeStyle = 'rgba(17, 22, 19, 0.9)';
+    ctx.lineWidth = 5;
+    ctx.font = `800 ${Math.round(target.size * 0.42)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeText(`${seconds}s`, target.x, target.y + target.size * 0.02);
+    ctx.fillText(`${seconds}s`, target.x, target.y + target.size * 0.02);
+
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#fff2a7';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, target.size * (0.35 + holdProgress * 0.18), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+}
+
 function drawDanceStepReference(target, move, active, color) {
     const label = getDanceStepLabel(move);
     if (!label) return;
 
+    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
     const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / DANCE_HOLD_MS)
+        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
         : 0;
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(target.size * 1.28, 86);
@@ -1782,7 +1668,7 @@ function drawDanceStepReference(target, move, active, color) {
 
 function getDanceStepLabel(move) {
     if (!move) return '';
-    if (move.type === 'hold') return 'HOLD';
+    if (move.type === 'hold') return 'HOLD BEE';
     if (move.type === 'multiClick') return `CLICK x${move.clicksLeft}`;
     if (move.type === 'fastSequence') return 'CLICK FAST';
     if (move.type === 'spreadSequence') return 'CLICK PATH';
@@ -1839,14 +1725,20 @@ function drawHexPath(x, y, size) {
 
 function loadSprites() {
     const entries = Object.entries(SPRITE_DEFS);
+    const loadableEntries = entries.filter(([, definition]) => definition.src);
     let loaded = 0;
 
-    entries.forEach(([key, definition]) => {
+    if (!loadableEntries.length) {
+        spritesReady = true;
+        return;
+    }
+
+    loadableEntries.forEach(([key, definition]) => {
         const image = new Image();
         spriteAssets[key] = image;
         image.onload = () => {
             loaded += 1;
-            if (loaded === entries.length) {
+            if (loaded === loadableEntries.length) {
                 spriteFrames = buildSpriteFrames();
                 spritesReady = true;
                 draw();
@@ -1854,7 +1746,7 @@ function loadSprites() {
         };
         image.onerror = () => {
             loaded += 1;
-            if (loaded === entries.length) {
+            if (loaded === loadableEntries.length) {
                 spriteFrames = buildSpriteFrames();
                 spritesReady = true;
                 draw();
@@ -1966,6 +1858,9 @@ function drawSprite(type, x, y, size) {
 
     const frame = Math.floor(performance.now() / definition.frameMs) % definition.columns;
     const spriteFrame = spriteFrames[spriteKey][frame];
+    const danceGiggle = type === 'player' && game.dance?.move?.type === 'hold' && game.dance?.active?.holdStartedAt
+        ? Math.sin(performance.now() / 42) * size * 0.045
+        : 0;
     const bob = Math.sin(performance.now() / 260 + definition.row) * size * 0.035;
     const maxDrawSize = size * (type === 'entry' || type === 'exit' || type === 'finalExit' ? 1.02 : 1.22);
     const scale = maxDrawSize / Math.max(spriteFrame.sourceWidth, spriteFrame.sourceHeight);
@@ -1980,7 +1875,7 @@ function drawSprite(type, x, y, size) {
         spriteFrame.sourceY,
         spriteFrame.sourceWidth,
         spriteFrame.sourceHeight,
-        x - drawWidth / 2,
+        x - drawWidth / 2 + danceGiggle,
         y - drawHeight / 2 + bob,
         drawWidth,
         drawHeight
@@ -1997,6 +1892,7 @@ function drawTokenFallback(type, x, y, size) {
     ctx.translate(x, y);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    const fallbackLabel = getFallbackLabel(type);
 
     if (type === 'enemy') {
         ctx.fillStyle = '#3b1716';
@@ -2067,12 +1963,18 @@ function drawTokenFallback(type, x, y, size) {
         ctx.fill();
     }
 
-    if (type === 'glowPollen' || type === 'compassPollen' || type === 'nectarCache' || type === 'stickyHoney') {
+    if (type === 'glowPollen' || type === 'compassPollen' || type === 'nectarCache' || type === 'stickyHoney' || type === 'honeyDrop' || type === 'cleanWater' || type === 'smokePuff' || type === 'sunShard' || type === 'flowerMap' || type === 'royalNectar') {
         const colors = {
             glowPollen: '#7ee6a5',
             compassPollen: '#f7df72',
             nectarCache: '#f0a64f',
-            stickyHoney: '#d68c39'
+            stickyHoney: '#d68c39',
+            honeyDrop: '#f2b544',
+            cleanWater: '#9ee7ff',
+            smokePuff: '#c9ced1',
+            sunShard: '#ffd166',
+            flowerMap: '#82d173',
+            royalNectar: '#ff9fcb'
         };
         ctx.fillStyle = colors[type];
         drawStar(0, 0, size * 0.28, size * 0.11, type === 'nectarCache' ? 8 : 6);
@@ -2152,6 +2054,33 @@ function drawTokenFallback(type, x, y, size) {
         ctx.stroke();
     }
 
+    if (fallbackLabel) {
+        drawFallbackLabel(fallbackLabel, size);
+    }
+
+    ctx.restore();
+}
+
+function getFallbackLabel(type) {
+    const spriteKey = getSpriteKey(type);
+    return SPRITE_DEFS[spriteKey]?.fallback || '';
+}
+
+function drawFallbackLabel(label, size) {
+    ctx.save();
+    const fontSize = label.length > 2 ? size * 0.18 : size * 0.22;
+    ctx.fillStyle = 'rgba(17, 22, 19, 0.84)';
+    ctx.strokeStyle = '#fff2a7';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-size * 0.32, -size * 0.16, size * 0.64, size * 0.32, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#fff2a7';
+    ctx.font = `800 ${Math.round(fontSize)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 0, 0);
     ctx.restore();
 }
 
@@ -2249,14 +2178,17 @@ function drawPlayerSelectionRing(x, y, size) {
     if (game.mode !== 'dungeon' || game.ended) return;
 
     const pulse = (Math.sin(performance.now() / 180) + 1) / 2;
+    const staminaProgress = game.player.stamina / game.player.maxStamina;
     ctx.save();
     drawHexPath(x, y, size - 5);
-    ctx.strokeStyle = `rgba(255, 242, 167, ${0.56 + pulse * 0.28})`;
+    ctx.strokeStyle = `rgba(255, 242, 167, ${0.28 + pulse * 0.22})`;
     ctx.lineWidth = 5;
     ctx.stroke();
-    drawHexPath(x, y, size - 13);
-    ctx.strokeStyle = `rgba(245, 200, 75, ${0.28 + pulse * 0.22})`;
-    ctx.lineWidth = 2;
+
+    ctx.strokeStyle = '#f5c84b';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.78, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * staminaProgress);
     ctx.stroke();
     ctx.restore();
 }
@@ -2298,7 +2230,7 @@ function getPlayerDrawPosition() {
     const motion = game.playerMotion;
 
     if (!motion) {
-        return current;
+        return applyDangerShake(current);
     }
 
     const progress = Math.min(1, (performance.now() - motion.startedAt) / motion.duration);
@@ -2306,15 +2238,26 @@ function getPlayerDrawPosition() {
 
     if (progress >= 1) {
         game.playerMotion = null;
-        return current;
+        return applyDangerShake(current);
     }
 
     const from = hexToPixel(motion.fromQ, motion.fromR);
     const to = hexToPixel(motion.toQ, motion.toR);
-    return {
+    return applyDangerShake({
         x: from.x + (to.x - from.x) * eased,
         y: from.y + (to.y - from.y) * eased,
         size: current.size
+    });
+}
+
+function applyDangerShake(position) {
+    const danger = getCurrentDangerState();
+    if (!danger.active || game.replay) return position;
+    const strength = danger.lowHealth ? 3.2 : 2;
+    return {
+        ...position,
+        x: position.x + Math.sin(performance.now() / 34) * strength,
+        y: position.y + Math.cos(performance.now() / 41) * strength * 0.55
     };
 }
 
@@ -2351,6 +2294,19 @@ function drawStatPopups() {
         ctx.fillStyle = popup.color;
         const iconX = popup.x - popup.textWidth / 2 - 15;
         const textY = popup.y - lift + popup.offsetY;
+        if (popup.icon === 'blockedAction') {
+            const boxWidth = popup.textWidth + 34;
+            const boxHeight = 26;
+            ctx.fillStyle = 'rgba(64, 14, 18, 0.92)';
+            ctx.strokeStyle = '#ff3d3d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(popup.x - boxWidth / 2, textY - boxHeight / 2, boxWidth, boxHeight, 8);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = popup.color;
+            ctx.strokeStyle = 'rgba(17, 22, 19, 0.82)';
+        }
         if (popup.icon === 'heart') {
             drawHeartIcon(iconX, textY, 11, popup.color);
         } else if (popup.icon === 'shield') {
@@ -2410,6 +2366,19 @@ function getCellInfo(cell) {
                 roles.unrevealed,
                 roles.revealHelp
             ]
+        };
+    }
+
+    if (cell.object === 'falseFlower' && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 1) {
+        const object = OBJECTS.pollen;
+        return {
+            color: object.color,
+            lines: [
+                object.name,
+                getObjectRole('pollen'),
+                object.description,
+                getActionPreview({ ...cell, object: 'pollen' })
+            ].filter(Boolean)
         };
     }
 
@@ -2533,7 +2502,7 @@ function drawStar(x, y, outerRadius, innerRadius, points) {
 }
 
 function moveTo(cell) {
-    if (game.ended || !cell || game.player.health <= 0) {
+    if (game.replay || game.ended || !cell || game.player.health <= 0) {
         return;
     }
 
@@ -2566,6 +2535,11 @@ function moveTo(cell) {
     }
 
     const previousPosition = { q: game.player.q, r: game.player.r };
+    if (!ensureStaminaForAction()) {
+        showBlockedAction(cell, t('ui', 'blockedStamina'));
+        return;
+    }
+    spendStamina(1);
     game.player.q = cell.q;
     game.player.r = cell.r;
     startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
@@ -2574,7 +2548,7 @@ function moveTo(cell) {
 
     if (targetObject === 'exit') {
         game.roomStack.push(createRoomSnapshot());
-        openRelicChoice();
+        openCampChoice();
         return;
     }
 
@@ -2610,26 +2584,63 @@ function moveTo(cell) {
     }
     moveBats();
     moveMites();
+    recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
     draw();
+}
+
+function spendStamina(amount) {
+    game.player.stamina = Math.max(0, game.player.stamina - amount);
+    game.lastStaminaRegenAt = performance.now();
+}
+
+function hasStaminaRecoveryResource() {
+    return game.player.water > 0 || game.player.pollen > 0 || game.player.honey > 0;
+}
+
+function ensureStaminaForAction() {
+    if (game.player.stamina > 0) return true;
+    const resources = ['water', 'pollen', 'honey'].filter((resource) => game.player[resource] > 0);
+    if (!resources.length) return false;
+    const resource = randomFrom(resources);
+    game.player[resource] -= 1;
+    game.player.stamina = Math.min(game.player.maxStamina, game.player.stamina + 3);
+    addStatPopups(game.player.q, game.player.r, [
+        { stat: resource, amount: -1 },
+        { stat: 'stamina', amount: 3 }
+    ]);
+    addLog(t('ui', 'stamina'), `${resource} restored stamina.`);
+    return true;
 }
 
 function openWaxDoor(cell) {
     if (game.player.pollen > 0) {
+        if (!ensureStaminaForAction()) {
+            showBlockedAction(cell, t('ui', 'blockedStamina'));
+            return;
+        }
+        spendStamina(1);
         game.player.pollen -= 1;
         cell.object = 'empty';
         addStatPopups(cell.q, cell.r, [{ stat: 'pollen', amount: -1 }]);
         game.message = 'Spent 1 pollen to open the wax door.';
         addLog('Wax Door', game.message);
+        recordReplayEvent('playerAction', { object: 'waxDoor', q: cell.q, r: cell.r, method: 'pollen' });
         draw();
         return;
     }
 
     if (getAttackCooldownRemaining() <= 0) {
+        if (!ensureStaminaForAction()) {
+            showBlockedAction(cell, t('ui', 'blockedStamina'));
+            return;
+        }
+        spendStamina(1);
         game.player.attackReadyAt = performance.now() + game.player.attackCooldownMs;
         game.player.attackAnimationUntil = performance.now() + 520;
         cell.object = 'empty';
         game.message = 'Stung through the wax door. Sting is now cooling down.';
         addLog('Wax Door', game.message);
+        recordReplayEvent('playerAction', { object: 'waxDoor', q: cell.q, r: cell.r, method: 'sting' });
         draw();
         return;
     }
@@ -2641,6 +2652,15 @@ function openWaxDoor(cell) {
 
 function handleDanceClick(cell) {
     return;
+}
+
+function isPlayerCell(cell) {
+    return Boolean(cell && cell.q === game.player.q && cell.r === game.player.r);
+}
+
+function isActiveDanceCell(cell) {
+    const active = game.dance?.active;
+    return Boolean(active && cell && cell.q === active.q && cell.r === active.r);
 }
 
 function startDanceHold(cell) {
@@ -2690,9 +2710,11 @@ function completeDanceStep() {
     const previousPosition = { q: game.player.q, r: game.player.r };
     game.player.q = cell.q;
     game.player.r = cell.r;
-    startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
+    if (previousPosition.q !== cell.q || previousPosition.r !== cell.r) {
+        startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
+        game.player.steps += 1;
+    }
     cell.visited = true;
-    game.player.steps += 1;
     game.dance.move.index += 1;
 
     if (game.dance.move.index >= game.dance.move.steps.length) {
@@ -2720,12 +2742,14 @@ function updateDanceArrow() {
     if (!game.dance?.active || game.ended) return;
 
     const active = game.dance.active;
-    if (game.dance.move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= DANCE_HOLD_MS) {
+    const move = game.dance.move;
+    const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
+    if (move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= holdDuration) {
         completeDanceStep();
         return;
     }
 
-    if (game.dance.move?.type !== 'hold' && performance.now() >= active.expiresAt) {
+    if (move?.type !== 'hold' && performance.now() >= active.expiresAt) {
         registerDanceMiss('Arrow missed.');
     }
 }
@@ -2735,21 +2759,23 @@ function showBlockedAction(cell, reason) {
     game.message = message;
     addLog(currentLanguage === 'es-419' ? 'Acción bloqueada' : 'Blocked Action', message);
     addWarningPopup(cell?.q ?? game.player.q, cell?.r ?? game.player.r, message);
+    recordReplayEvent('blockedAction', { q: cell?.q, r: cell?.r, reason: message });
     draw();
 }
 
 function addWarningPopup(q, r, message) {
     const point = hexToPixel(q, r);
+    const activeWarnings = game.statPopups.filter((popup) => popup.icon === 'blockedAction').length;
     game.statPopups.push({
         x: point.x,
         y: point.y - point.size * 0.7,
-        offsetY: 0,
+        offsetY: activeWarnings * 30,
         label: message,
         textWidth: Math.max(70, message.length * 7),
         icon: 'blockedAction',
-        color: '#ff8a72',
+        color: '#ffd7cf',
         createdAt: performance.now(),
-        duration: 1250
+        duration: 2600
     });
 }
 
@@ -2766,6 +2792,290 @@ function registerDanceMiss(reason) {
     }
 
     spawnDanceMove();
+}
+
+const ITEM_EFFECTS = {
+    npc: interactTradeBeetle,
+    upgrade: collectShieldUpgrade,
+    stingUpgrade: collectDoubleSting,
+    pollen: collectPollen,
+    water: collectWater,
+    glowPollen: collectGlowPollen,
+    nectarCache: collectNectarCache,
+    honeyDrop: collectHoneyDrop,
+    cleanWater: collectCleanWater,
+    smokePuff: collectSmokePuff,
+    sunShard: collectSunShard,
+    flowerMap: collectFlowerMap,
+    royalNectar: collectRoyalNectar,
+    stickyHoney: collectStickyHoney,
+    compassPollen: collectCompassPollen
+};
+
+function getPlayerMaxHealth() {
+    return game.player.maxHealth || 7;
+}
+
+function healPlayer(amount) {
+    const previousHealth = game.player.health;
+    game.player.health = Math.min(getPlayerMaxHealth(), game.player.health + amount);
+    return game.player.health - previousHealth;
+}
+
+function interactTradeBeetle() {
+    if (game.player.pollen > 0 && game.player.water > 0) {
+        game.player.pollen -= 1;
+        game.player.water -= 1;
+        game.player.attackCooldownMs = Math.max(MIN_ATTACK_COOLDOWN_MS, game.player.attackCooldownMs - 100);
+        if (getAttackCooldownRemaining() > 0) {
+            game.player.attackReadyAt = Math.max(performance.now(), game.player.attackReadyAt - 100);
+        }
+        return {
+            message: 'Trade beetle tuned your sting. Cooldown reduced by 0.1s.',
+            deltas: [
+                { stat: 'pollen', amount: -1 },
+                { stat: 'water', amount: -1 },
+                { stat: 'cooldown', amount: -0.1 }
+            ],
+            consume: true
+        };
+    }
+    return {
+        message: 'Trade beetle needs 1 pollen and 1 water to reduce sting cooldown.',
+        deltas: [],
+        consume: true
+    };
+}
+
+function collectShieldUpgrade() {
+    if (game.player.upgrades >= game.player.maxShield) {
+        return {
+            message: 'Shield is already full.',
+            deltas: [],
+            consume: false
+        };
+    }
+    game.player.upgrades = Math.min(game.player.maxShield, game.player.upgrades + 1);
+    return {
+        message: 'Shield upgrade collected. Added 1 shield.',
+        deltas: [{ stat: 'upgrades', amount: 1 }],
+        consume: true
+    };
+}
+
+function collectDoubleSting() {
+    game.player.stingCharges += 1;
+    return {
+        message: 'Double sting stored. It will be used before regular sting.',
+        deltas: [{ stat: 'stingCharges', amount: 1 }],
+        consume: true
+    };
+}
+
+function collectPollen() {
+    game.player.pollen += 1;
+    game.runStats.pollen += 1;
+    const deltas = [{ stat: 'pollen', amount: 1 }];
+    let message = 'Collected a pollen bundle.';
+    if (hasRelic('royalJelly')) {
+        game.royalJellyPollen += 1;
+        if (game.royalJellyPollen >= 3) {
+            game.royalJellyPollen = 0;
+            const healthDelta = healPlayer(2);
+            if (healthDelta > 0) {
+                deltas.push({ stat: 'health', amount: healthDelta });
+                message = 'Collected pollen. Royal Jelly healed the bee.';
+            }
+        }
+    }
+    return { message, deltas, consume: true };
+}
+
+function collectWater() {
+    game.player.water += 1;
+    game.runStats.water += 1;
+    const healthDelta = healPlayer(2);
+    const deltas = [{ stat: 'water', amount: 1 }];
+    if (healthDelta > 0) {
+        deltas.push({ stat: 'health', amount: healthDelta });
+    }
+    return {
+        message: healthDelta > 0
+            ? 'Collected a water drop and recovered a little health.'
+            : 'Collected a water drop.',
+        deltas,
+        consume: true
+    };
+}
+
+function collectGlowPollen(cell) {
+    revealAround(cell.q, cell.r, 4);
+    return {
+        message: 'Glow pollen lit up the surrounding mist.',
+        deltas: [],
+        consume: true
+    };
+}
+
+function collectNectarCache() {
+    game.player.pollen += 1;
+    game.player.water += 1;
+    game.player.honey += 1;
+    game.runStats.pollen += 1;
+    game.runStats.water += 1;
+    game.runStats.honey += 1;
+    const healthDelta = healPlayer(1);
+    const deltas = [
+        { stat: 'pollen', amount: 1 },
+        { stat: 'water', amount: 1 },
+        { stat: 'honey', amount: 1 }
+    ];
+    if (healthDelta > 0) {
+        deltas.push({ stat: 'health', amount: healthDelta });
+    }
+    return {
+        message: 'Opened a nectar cache. Gained pollen and water.',
+        deltas,
+        consume: true
+    };
+}
+
+function collectHoneyDrop() {
+    game.player.honey += 1;
+    game.runStats.honey += 1;
+    const healthDelta = healPlayer(2);
+    const deltas = [{ stat: 'honey', amount: 1 }];
+    if (healthDelta > 0) {
+        deltas.push({ stat: 'health', amount: healthDelta });
+    }
+    return {
+        message: healthDelta > 0
+            ? 'Collected honey. Restored health and stored stamina fuel.'
+            : 'Collected honey for stamina recovery.',
+        deltas,
+        consume: true
+    };
+}
+
+function collectCleanWater(cell) {
+    const healthDelta = healPlayer(1);
+    pauseEnemyTimers(1400, cell.q, cell.r, 2);
+    const deltas = [];
+    if (healthDelta > 0) {
+        deltas.push({ stat: 'health', amount: healthDelta });
+    }
+    return {
+        message: 'Clean water washed away nearby pressure.',
+        deltas,
+        consume: true
+    };
+}
+
+function collectSmokePuff(cell) {
+    pauseEnemyTimers(2400, cell.q, cell.r, 99);
+    return {
+        message: 'Smoke puff stalled enemy timers for a short escape.',
+        deltas: [],
+        consume: true
+    };
+}
+
+function collectSunShard() {
+    game.cells.forEach((cell) => {
+        if (isEnemyObject(cell.object)) {
+            cell.revealed = true;
+        }
+    });
+    return {
+        message: 'Sun shard revealed every enemy in the chamber.',
+        deltas: [],
+        consume: true
+    };
+}
+
+function collectFlowerMap() {
+    revealRouteToExit();
+    return {
+        message: 'Flower map traced a route toward the exit.',
+        deltas: [],
+        consume: true
+    };
+}
+
+function collectRoyalNectar() {
+    const deltas = [];
+    if (game.player.health >= getPlayerMaxHealth()) {
+        game.player.maxHealth += 1;
+        game.player.health += 1;
+        deltas.push({ stat: 'health', amount: 1 });
+        return {
+            message: 'Royal nectar strengthened the bee. Max health increased.',
+            deltas,
+            consume: true
+        };
+    }
+    const healthDelta = healPlayer(4);
+    if (healthDelta > 0) {
+        deltas.push({ stat: 'health', amount: healthDelta });
+    }
+    return {
+        message: 'Royal nectar restored the bee.',
+        deltas,
+        consume: true
+    };
+}
+
+function collectStickyHoney(cell) {
+    game.player.honey += 1;
+    game.runStats.honey += 1;
+    slowNearbyEnemies(cell.q, cell.r);
+    cell.object = 'stickyTrap';
+    return {
+        message: 'Sticky honey spread across the comb. Nearby moving enemies slowed.',
+        deltas: [{ stat: 'honey', amount: 1 }],
+        consume: false
+    };
+}
+
+function collectCompassPollen() {
+    revealExitHint();
+    return {
+        message: 'Compass pollen tugged toward the exit.',
+        deltas: [],
+        consume: true
+    };
+}
+
+function pauseEnemyTimers(durationMs, q = game.player.q, r = game.player.r, radius = 99) {
+    const until = performance.now() + durationMs;
+    game.cells
+        .filter((cell) => isEnemyObject(cell.object) && hexDistance(q, r, cell.q, cell.r) <= radius)
+        .forEach((enemy) => {
+            enemy.nextAttackAt = Math.max(enemy.nextAttackAt || 0, until);
+            enemy.nextAuraAt = Math.max(enemy.nextAuraAt || 0, until);
+            enemy.nextSpecialAt = Math.max(enemy.nextSpecialAt || 0, until);
+        });
+}
+
+function revealRouteToExit() {
+    if (!game.exitCell) return;
+    let cursor = { q: game.player.q, r: game.player.r };
+    for (let i = 0; i < 10; i++) {
+        const cell = getCell(cursor.q, cursor.r);
+        if (cell) cell.revealed = true;
+        if (cursor.q === game.exitCell.q && cursor.r === game.exitCell.r) break;
+        const next = HEX_DIRECTIONS
+            .map((direction) => ({ q: cursor.q + direction.q, r: cursor.r + direction.r }))
+            .filter((step) => getCell(step.q, step.r))
+            .sort((a, b) => (
+                hexDistance(a.q, a.r, game.exitCell.q, game.exitCell.r)
+                - hexDistance(b.q, b.r, game.exitCell.q, game.exitCell.r)
+            ))[0];
+        if (!next) break;
+        cursor = next;
+    }
+    const exit = getCell(game.exitCell.q, game.exitCell.r);
+    if (exit) exit.revealed = true;
 }
 
 function resolveInteraction(object, cell) {
@@ -2801,141 +3111,9 @@ function resolveInteraction(object, cell) {
         };
     }
 
-    if (object === 'npc') {
-        if (game.player.pollen > 0 && game.player.water > 0) {
-            game.player.pollen -= 1;
-            game.player.water -= 1;
-            game.player.attackCooldownMs = Math.max(800, game.player.attackCooldownMs - 100);
-            if (getAttackCooldownRemaining() > 0) {
-                game.player.attackReadyAt = Math.max(performance.now(), game.player.attackReadyAt - 100);
-            }
-            return {
-                message: 'Trade beetle tuned your sting. Cooldown reduced by 0.1s.',
-                deltas: [
-                    { stat: 'pollen', amount: -1 },
-                    { stat: 'water', amount: -1 },
-                    { stat: 'cooldown', amount: -0.1 }
-                ],
-                consume: true
-            };
-        }
-        return {
-            message: 'Trade beetle needs 1 pollen and 1 water to reduce sting cooldown.',
-            deltas: [],
-            consume: true
-        };
-    }
-
-    if (object === 'upgrade') {
-        game.player.upgrades += 8;
-        return {
-            message: 'Shield upgrade collected. Added 8 shield.',
-            deltas: [{ stat: 'upgrades', amount: 8 }],
-            consume: true
-        };
-    }
-
-    if (object === 'stingUpgrade') {
-        game.player.stingCharges += 1;
-        return {
-            message: 'Double sting stored. It will be used before regular sting.',
-            deltas: [{ stat: 'stingCharges', amount: 1 }],
-            consume: true
-        };
-    }
-
-    if (object === 'pollen') {
-        game.player.pollen += 1;
-        game.runStats.pollen += 1;
-        const deltas = [{ stat: 'pollen', amount: 1 }];
-        let message = 'Collected a pollen bundle.';
-        if (hasRelic('royalJelly')) {
-            game.royalJellyPollen += 1;
-            if (game.royalJellyPollen >= 3) {
-                game.royalJellyPollen = 0;
-                const previousHealth = game.player.health;
-                game.player.health = Math.min(100, game.player.health + 3);
-                const healthDelta = game.player.health - previousHealth;
-                if (healthDelta > 0) {
-                    deltas.push({ stat: 'health', amount: healthDelta });
-                    message = 'Collected pollen. Royal Jelly healed the bee.';
-                }
-            }
-        }
-        return {
-            message,
-            deltas,
-            consume: true
-        };
-    }
-
-    if (object === 'water') {
-        const previousHealth = game.player.health;
-        game.player.water += 1;
-        game.runStats.water += 1;
-        game.player.health = Math.min(100, game.player.health + 4);
-        const healthDelta = game.player.health - previousHealth;
-        const deltas = [{ stat: 'water', amount: 1 }];
-        if (healthDelta > 0) {
-            deltas.push({ stat: 'health', amount: healthDelta });
-        }
-        return {
-            message: healthDelta > 0
-                ? 'Collected a water drop and recovered a little health.'
-                : 'Collected a water drop.',
-            deltas,
-            consume: true
-        };
-    }
-
-    if (object === 'glowPollen') {
-        revealAround(cell.q, cell.r, 4);
-        return {
-            message: 'Glow pollen lit up the surrounding mist.',
-            deltas: [],
-            consume: true
-        };
-    }
-
-    if (object === 'nectarCache') {
-        const previousHealth = game.player.health;
-        game.player.pollen += 1;
-        game.player.water += 1;
-        game.runStats.pollen += 1;
-        game.runStats.water += 1;
-        game.player.health = Math.min(100, game.player.health + 2);
-        const healthDelta = game.player.health - previousHealth;
-        const deltas = [
-            { stat: 'pollen', amount: 1 },
-            { stat: 'water', amount: 1 }
-        ];
-        if (healthDelta > 0) {
-            deltas.push({ stat: 'health', amount: healthDelta });
-        }
-        return {
-            message: 'Opened a nectar cache. Gained pollen and water.',
-            deltas,
-            consume: true
-        };
-    }
-
-    if (object === 'stickyHoney') {
-        slowNearbyEnemies(cell.q, cell.r);
-        cell.object = 'stickyTrap';
-        return {
-            message: 'Sticky honey spread across the comb. Nearby moving enemies slowed.',
-            deltas: [],
-            consume: false
-        };
-    }
-
-    if (object === 'compassPollen') {
-        revealExitHint();
-        return {
-            message: 'Compass pollen tugged toward the exit.',
-            deltas: [],
-            consume: true
-        };
+    const itemEffect = ITEM_EFFECTS[object];
+    if (itemEffect) {
+        return itemEffect(cell);
     }
 
     return {
@@ -3017,6 +3195,7 @@ function moveBats() {
 
     if (plannedMoves.length) {
         addLog('Bat Movement', `${plannedMoves.length} bat${plannedMoves.length === 1 ? '' : 's'} moved closer.`);
+        recordReplayEvent('enemyMove', { enemy: 'bat', count: plannedMoves.length });
     }
 }
 
@@ -3055,6 +3234,7 @@ function moveMites() {
 
     if (plannedMoves.length) {
         addLog('Mite Movement', `${plannedMoves.length} mite swarm${plannedMoves.length === 1 ? '' : 's'} crept closer.`);
+        recordReplayEvent('enemyMove', { enemy: 'miteSwarm', count: plannedMoves.length });
     }
 }
 
@@ -3079,6 +3259,7 @@ function updateBatAttacks() {
             if (now >= bat.nextAttackAt) {
                 applyDamage(enemy.attack, bat.q, bat.r, `${enemy.name} Bite`);
                 addLog(`${enemy.name} Bite`, `${enemy.name} hit you for ${enemy.attack} damage.`);
+                recordReplayEvent('enemyDamage', { enemy: bat.object, q: bat.q, r: bat.r, amount: enemy.attack });
                 bat.nextAttackAt = now + enemy.intervalMs;
             }
         });
@@ -3090,23 +3271,113 @@ function updateEnemyAuras() {
     const now = performance.now();
     game.cells
         .filter((cell) => hasTimedAura(cell.object))
-        .forEach((wasp) => {
-            const enemy = getEnemyDef(wasp.object);
-            if (hexDistance(wasp.q, wasp.r, game.player.q, game.player.r) > enemy.range) {
-                wasp.nextAuraAt = 0;
+        .forEach((enemyCell) => {
+            const enemy = getEnemyDef(enemyCell.object);
+            if (hexDistance(enemyCell.q, enemyCell.r, game.player.q, game.player.r) > enemy.range) {
+                enemyCell.nextAuraAt = 0;
                 return;
             }
 
-            if (!wasp.nextAuraAt) {
-                wasp.nextAuraAt = now + enemy.intervalMs;
+            if (!enemyCell.nextAuraAt) {
+                enemyCell.nextAuraAt = now + enemy.intervalMs;
                 return;
             }
 
-            if (now >= wasp.nextAuraAt) {
-                applyDamage(enemy.attack, wasp.q, wasp.r, `${enemy.name} Attack`);
-                wasp.nextAuraAt = now + enemy.intervalMs;
+            if (now >= enemyCell.nextAuraAt) {
+                if (!handleEnemyAuraEffect(enemyCell, enemy, now)) {
+                    applyDamage(enemy.attack, enemyCell.q, enemyCell.r, `${enemy.name} Attack`);
+                    recordReplayEvent('enemyDamage', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, amount: enemy.attack });
+                }
+                enemyCell.nextAuraAt = now + enemy.intervalMs;
             }
         });
+}
+
+function handleEnemyAuraEffect(enemyCell, enemy, now) {
+    if (enemyCell.object === 'fogMoth') {
+        const hidden = refogNearEnemy(enemyCell);
+        if (hidden > 0) {
+            addLog(enemy.name, `Fog moth folded ${hidden} revealed cell${hidden === 1 ? '' : 's'} back into mist.`);
+            recordReplayEvent('enemySpecial', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'refog', count: hidden });
+        }
+        return true;
+    }
+
+    if (enemyCell.object === 'waxMoth') {
+        if (game.player.pollen > 0) {
+            game.player.pollen -= 1;
+            addStatPopups(enemyCell.q, enemyCell.r, [{ stat: 'pollen', amount: -1 }]);
+            addLog(enemy.name, 'Wax moth stole 1 pollen and fluttered away.');
+            fleeFromPlayer(enemyCell);
+            recordReplayEvent('enemySpecial', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'stealPollen' });
+        }
+        return true;
+    }
+
+    if (enemyCell.object === 'broodWasp') {
+        const spawned = spawnMiteNear(enemyCell);
+        if (spawned) {
+            addLog(enemy.name, 'Brood wasp hatched a mite swarm.');
+            recordReplayEvent('enemySpecial', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'spawnMite' });
+        } else if (enemy.attack > 0) {
+            applyDamage(enemy.attack, enemyCell.q, enemyCell.r, `${enemy.name} Attack`);
+            recordReplayEvent('enemyDamage', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, amount: enemy.attack });
+        }
+        return true;
+    }
+
+    return false;
+}
+
+function refogNearEnemy(enemyCell) {
+    let hidden = 0;
+    game.cells.forEach((cell) => {
+        const protectedCell = (
+            cell.q === game.player.q && cell.r === game.player.r
+        ) || cell.object === 'entry' || cell.object === 'exit' || cell.object === 'finalExit';
+        if (
+            !protectedCell
+            && cell.revealed
+            && hexDistance(enemyCell.q, enemyCell.r, cell.q, cell.r) <= 2
+            && hexDistance(game.player.q, game.player.r, cell.q, cell.r) > game.revealRadius
+        ) {
+            cell.revealed = false;
+            hidden += 1;
+        }
+    });
+    return hidden;
+}
+
+function fleeFromPlayer(enemyCell) {
+    const target = HEX_DIRECTIONS
+        .map((direction) => getCell(enemyCell.q + direction.q, enemyCell.r + direction.r))
+        .filter((cell) => cell && cell.object === 'empty' && !(cell.q === game.player.q && cell.r === game.player.r))
+        .sort((a, b) => (
+            hexDistance(b.q, b.r, game.player.q, game.player.r)
+            - hexDistance(a.q, a.r, game.player.q, game.player.r)
+        ))[0];
+    if (!target) return false;
+    target.object = enemyCell.object;
+    target.hits = enemyCell.hits || 0;
+    target.revealed = enemyCell.revealed;
+    target.nextAuraAt = 0;
+    enemyCell.object = 'empty';
+    enemyCell.hits = 0;
+    enemyCell.nextAuraAt = 0;
+    return true;
+}
+
+function spawnMiteNear(enemyCell) {
+    const target = HEX_DIRECTIONS
+        .map((direction) => getCell(enemyCell.q + direction.q, enemyCell.r + direction.r))
+        .filter((cell) => cell && cell.object === 'empty' && !(cell.q === game.player.q && cell.r === game.player.r))
+        .sort(() => seededRandom() - 0.5)[0];
+    if (!target) return false;
+    target.object = 'miteSwarm';
+    target.revealed = enemyCell.revealed;
+    target.nextAuraAt = 0;
+    target.hits = 0;
+    return true;
 }
 
 function updateSleepingEnemies() {
@@ -3117,6 +3388,7 @@ function updateSleepingEnemies() {
                 bat.awake = true;
                 bat.nextAttackAt = 0;
                 addLog('Sleeping Bat', 'A sleeping bat woke up and started hunting.');
+                recordReplayEvent('enemyWake', { enemy: bat.object, q: bat.q, r: bat.r });
             }
         });
 }
@@ -3136,6 +3408,8 @@ function applyDamage(amount, q, r, source) {
     if (healthDamage > 0) {
         game.player.health = Math.max(0, game.player.health - healthDamage);
         deltas.push({ stat: 'health', amount: -healthDamage });
+        game.lastDamageSource = source;
+        game.deathTip = getDeathTip(source);
     }
 
     addStatPopups(q, r, deltas);
@@ -3146,9 +3420,21 @@ function applyDamage(amount, q, r, source) {
         game.message = `${source} dealt ${healthDamage} health damage.`;
     }
 
+    recordReplayEvent('damage', { source, amount, q, r, blocked, healthDamage });
+
     if (game.player.health <= 0) {
         endRun('death');
     }
+}
+
+function getDeathTip(source = '') {
+    const lower = source.toLowerCase();
+    if (lower.includes('bat')) return 'Bats punish standing adjacent. Save Double Sting or move away before the bite timer fills.';
+    if (lower.includes('wasp')) return 'Wasp pressure is about timing. Back out of its ring while your sting is cooling down.';
+    if (lower.includes('vine')) return 'Vines are permanent taxes. Cross them only when you can afford the health or shield loss.';
+    if (lower.includes('moth')) return 'Moths are support threats. Clear them early before they steal tempo or hide the room.';
+    if (lower.includes('beetle')) return 'Beetles control chokepoints. Do not linger beside one without shield.';
+    return 'Watch the top-right danger timers and leave threatened cells before they fill.';
 }
 
 function isEnemyObject(object) {
@@ -3163,12 +3449,19 @@ function hasTimedAura(object) {
     return object === 'enemy'
         || object === 'guardWasp'
         || object === 'honeyLeech'
-        || object === 'miteSwarm';
+        || object === 'miteSwarm'
+        || object === 'thornBeetle'
+        || object === 'fogMoth'
+        || object === 'waxMoth'
+        || object === 'broodWasp'
+        || object === 'stagBeetle'
+        || object === 'falseFlower';
 }
 
 function endRun(reason = 'final-exit') {
     if (game.ended) return;
     game.ended = true;
+    updateProgression();
     const survivedMs = performance.now() - game.runStartedAt;
     const seconds = Math.floor(survivedMs / 1000);
     const minutes = Math.floor(seconds / 60);
@@ -3178,7 +3471,7 @@ function endRun(reason = 'final-exit') {
         : 100;
 
     game.message = reason === 'death'
-        ? 'Game over. The bee ran out of health.'
+        ? `Game over. ${game.lastDamageSource || 'The last hit'} ended the run.`
         : reason === 'dance-failed'
         ? `The path to food faded. ${danceComplete}% complete.`
         : 'The dance revealed the path to food.';
@@ -3188,18 +3481,149 @@ function endRun(reason = 'final-exit') {
         [currentLanguage === 'es-419' ? 'Bajas' : 'Kills', game.runStats.kills],
         [t('stats', 'pollen')[0], game.runStats.pollen],
         [t('stats', 'water')[0], game.runStats.water],
+        [t('ui', 'honey'), game.runStats.honey],
         [currentLanguage === 'es-419' ? 'Tiempo sobrevivido' : 'Time Survived', `${minutes}:${String(remainingSeconds).padStart(2, '0')}`],
-        [currentLanguage === 'es-419' ? 'Camino a la comida' : 'Path to Food', reason === 'death' ? '0%' : `${danceComplete}%`]
+        [currentLanguage === 'es-419' ? 'Camino a la comida' : 'Path to Food', reason === 'death' ? '0%' : `${danceComplete}%`],
+        ...(reason === 'death' ? [
+            [currentLanguage === 'es-419' ? 'Causa' : 'Cause', game.lastDamageSource || 'Unknown'],
+            [currentLanguage === 'es-419' ? 'Consejo' : 'Tip', game.deathTip || getDeathTip()]
+        ] : []),
+        [currentLanguage === 'es-419' ? 'Polen total' : 'Lifetime Pollen', progression.lifetimePollen],
+        [currentLanguage === 'es-419' ? 'Miel total' : 'Lifetime Honey', progression.lifetimeHoney],
+        [currentLanguage === 'es-419' ? 'Desbloqueos' : 'Unlocks', getProgressionUnlockText()],
+        [currentLanguage === 'es-419' ? 'Semilla' : 'Seed', game.runSeed]
     ];
 
     endStatsNode.innerHTML = stats.map(([label, value]) => (
         `<div><span>${label}</span><strong>${value}</strong></div>`
     )).join('');
+    recordReplayEvent('runEnd', { reason });
     endScreen.classList.add('visible');
+}
+
+function updateProgression() {
+    progression.lifetimePollen += game.runStats.pollen;
+    progression.lifetimeHoney += game.runStats.honey;
+    progression.bestRoom = Math.max(progression.bestRoom || 1, game.roomDepth);
+    const seen = new Set(progression.encyclopedia || []);
+    game.cells.forEach((cell) => {
+        if (cell.revealed && cell.object !== 'empty') {
+            seen.add(cell.object);
+        }
+    });
+    progression.encyclopedia = [...seen].slice(0, 80);
+    saveProgression();
+}
+
+function getProgressionUnlockText() {
+    const unlocks = [];
+    if (progression.lifetimeHoney >= 5) unlocks.push('gold trail');
+    if (progression.lifetimePollen >= 12) unlocks.push('pollen trail');
+    if ((progression.encyclopedia || []).length >= 10) unlocks.push('field notes');
+    return unlocks.length ? unlocks.join(', ') : 'none yet';
 }
 
 function getCell(q, r) {
     return game.cells.find((cell) => cell.q === q && cell.r === r);
+}
+
+function recordReplayEvent(type, payload = {}) {
+    if (game.replay || game.mode === 'menu') return;
+    game.replayEvents.push({
+        type,
+        payload,
+        at: Math.round(performance.now() - game.runStartedAt),
+        snapshot: createReplaySnapshot()
+    });
+}
+
+function createReplaySnapshot() {
+    return {
+        seed: game.runSeed,
+        mode: game.mode,
+        roomDepth: game.roomDepth,
+        cells: game.cells.map((cell) => ({ ...cell })),
+        player: { ...game.player },
+        runStats: { ...game.runStats },
+        statPopups: game.statPopups.map((popup) => ({ ...popup })),
+        playerMotion: game.playerMotion ? { ...game.playerMotion } : null,
+        cameraPan: { ...game.cameraPan },
+        message: game.message,
+        dance: game.dance ? JSON.parse(JSON.stringify(game.dance)) : null,
+        ended: game.ended
+    };
+}
+
+function applyReplaySnapshot(snapshot) {
+    game.mode = snapshot.mode;
+    game.roomDepth = snapshot.roomDepth;
+    game.cells = snapshot.cells.map((cell) => ({ ...cell }));
+    game.player = { ...snapshot.player };
+    game.runStats = { ...snapshot.runStats };
+    game.statPopups = (snapshot.statPopups || []).map((popup, index) => ({
+        ...popup,
+        createdAt: performance.now() + index * 60
+    }));
+    game.playerMotion = snapshot.playerMotion ? { ...snapshot.playerMotion, startedAt: performance.now() } : null;
+    game.cameraPan = snapshot.cameraPan ? { ...snapshot.cameraPan } : { x: 0, y: 0 };
+    game.message = snapshot.message;
+    game.dance = snapshot.dance ? JSON.parse(JSON.stringify(snapshot.dance)) : null;
+    game.ended = snapshot.ended;
+}
+
+function startReplay() {
+    if (!game.replayEvents.length) return;
+    const events = game.replayEvents.map((event) => ({
+        ...event,
+        snapshot: JSON.parse(JSON.stringify(event.snapshot))
+    }));
+    endScreen.classList.remove('visible');
+    startScreen.classList.add('hidden');
+    replayControls.classList.add('visible');
+    game.replay = {
+        events,
+        index: 0,
+        paused: false,
+        timer: 0
+    };
+    applyReplaySnapshot(events[0].snapshot);
+    replayPauseButton.textContent = 'II';
+    scheduleReplayStep();
+}
+
+function scheduleReplayStep() {
+    if (!game.replay || game.replay.paused) return;
+    window.clearTimeout(game.replay.timer);
+    game.replay.timer = window.setTimeout(advanceReplay, REPLAY_STEP_MS);
+}
+
+function advanceReplay() {
+    if (!game.replay || game.replay.paused) return;
+    game.replay.index += 1;
+    if (game.replay.index >= game.replay.events.length) {
+        game.replay.index = game.replay.events.length - 1;
+        game.replay.paused = true;
+        replayPauseButton.textContent = '>';
+        return;
+    }
+    applyReplaySnapshot(game.replay.events[game.replay.index].snapshot);
+    scheduleReplayStep();
+}
+
+function toggleReplayPause() {
+    if (!game.replay) return;
+    game.replay.paused = !game.replay.paused;
+    replayPauseButton.textContent = game.replay.paused ? '>' : 'II';
+    scheduleReplayStep();
+}
+
+function closeReplay() {
+    if (game.replay?.timer) {
+        window.clearTimeout(game.replay.timer);
+    }
+    game.replay = null;
+    replayControls.classList.remove('visible');
+    showMainMenu();
 }
 
 function getAttackCooldownRemaining() {
@@ -3258,7 +3682,9 @@ function formatDelta(delta) {
         health: t('stats', 'health')[0],
         pollen: t('stats', 'pollen')[0],
         water: t('stats', 'water')[0],
+        honey: t('ui', 'honey'),
         upgrades: t('stats', 'shield')[0],
+        stamina: t('ui', 'stamina'),
         stingCharges: t('stats', 'doubleSting')[0],
         cooldown: t('ui', 'cooldown'),
         blocked: currentLanguage === 'es-419' ? 'bloqueado' : 'blocked'
@@ -3290,8 +3716,10 @@ function renderStats() {
         [statsText.health[0], game.player.health, statsText.health[1]],
         [statsText.pollen[0], game.player.pollen, statsText.pollen[1]],
         [statsText.water[0], game.player.water, statsText.water[1]],
+        [t('ui', 'honey'), game.player.honey, t('ui', 'honeyHint')],
         [statsText.shield[0], game.player.upgrades, statsText.shield[1]],
         [statsText.doubleSting[0], game.player.stingCharges, statsText.doubleSting[1]],
+        [t('ui', 'stamina'), `${game.player.stamina}/${game.player.maxStamina}`, t('ui', 'staminaHint')],
         [game.mode === 'dance' ? statsText.dance[0] : statsText.room[0], game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, game.mode === 'dance' ? `${DANCE_MAX_MISSES - (game.dance?.misses || 0)} ${statsText.dance[1]}` : statsText.room[1]],
         [statsText.steps[0], game.player.steps, statsText.steps[1]]
     ];
@@ -3299,6 +3727,65 @@ function renderStats() {
     statsNode.innerHTML = stats.map(([label, value, hint]) => (
         `<div class="stat"><span>${label}<small>${hint}</small></span><strong>${value}</strong></div>`
     )).join('');
+    renderStatsHud(statsText);
+    renderTimerHud();
+}
+
+function renderStatsHud(statsText) {
+    const items = [
+        { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
+        { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, sprite: 'pollen', fallback: 'P', color: '#f7d45c' },
+        { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, sprite: 'water', fallback: 'W', color: '#4bb6f2' },
+        { id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' },
+        { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
+        { id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' },
+        { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, icon: 'bolt', color: '#f5c84b' },
+        { id: 'room', value: game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, title: game.mode === 'dance' ? `${statsText.dance[0]}: ${DANCE_MAX_MISSES - (game.dance?.misses || 0)} ${statsText.dance[1]}` : `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' }
+    ];
+    hudRenderer.renderStats(items);
+}
+
+function renderTimerHud() {
+    const items = [];
+    const attackRemaining = getAttackCooldownRemaining();
+    if (attackRemaining > 0) {
+        items.push({
+            id: 'attackCooldown',
+            value: `${(attackRemaining / 1000).toFixed(1)}`,
+            title: `${t('ui', 'locked')}: ${t('ui', 'avoidEnemies')}`,
+            sprite: 'stingUpgrade',
+            fallback: '!',
+            color: '#ff8a72',
+            tone: 'warning'
+        });
+    }
+
+    const now = performance.now();
+    game.cells
+        .filter((cell) => isEnemyObject(cell.object))
+        .forEach((cell) => {
+            const enemy = getEnemyDef(cell.object);
+            let remaining = 0;
+            if ((cell.object === 'bat' || (cell.object === 'sleepingBat' && cell.awake)) && isAdjacent(cell.q, cell.r, game.player.q, game.player.r)) {
+                remaining = Math.max(0, (cell.nextAttackAt || now + enemy.intervalMs) - now);
+            } else if (hasTimedAura(cell.object) && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= enemy.range) {
+                remaining = Math.max(0, (cell.nextAuraAt || now + enemy.intervalMs) - now);
+            }
+            if (remaining > 0) {
+                const damage = enemy.attack > 0 ? `${enemy.attack} damage` : 'special';
+                items.push({
+                    id: `enemy-${cell.q},${cell.r}`,
+                    value: `${Math.ceil(remaining / 100) / 10}`,
+                    title: `${enemy.name}: ${damage}. ${enemy.behavior}`,
+                    sprite: enemy.sprite,
+                    fallback: getFallbackLabel(cell.object) || enemy.name.slice(0, 1),
+                    color: enemy.color,
+                    tone: 'danger'
+                });
+            }
+        });
+
+    hudRenderer.renderTimers(items.slice(0, 14));
 }
 
 function renderCooldown() {
@@ -3355,6 +3842,9 @@ function getCellActionState(cell) {
     if (!isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
         return { available: false, reason: t('ui', 'blockedNotAdjacent'), symbol: 'i', color: '#b8c2aa' };
     }
+    if (game.player.stamina <= 0 && !hasStaminaRecoveryResource()) {
+        return { available: false, reason: t('ui', 'blockedStamina'), symbol: 'S', color: '#f5c84b' };
+    }
 
     const object = cell.object;
     if (isEnemyObject(object)) {
@@ -3409,6 +3899,10 @@ function makeCursor(symbol, color, available = true) {
 }
 
 canvas.addEventListener('click', (event) => {
+    if (game.suppressNextClick) {
+        game.suppressNextClick = false;
+        return;
+    }
     if (game.mode === 'dance') return;
 
     const rect = canvas.getBoundingClientRect();
@@ -3429,16 +3923,84 @@ canvas.addEventListener('mousemove', (event) => {
 });
 
 canvas.addEventListener('pointerdown', (event) => {
-    if (game.mode !== 'dance' || game.ended) return;
-
     const rect = canvas.getBoundingClientRect();
     const cell = pixelToClosestHex(event.clientX - rect.left, event.clientY - rect.top);
-    if (cell) {
+    const canPan = event.button === 1 || event.pointerType === 'touch';
+    if (event.button === 0 && cell) {
+        game.dragAction = {
+            id: event.pointerId,
+            mode: game.mode,
+            startCell: cell,
+            startX: event.clientX,
+            startY: event.clientY
+        };
+    }
+    if (canPan && game.mode === 'dungeon') {
+        event.preventDefault();
+        game.pointer = {
+            id: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            lastX: event.clientX,
+            lastY: event.clientY,
+            panning: false
+        };
+        canvas.setPointerCapture?.(event.pointerId);
+    }
+
+    if (game.mode !== 'dance' || game.ended) return;
+
+    if (cell && (game.dance?.move?.type === 'hold' || isActiveDanceCell(cell))) {
         startDanceHold(cell);
     }
 });
 
-canvas.addEventListener('pointerup', () => {
+canvas.addEventListener('auxclick', (event) => {
+    if (event.button === 1) {
+        event.preventDefault();
+    }
+});
+
+canvas.addEventListener('pointermove', (event) => {
+    if (!game.pointer || game.pointer.id !== event.pointerId) return;
+    const dx = event.clientX - game.pointer.lastX;
+    const dy = event.clientY - game.pointer.lastY;
+    const total = Math.hypot(event.clientX - game.pointer.startX, event.clientY - game.pointer.startY);
+    if (total > 8) {
+        game.pointer.panning = true;
+        game.suppressNextClick = true;
+    }
+    if (game.pointer.panning) {
+        game.cameraPan.x += dx;
+        game.cameraPan.y += dy;
+        game.hover = null;
+        event.preventDefault();
+    }
+    game.pointer.lastX = event.clientX;
+    game.pointer.lastY = event.clientY;
+});
+
+canvas.addEventListener('pointerup', (event) => {
+    if (game.pointer?.panning) {
+        game.suppressNextClick = true;
+    }
+    game.pointer = null;
+    const drag = game.dragAction?.id === event.pointerId ? game.dragAction : null;
+    if (drag) {
+        const rect = canvas.getBoundingClientRect();
+        const endCell = pixelToClosestHex(event.clientX - rect.left, event.clientY - rect.top);
+        const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+        if (distance > 8 && endCell) {
+            if (drag.mode === 'dungeon' && isPlayerCell(drag.startCell)) {
+                game.suppressNextClick = true;
+                moveTo(endCell);
+            } else if (drag.mode === 'dance' && isPlayerCell(drag.startCell) && isActiveDanceCell(endCell)) {
+                game.suppressNextClick = true;
+                startDanceHold(endCell);
+            }
+        }
+    }
+    game.dragAction = null;
     if (game.mode === 'dance') {
         endDanceHold();
     }
@@ -3446,6 +4008,8 @@ canvas.addEventListener('pointerup', () => {
 
 canvas.addEventListener('pointerleave', () => {
     game.hover = null;
+    game.pointer = null;
+    game.dragAction = null;
     canvas.style.cursor = 'default';
     if (game.mode === 'dance') {
         endDanceHold();
@@ -3454,9 +4018,20 @@ canvas.addEventListener('pointerleave', () => {
 
 restartButton.addEventListener('click', createGrid);
 endRestartButton.addEventListener('click', createGrid);
+endReplayButton.addEventListener('click', startReplay);
 endMenuButton.addEventListener('click', showMainMenu);
+replayPauseButton.addEventListener('click', toggleReplayPause);
+replayCloseButton.addEventListener('click', closeReplay);
 newRunButton.addEventListener('click', createGrid);
 testDanceButton.addEventListener('click', testDanceRun);
+statsToggle.addEventListener('click', () => {
+    statsPanel.classList.toggle('open');
+    logPanel.classList.remove('open');
+});
+logToggle.addEventListener('click', () => {
+    logPanel.classList.toggle('open');
+    statsPanel.classList.remove('open');
+});
 optionsButton.addEventListener('click', () => {
     optionsPanel.classList.toggle('visible');
 });
@@ -3471,6 +4046,13 @@ relicChoicesNode.addEventListener('click', (event) => {
         chooseRelic(button.dataset.relicId);
     }
 });
+campActionsNode.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-camp-action]');
+    if (button) {
+        applyCampAction(button.dataset.campAction);
+    }
+});
+campContinueButton.addEventListener('click', continueFromCamp);
 window.addEventListener('resize', resizeCanvas);
 
 setLanguage(currentLanguage);
@@ -3478,3 +4060,4 @@ renderStats();
 renderRelics();
 resizeCanvas();
 requestAnimationFrame(animate);
+
