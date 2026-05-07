@@ -1,0 +1,168 @@
+// Data-driven item interaction system.
+(() => {
+function createItemSystem(context) {
+    const { game, objects, helpers } = context;
+
+    function resolve(objectId, cell) {
+        const object = objects[objectId];
+        if (!object?.effects?.length) {
+            return {
+                message: 'Moved to an open cell.',
+                deltas: [],
+                consume: false
+            };
+        }
+
+        const result = {
+            messages: [],
+            deltas: [],
+            consume: true
+        };
+
+        object.effects.forEach((effect) => applyEffect(effect, cell, result));
+
+        return {
+            message: result.messages.filter(Boolean).join(' ') || `${object.name} collected.`,
+            deltas: result.deltas,
+            consume: result.consume
+        };
+    }
+
+    function applyEffect(effect, cell, result) {
+        const amount = effect.amount || 0;
+        if (effect.type === 'tradeCooldown') {
+            if (game.player.pollen >= effect.pollen && game.player.water >= effect.water) {
+                game.player.pollen -= effect.pollen;
+                game.player.water -= effect.water;
+                game.player.attackCooldownMs = Math.max(helpers.minAttackCooldownMs, game.player.attackCooldownMs - effect.cooldownMs);
+                if (helpers.getAttackCooldownRemaining() > 0) {
+                    game.player.attackReadyAt = Math.max(performance.now(), game.player.attackReadyAt - effect.cooldownMs);
+                }
+                result.deltas.push({ stat: 'pollen', amount: -effect.pollen }, { stat: 'water', amount: -effect.water }, { stat: 'cooldown', amount: -effect.cooldownMs / 1000 });
+                result.messages.push('Trade beetle tuned your sting. Cooldown reduced by 0.1s.');
+            } else {
+                result.messages.push('Trade beetle needs 1 pollen and 1 water to reduce sting cooldown.');
+            }
+            return;
+        }
+
+        if (effect.type === 'gainShield') {
+            if (game.player.upgrades >= game.player.maxShield) {
+                result.consume = false;
+                result.messages.push('Shield is already full.');
+                return;
+            }
+            const gained = Math.min(effect.amount, game.player.maxShield - game.player.upgrades);
+            game.player.upgrades += gained;
+            result.deltas.push({ stat: 'upgrades', amount: gained });
+            result.messages.push(`Shield upgrade collected. Added ${gained} shield.`);
+            return;
+        }
+
+        if (effect.type === 'gainResource') {
+            game.player[effect.resource] = (game.player[effect.resource] || 0) + amount;
+            if (effect.runStat) {
+                game.runStats[effect.resource] = (game.runStats[effect.resource] || 0) + amount;
+            }
+            result.deltas.push({ stat: effect.resource, amount });
+            result.messages.push(getResourceMessage(effect.resource));
+            return;
+        }
+
+        if (effect.type === 'heal') {
+            const healed = helpers.healPlayer(effect.amount);
+            if (healed > 0) {
+                result.deltas.push({ stat: 'health', amount: healed });
+                result.messages.push('Recovered health.');
+            }
+            return;
+        }
+
+        if (effect.type === 'royalJelly') {
+            if (!helpers.hasRelic('royalJelly')) return;
+            game.royalJellyPollen += 1;
+            if (game.royalJellyPollen >= 3) {
+                game.royalJellyPollen = 0;
+                const healed = helpers.healPlayer(2);
+                if (healed > 0) {
+                    result.deltas.push({ stat: 'health', amount: healed });
+                    result.messages.push('Royal Jelly healed the bee.');
+                }
+            }
+            return;
+        }
+
+        if (effect.type === 'revealAround') {
+            helpers.revealAround(cell.q, cell.r, effect.radius);
+            result.messages.push('Mist lifted around the cell.');
+            return;
+        }
+
+        if (effect.type === 'pauseEnemyTimers') {
+            helpers.pauseEnemyTimers(effect.durationMs, cell.q, cell.r, effect.radius);
+            result.messages.push('Enemy timers stalled for a short escape.');
+            return;
+        }
+
+        if (effect.type === 'revealEnemies') {
+            game.cells.forEach((roomCell) => {
+                if (helpers.isEnemyObject(roomCell.object)) roomCell.revealed = true;
+            });
+            result.messages.push('Every enemy in the chamber was revealed.');
+            return;
+        }
+
+        if (effect.type === 'revealExitRoute') {
+            helpers.revealRouteToExit();
+            result.messages.push('A route toward the exit was revealed.');
+            return;
+        }
+
+        if (effect.type === 'royalNectar') {
+            if (game.player.health >= helpers.getPlayerMaxHealth()) {
+                game.player.maxHealth += 1;
+                game.player.health += 1;
+                result.deltas.push({ stat: 'health', amount: 1 });
+                result.messages.push('Royal nectar strengthened the bee. Max health increased.');
+            } else {
+                const healed = helpers.healPlayer(effect.heal || 4);
+                if (healed > 0) result.deltas.push({ stat: 'health', amount: healed });
+                result.messages.push('Royal nectar restored the bee.');
+            }
+            return;
+        }
+
+        if (effect.type === 'slowNearbyEnemies') {
+            helpers.slowNearbyEnemies(cell.q, cell.r, effect.radius, effect.durationMs);
+            result.messages.push('Nearby moving enemies slowed.');
+            return;
+        }
+
+        if (effect.type === 'transformCell') {
+            cell.object = effect.object;
+            result.consume = false;
+            result.messages.push('The cell changed shape.');
+            return;
+        }
+
+        if (effect.type === 'revealExitHint') {
+            helpers.revealExitHint();
+            result.messages.push('The exit tugged through the mist.');
+        }
+    }
+
+    function getResourceMessage(resource) {
+        if (resource === 'pollen') return 'Collected pollen.';
+        if (resource === 'water') return 'Collected water.';
+        if (resource === 'honey') return 'Collected honey.';
+        if (resource === 'stingCharges') return 'Double sting stored.';
+        return 'Collected supplies.';
+    }
+
+    return { resolve };
+}
+
+window.HW_ITEMS = {
+    createItemSystem
+};
+})();

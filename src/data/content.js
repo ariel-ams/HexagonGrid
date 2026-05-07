@@ -382,7 +382,8 @@ const ENEMY_DEFS = {
         intervalMs: 500,
         range: 1,
         behavior: 'Stationary aura. Deals damage every 0.5s while adjacent.',
-        lesson: 'Do not linger next to it while sting is cooling down.'
+        lesson: 'Do not linger next to it while sting is cooling down.',
+        behaviors: [{ type: 'damageAura' }]
     },
     bat: {
         name: 'Bat',
@@ -393,7 +394,8 @@ const ENEMY_DEFS = {
         intervalMs: 1000,
         range: 1,
         behavior: 'Pursues the bee after each move. Attacks every 1s when adjacent.',
-        lesson: 'Use Double Sting or plan two safe hits.'
+        lesson: 'Use Double Sting or plan two safe hits.',
+        behaviors: [{ type: 'biteAdjacent' }, { type: 'moveTowardPlayer' }]
     },
     miteSwarm: {
         name: 'Mite Swarm',
@@ -404,7 +406,8 @@ const ENEMY_DEFS = {
         intervalMs: 900,
         range: 1,
         behavior: 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.',
-        lesson: 'Cheap to kill, dangerous if ignored in groups.'
+        lesson: 'Cheap to kill, dangerous if ignored in groups.',
+        behaviors: [{ type: 'damageAura' }, { type: 'moveEverySteps', stepInterval: 2 }]
     },
     thornBeetle: {
         name: 'Thorn Beetle',
@@ -415,7 +418,8 @@ const ENEMY_DEFS = {
         intervalMs: 1000,
         range: 1,
         behavior: 'Armored blocker. Deals thorn damage while you stand near it.',
-        lesson: 'Clear it before crossing narrow routes or it will tax your shield.'
+        lesson: 'Clear it before crossing narrow routes or it will tax your shield.',
+        behaviors: [{ type: 'damageAura' }]
     },
     fogMoth: {
         name: 'Fog Moth',
@@ -426,7 +430,8 @@ const ENEMY_DEFS = {
         intervalMs: 1200,
         range: 2,
         behavior: 'Stationary pressure. Re-hides distant revealed cells when you linger nearby.',
-        lesson: 'Fight it before scouting routes around it.'
+        lesson: 'Fight it before scouting routes around it.',
+        behaviors: [{ type: 'refogAura' }]
     },
     waxMoth: {
         name: 'Wax Moth',
@@ -437,7 +442,8 @@ const ENEMY_DEFS = {
         intervalMs: 900,
         range: 1,
         behavior: 'Steals 1 pollen when adjacent, then tries to flee.',
-        lesson: 'Do not carry pollen past it unless your sting is ready.'
+        lesson: 'Do not carry pollen past it unless your sting is ready.',
+        behaviors: [{ type: 'stealResourceAura', resource: 'pollen', amount: 1 }, { type: 'fleeFromPlayer' }]
     },
     broodWasp: {
         name: 'Brood Wasp',
@@ -448,7 +454,8 @@ const ENEMY_DEFS = {
         intervalMs: 1500,
         range: 1,
         behavior: 'Spawns mite swarms if left alive too long.',
-        lesson: 'Prioritize it before the room fills with small threats.'
+        lesson: 'Prioritize it before the room fills with small threats.',
+        behaviors: [{ type: 'spawnEnemyAura', object: 'miteSwarm' }, { type: 'damageAura', fallbackOnly: true }]
     },
     stagBeetle: {
         name: 'Stag Beetle',
@@ -459,7 +466,8 @@ const ENEMY_DEFS = {
         intervalMs: 1400,
         range: 2,
         behavior: 'Heavy blocker with a wider warning zone.',
-        lesson: 'Its slow aura punishes greedy pathing through chokepoints.'
+        lesson: 'Its slow aura punishes greedy pathing through chokepoints.',
+        behaviors: [{ type: 'damageAura' }]
     },
     falseFlower: {
         name: 'False Flower',
@@ -470,7 +478,8 @@ const ENEMY_DEFS = {
         intervalMs: 800,
         range: 1,
         behavior: 'Looks like pollen until close, then bites with a hidden aura.',
-        lesson: 'Inspect rewards carefully when the route feels too generous.'
+        lesson: 'Inspect rewards carefully when the route feels too generous.',
+        behaviors: [{ type: 'damageAura' }, { type: 'disguiseAs', object: 'pollen', revealRange: 1 }]
     },
     guardWasp: {
         name: 'Guard Wasp',
@@ -481,7 +490,8 @@ const ENEMY_DEFS = {
         intervalMs: 1200,
         range: 2,
         behavior: 'Stationary guard. Its larger aura reaches 2 cells.',
-        lesson: 'Check your route before entering its zone.'
+        lesson: 'Check your route before entering its zone.',
+        behaviors: [{ type: 'damageAura' }]
     },
     sleepingBat: {
         name: 'Sleeping Bat',
@@ -492,7 +502,8 @@ const ENEMY_DEFS = {
         intervalMs: 1000,
         range: 1,
         behavior: 'Sleeps until the bee gets close, then wakes and pursues.',
-        lesson: 'Skirt around it unless the reward is worth waking it.'
+        lesson: 'Skirt around it unless the reward is worth waking it.',
+        behaviors: [{ type: 'wakeOnRange', range: 2 }, { type: 'biteAdjacent' }, { type: 'moveTowardPlayer' }]
     },
     honeyLeech: {
         name: 'Honey Leech',
@@ -503,7 +514,8 @@ const ENEMY_DEFS = {
         intervalMs: 850,
         range: 1,
         behavior: 'Stationary drain. Chews through shield first, then health.',
-        lesson: 'Shield is not permanent safety near this enemy.'
+        lesson: 'Shield is not permanent safety near this enemy.',
+        behaviors: [{ type: 'damageAura' }]
     }
 };
 
@@ -576,27 +588,32 @@ const OBJECTS = {
     npc: {
         name: 'Trade Beetle',
         color: '#64b5f6',
-        description: 'Reduces sting cooldown.'
+        description: 'Reduces sting cooldown.',
+        effects: [{ type: 'tradeCooldown', pollen: 1, water: 1, cooldownMs: 100 }]
     },
     upgrade: {
         name: 'Shield Upgrade',
         color: '#b787f4',
-        description: 'Improves your scout.'
+        description: 'Improves your scout.',
+        effects: [{ type: 'gainShield', amount: 1 }]
     },
     stingUpgrade: {
         name: 'Double Sting',
         color: '#f28f3b',
-        description: 'One-use stronger sting.'
+        description: 'One-use stronger sting.',
+        effects: [{ type: 'gainResource', resource: 'stingCharges', amount: 1 }]
     },
     pollen: {
         name: 'Pollen',
         color: '#5fc77e',
-        description: 'Adds pollen.'
+        description: 'Adds pollen.',
+        effects: [{ type: 'gainResource', resource: 'pollen', amount: 1, runStat: true }, { type: 'royalJelly' }]
     },
     water: {
         name: 'Water',
         color: '#4bb6f2',
-        description: 'Adds water.'
+        description: 'Adds water.',
+        effects: [{ type: 'gainResource', resource: 'water', amount: 1, runStat: true }, { type: 'heal', amount: 2 }]
     },
     vine: {
         name: 'Vines',
@@ -606,42 +623,55 @@ const OBJECTS = {
     glowPollen: {
         name: 'Glow Pollen',
         color: '#7ee6a5',
-        description: 'Reveals a wide patch of mist around this cell.'
+        description: 'Reveals a wide patch of mist around this cell.',
+        effects: [{ type: 'revealAround', radius: 4 }]
     },
     nectarCache: {
         name: 'Nectar Cache',
         color: '#f0a64f',
-        description: 'Grants pollen and water together.'
+        description: 'Grants pollen and water together.',
+        effects: [
+            { type: 'gainResource', resource: 'pollen', amount: 1, runStat: true },
+            { type: 'gainResource', resource: 'water', amount: 1, runStat: true },
+            { type: 'gainResource', resource: 'honey', amount: 1, runStat: true },
+            { type: 'heal', amount: 1 }
+        ]
     },
     honeyDrop: {
         name: 'Honey Drop',
         color: '#f2b544',
-        description: 'Restores health and adds honey for stamina recovery.'
+        description: 'Restores health and adds honey for stamina recovery.',
+        effects: [{ type: 'gainResource', resource: 'honey', amount: 1, runStat: true }, { type: 'heal', amount: 2 }]
     },
     cleanWater: {
         name: 'Clean Water',
         color: '#9ee7ff',
-        description: 'Cleanses nearby pressure and restores a little health.'
+        description: 'Cleanses nearby pressure and restores a little health.',
+        effects: [{ type: 'heal', amount: 1 }, { type: 'pauseEnemyTimers', durationMs: 1400, radius: 2 }]
     },
     smokePuff: {
         name: 'Smoke Puff',
         color: '#c9ced1',
-        description: 'Pauses enemy timers for a short escape window.'
+        description: 'Pauses enemy timers for a short escape window.',
+        effects: [{ type: 'pauseEnemyTimers', durationMs: 2400, radius: 99 }]
     },
     sunShard: {
         name: 'Sun Shard',
         color: '#ffd166',
-        description: 'Reveals every enemy in the current room.'
+        description: 'Reveals every enemy in the current room.',
+        effects: [{ type: 'revealEnemies' }]
     },
     flowerMap: {
         name: 'Flower Map',
         color: '#82d173',
-        description: 'Reveals a rough route toward the exit.'
+        description: 'Reveals a rough route toward the exit.',
+        effects: [{ type: 'revealExitRoute' }]
     },
     royalNectar: {
         name: 'Royal Nectar',
         color: '#ff9fcb',
-        description: 'Rare recovery. Heals now, or grants permanent health if already full.'
+        description: 'Rare recovery. Heals now, or grants permanent health if already full.',
+        effects: [{ type: 'royalNectar', heal: 4 }]
     },
     waxDoor: {
         name: 'Wax Door',
@@ -651,7 +681,8 @@ const OBJECTS = {
     stickyHoney: {
         name: 'Sticky Honey',
         color: '#d68c39',
-        description: 'Leaves sticky honey behind that slows nearby moving enemies.'
+        description: 'Leaves sticky honey behind that slows nearby moving enemies.',
+        effects: [{ type: 'gainResource', resource: 'honey', amount: 1, runStat: true }, { type: 'slowNearbyEnemies', radius: 2, durationMs: 1400 }, { type: 'transformCell', object: 'stickyTrap' }]
     },
     stickyTrap: {
         name: 'Sticky Patch',
@@ -661,7 +692,8 @@ const OBJECTS = {
     compassPollen: {
         name: 'Compass Pollen',
         color: '#f7df72',
-        description: 'Reveals the exit through the mist.'
+        description: 'Reveals the exit through the mist.',
+        effects: [{ type: 'revealExitHint' }]
     },
     entry: {
         name: 'Entry',
