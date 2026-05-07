@@ -57,8 +57,17 @@ const MAX_SHIELD = 5;
 const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const BASE_XP_TO_LEVEL = 24;
+const GAMEPLAY_MUSIC_SRC = 'assets/main_song.mp3';
+const DANCE_MUSIC_SRC = 'assets/dancefloor.mp3';
+const GAMEPLAY_MUSIC_VOLUME = 0.45;
+const DANCE_MUSIC_VOLUME = 0.56;
+const DANCE_MISS_VOLUME = 0.18;
+const DANCE_MUSIC_START_AT = 48;
 const DANCE_MOVES_REQUIRED = 12;
 const DANCE_ARROW_MS = 1000;
+const DANCE_CLICK_WINDOW_MS = 1200;
+const DANCE_PERFECT_START_MS = 1000;
+const DANCE_HOLD_PERFECT_PROGRESS = 0.85;
 const DANCE_HOLD_MIN_MS = 1000;
 const DANCE_HOLD_MAX_MS = 3000;
 const DANCE_SEQUENCE_MIN_LENGTH = 3;
@@ -214,6 +223,18 @@ const hudRenderer = window.HW_HUD.createHudRenderer({
 
 let itemSystem = null;
 let enemySystem = null;
+const gameplayMusic = new Audio(GAMEPLAY_MUSIC_SRC);
+gameplayMusic.loop = true;
+gameplayMusic.volume = GAMEPLAY_MUSIC_VOLUME;
+const danceMusic = new Audio(DANCE_MUSIC_SRC);
+danceMusic.loop = false;
+danceMusic.volume = DANCE_MUSIC_VOLUME;
+let danceVolumeTimer = 0;
+danceMusic.addEventListener('ended', () => {
+    if (game.mode !== 'dance' || game.ended) return;
+    danceMusic.currentTime = DANCE_MUSIC_START_AT;
+    danceMusic.play().catch(() => {});
+});
 
 const OBJECT_UNLOCK_LEVELS = {
     empty: 1,
@@ -256,9 +277,75 @@ const XP_REWARDS = {
     specialItem: 7,
     enemy: 12,
     room: 24,
+    objective: 10,
     danceStep: 1,
     danceMove: 5
 };
+
+const ROOM_OBJECTIVES = [
+    {
+        id: 'findExit',
+        minDepth: 1,
+        label: { en: 'Find the exit', 'es-419': 'Encuentra la salida' },
+        hint: { en: 'Move through mist and reveal the room.', 'es-419': 'Muévete por la niebla y revela la sala.' },
+        isComplete: () => game.objectiveProgress.exitSeen
+    },
+    {
+        id: 'collectTwo',
+        minDepth: 1,
+        label: { en: 'Collect 2 supplies', 'es-419': 'Junta 2 suministros' },
+        hint: { en: 'Pollen and water fuel camp choices.', 'es-419': 'El polen y el agua activan opciones de campamento.' },
+        isComplete: () => game.objectiveProgress.supplies >= 2
+    },
+    {
+        id: 'keepShield',
+        minDepth: 2,
+        label: { en: 'Reach the exit with shield', 'es-419': 'Llega a la salida con escudo' },
+        hint: { en: 'Shield blocks the next mistake.', 'es-419': 'El escudo bloquea el próximo error.' },
+        isComplete: () => game.objectiveProgress.exitSeen && game.player.upgrades > 0
+    },
+    {
+        id: 'avoidDamage',
+        minDepth: 2,
+        label: { en: 'Avoid damage this room', 'es-419': 'Evita daño en esta sala' },
+        hint: { en: 'Leave danger rings before timers fill.', 'es-419': 'Sal de los anillos de peligro antes de que se llenen.' },
+        isComplete: () => game.objectiveProgress.exitSeen && !game.objectiveProgress.tookDamage
+    },
+    {
+        id: 'defeatEnemy',
+        minDepth: 3,
+        label: { en: 'Defeat 1 enemy', 'es-419': 'Derrota 1 enemigo' },
+        hint: { en: 'Sting, retreat, then sting again if needed.', 'es-419': 'Pica, retrocede y vuelve a picar si hace falta.' },
+        isComplete: () => game.objectiveProgress.kills >= 1
+    }
+];
+
+const DISCOVERY_CALLOUT_OBJECTS = new Set([
+    'enemy',
+    'bat',
+    'miteSwarm',
+    'thornBeetle',
+    'fogMoth',
+    'waxMoth',
+    'broodWasp',
+    'stagBeetle',
+    'falseFlower',
+    'guardWasp',
+    'sleepingBat',
+    'honeyLeech',
+    'vine',
+    'npc',
+    'upgrade',
+    'stingUpgrade',
+    'glowPollen',
+    'cleanWater',
+    'smokePuff',
+    'flowerMap',
+    'compassPollen',
+    'waxDoor',
+    'stickyHoney',
+    'finalExit'
+]);
 
 const game = {
     cells: [],
@@ -288,6 +375,15 @@ const game = {
     pendingNextRoomReason: null,
     campBuffs: {},
     campRelicRerolls: 0,
+    nextRoomPreview: null,
+    roomObjective: null,
+    objectiveProgress: {
+        supplies: 0,
+        kills: 0,
+        tookDamage: false,
+        exitSeen: false,
+        rewarded: false
+    },
     lastDamageSource: null,
     deathTip: '',
     revealRadius: 2,
@@ -615,6 +711,7 @@ function loadProgression() {
             level: 1,
             bestRoom: 1,
             encyclopedia: [],
+            tutorialsSeen: [],
             ...JSON.parse(localStorage.getItem(PROGRESSION_STORAGE_KEY) || '{}')
         };
     } catch {
@@ -624,13 +721,59 @@ function loadProgression() {
             xp: 0,
             level: 1,
             bestRoom: 1,
-            encyclopedia: []
+            encyclopedia: [],
+            tutorialsSeen: []
         };
     }
 }
 
 function saveProgression() {
     localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(progression));
+}
+
+function startGameplayMusic() {
+    stopDanceMusic();
+    if (!gameplayMusic.paused) return;
+    gameplayMusic.currentTime = gameplayMusic.currentTime || 0;
+    gameplayMusic.play().catch(() => {
+        // Browsers may block audio until a direct user gesture. The next run/replay click will try again.
+    });
+}
+
+function stopGameplayMusic() {
+    gameplayMusic.pause();
+    gameplayMusic.currentTime = 0;
+}
+
+function startDanceMusic() {
+    stopGameplayMusic();
+    window.clearTimeout(danceVolumeTimer);
+    danceMusic.volume = DANCE_MUSIC_VOLUME;
+    if (!danceMusic.paused) return;
+    danceMusic.currentTime = DANCE_MUSIC_START_AT;
+    danceMusic.play().catch(() => {
+        // Browsers may block audio until a direct user gesture. The next dance click will try again.
+    });
+}
+
+function stopDanceMusic() {
+    window.clearTimeout(danceVolumeTimer);
+    danceMusic.pause();
+    danceMusic.currentTime = 0;
+    danceMusic.volume = DANCE_MUSIC_VOLUME;
+}
+
+function stopAllMusic() {
+    stopGameplayMusic();
+    stopDanceMusic();
+}
+
+function duckDanceMusic() {
+    window.clearTimeout(danceVolumeTimer);
+    danceMusic.volume = DANCE_MISS_VOLUME;
+    danceVolumeTimer = window.setTimeout(() => {
+        danceMusic.volume = DANCE_MUSIC_VOLUME;
+    }, 900);
 }
 
 function seededRandom() {
@@ -713,10 +856,13 @@ function awardXp(amount, source, options = {}) {
     progression.xp = Math.max(0, Number(progression.xp) || 0) + value;
     game.runStats.xp += value;
     let leveled = false;
+    const unlocked = [];
 
     while (progression.xp >= getXpForNextLevel()) {
         progression.xp -= getXpForNextLevel();
+        const previousLevel = getPlayerLevel();
         progression.level = getPlayerLevel() + 1;
+        unlocked.push(...getUnlocksForLevel(previousLevel, progression.level));
         leveled = true;
     }
 
@@ -725,11 +871,26 @@ function awardXp(amount, source, options = {}) {
         const message = currentLanguage === 'es-419'
             ? `La abeja subiÃ³ al nivel ${progression.level}. Nuevos peligros pueden aparecer.`
             : `Bee reached level ${progression.level}. New threats can start appearing.`;
+        const unlockedNames = unlocked.map(getDisplayNameForObject);
         addLog(currentLanguage === 'es-419' ? 'Nivel' : 'Level Up', message);
-        addWarningPopup(game.player.q, game.player.r, `LV ${progression.level}`);
+        addWarningPopup(game.player.q, game.player.r, `LV ${progression.level}${unlockedNames.length ? `: ${unlockedNames.slice(0, 2).join(', ')}` : ''}`);
+        unlockedNames.slice(0, 3).forEach((name) => {
+            addLog(currentLanguage === 'es-419' ? 'Desbloqueo' : 'Unlocked', name);
+        });
     } else if (!options.silent && source) {
         addLog(currentLanguage === 'es-419' ? 'Experiencia' : 'Experience', `+${value} XP: ${source}`);
     }
+}
+
+function getUnlocksForLevel(previousLevel, newLevel) {
+    return Object.entries(OBJECT_UNLOCK_LEVELS)
+        .filter(([, level]) => level > previousLevel && level <= newLevel)
+        .map(([object]) => object)
+        .filter((object) => !['empty', 'entry', 'exit', 'finalExit'].includes(object));
+}
+
+function getDisplayNameForObject(object) {
+    return ENEMY_DEFS[object]?.name || OBJECTS[object]?.name || object;
 }
 
 function chooseWeightedObject(options, fallback) {
@@ -751,6 +912,7 @@ function chooseWeightedObject(options, fallback) {
 }
 
 function createGrid() {
+    startGameplayMusic();
     startScreen.classList.add('hidden');
     startRunState();
     generateRoom('restart');
@@ -780,6 +942,9 @@ function startRunState() {
     game.pendingNextRoomReason = null;
     game.campBuffs = {};
     game.campRelicRerolls = 0;
+    game.nextRoomPreview = null;
+    game.roomObjective = null;
+    game.objectiveProgress = createObjectiveProgress();
     game.lastDamageSource = null;
     game.deathTip = '';
     game.revealRadius = 2;
@@ -808,6 +973,7 @@ function startRunState() {
 }
 
 function testDanceRun() {
+    startGameplayMusic();
     startScreen.classList.add('hidden');
     startRunState();
     game.roomDepth = FINAL_ROOM;
@@ -815,6 +981,7 @@ function testDanceRun() {
 }
 
 function showMainMenu() {
+    stopAllMusic();
     game.ended = true;
     game.mode = 'menu';
     game.dance = null;
@@ -860,6 +1027,8 @@ function generateRoom(reason) {
     game.statPopups = [];
     game.cameraPan = { x: 0, y: 0 };
     game.roomProfile = getRoomProfile();
+    game.roomObjective = chooseRoomObjective();
+    game.objectiveProgress = createObjectiveProgress();
     game.roomSpawnCounts = {
         enemies: 0,
         hazards: 0,
@@ -886,20 +1055,61 @@ function generateRoom(reason) {
         });
     });
 
+    placeTeachingEnemy();
     placeBats();
     const startCell = getCell(game.player.q, game.player.r);
     if (startCell) startCell.visited = true;
     runRelicHook('onRoomStart');
     applyCampRoomBuffs();
     revealAroundPlayer();
+    updateObjectiveProgress();
 
     if (reason === 'restart') {
         addLog('Start', 'Scout the dungeon, manage sting cooldown, and use exits to crawl deeper.');
     } else {
         addLog('Exit', `Entered chamber ${game.roomDepth}.`);
     }
+    if (game.roomObjective) {
+        addLog(currentLanguage === 'es-419' ? 'Objetivo' : 'Objective', getRoomObjectiveText());
+    }
     recordReplayEvent('roomStart', { reason, depth: game.roomDepth });
     draw();
+}
+
+function createObjectiveProgress() {
+    return {
+        supplies: 0,
+        kills: 0,
+        tookDamage: false,
+        exitSeen: false,
+        rewarded: false
+    };
+}
+
+function chooseRoomObjective() {
+    const options = ROOM_OBJECTIVES.filter((objective) => game.roomDepth >= objective.minDepth);
+    if (game.roomDepth === 1) {
+        return ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit');
+    }
+    return randomFrom(options);
+}
+
+function getRoomObjectiveText() {
+    if (!game.roomObjective) return '';
+    const language = currentLanguage === 'es-419' ? 'es-419' : 'en';
+    const status = game.roomObjective.isComplete() ? 'OK ' : '';
+    return `${status}${game.roomObjective.label[language]} - ${game.roomObjective.hint[language]}`;
+}
+
+function updateObjectiveProgress() {
+    if (!game.roomObjective || game.objectiveProgress.rewarded) return;
+    const exit = game.exitCell ? getCell(game.exitCell.q, game.exitCell.r) : null;
+    game.objectiveProgress.exitSeen = Boolean(exit?.revealed);
+    if (!game.roomObjective.isComplete()) return;
+
+    game.objectiveProgress.rewarded = true;
+    awardXp(XP_REWARDS.objective + game.roomDepth * 2, currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective');
+    addWarningPopup(game.player.q, game.player.r, currentLanguage === 'es-419' ? 'Objetivo completo' : 'Objective complete');
 }
 
 function generateCaveBlob(targetCount) {
@@ -976,6 +1186,21 @@ function randomFrom(items) {
     return items[Math.floor(seededRandom() * items.length)];
 }
 
+function placeTeachingEnemy() {
+    if (game.roomDepth !== 1 || game.roomSpawnCounts.enemies >= game.roomProfile.maxEnemies) {
+        return;
+    }
+    const candidates = game.cells.filter((cell) => (
+        cell.object === 'empty'
+        && hexDistance(cell.q, cell.r, game.player.q, game.player.r) >= 5
+        && hexDistance(cell.q, cell.r, game.exitCell.q, game.exitCell.r) > 2
+    ));
+    if (!candidates.length || seededRandom() > 0.72) return;
+    const cell = randomFrom(candidates);
+    cell.object = 'enemy';
+    game.roomSpawnCounts.enemies += 1;
+}
+
 function placeBats() {
     const profile = getRoomProfile();
     if (!profile.allowedEnemies.includes('bat') || getObjectUnlockLevel('bat') > getPlayerLevel()) {
@@ -1008,9 +1233,14 @@ function revealAroundPlayer() {
 function revealAround(q, r, radius) {
     game.cells.forEach((cell) => {
         if (hexDistance(q, r, cell.q, cell.r) <= radius) {
+            const wasRevealed = cell.revealed;
             cell.revealed = true;
+            if (!wasRevealed) {
+                maybeShowDiscoveryCallout(cell.object);
+            }
         }
     });
+    updateObjectiveProgress();
 }
 
 function getRelic(id) {
@@ -1043,6 +1273,7 @@ function revealExitHint() {
         exit.revealed = true;
         addLog('Golden Antennae', 'The exit glows through the mist.');
     }
+    updateObjectiveProgress();
 }
 
 function slowNearbyEnemies(q, r, radius = 2, durationMs = 1400) {
@@ -1054,10 +1285,48 @@ function slowNearbyEnemies(q, r, radius = 2, durationMs = 1400) {
         });
 }
 
+function maybeShowDiscoveryCallout(object) {
+    if (!object || !DISCOVERY_CALLOUT_OBJECTS.has(object) || game.mode !== 'dungeon') return;
+    const key = `discover:${object}`;
+    const seen = new Set(progression.tutorialsSeen || []);
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    progression.tutorialsSeen = [...seen];
+    saveProgression();
+
+    const name = getDisplayNameForObject(object);
+    const lesson = ENEMY_DEFS[object]?.lesson || OBJECTS[object]?.description || '';
+    const message = lesson
+        ? `${name}: ${lesson}`
+        : `${name}: ${currentLanguage === 'es-419' ? 'Nuevo descubrimiento.' : 'New discovery.'}`;
+    addLog(currentLanguage === 'es-419' ? 'Descubrimiento' : 'Discovery', message);
+    addWarningPopup(game.player.q, game.player.r, name);
+}
+
+function showTutorialCallout(id, title, message) {
+    const key = `tutorial:${id}`;
+    const seen = new Set(progression.tutorialsSeen || []);
+    if (seen.has(key)) return;
+    seen.add(key);
+    progression.tutorialsSeen = [...seen];
+    saveProgression();
+    addLog(title, message);
+    addWarningPopup(game.player.q, game.player.r, title);
+}
+
 function openCampChoice() {
     game.mode = 'camp';
     game.pendingNextRoomReason = 'exit';
+    game.nextRoomPreview = buildNextRoomPreview();
     game.message = 'Camp between rooms: spend supplies or continue to relic choice.';
+    showTutorialCallout(
+        'camp',
+        currentLanguage === 'es-419' ? 'Campamento' : 'Camp',
+        currentLanguage === 'es-419'
+            ? 'Gasta suministros entre salas para sanar, reparar escudo o preparar la próxima sala.'
+            : 'Spend supplies between rooms to heal, repair shield, or prepare for the next chamber.'
+    );
     renderCampChoices();
     campScreen.classList.add('visible');
     draw();
@@ -1065,12 +1334,40 @@ function openCampChoice() {
 
 function renderCampChoices() {
     const actions = getCampActions();
-    campActionsNode.innerHTML = actions.map((action) => (
+    const preview = game.nextRoomPreview
+        ? `<div class="camp-preview">
+            <strong>${currentLanguage === 'es-419' ? 'Próxima sala' : 'Next chamber'}</strong>
+            <span>${escapeHtml(game.nextRoomPreview)}</span>
+        </div>`
+        : '';
+    campActionsNode.innerHTML = preview + actions.map((action) => (
         `<button class="camp-action" type="button" data-camp-action="${action.id}" ${action.available ? '' : 'disabled'}>
             <strong>${action.name}</strong>
             <span>${action.description}</span>
         </button>`
     )).join('');
+}
+
+function buildNextRoomPreview() {
+    const nextDepth = Math.min(FINAL_ROOM, game.roomDepth + 1);
+    const currentDepth = game.roomDepth;
+    game.roomDepth = nextDepth;
+    const profile = getRoomProfile();
+    game.roomDepth = currentDepth;
+
+    if (nextDepth >= FINAL_ROOM) {
+        return currentLanguage === 'es-419'
+            ? 'Baile final: guarda salud y concentración.'
+            : 'Final dance: save health and focus.';
+    }
+
+    const enemies = profile.allowedEnemies.map(getDisplayNameForObject).slice(0, 3).join(', ');
+    const hazards = profile.maxHazards > 0
+        ? currentLanguage === 'es-419' ? 'con peligros de terreno' : 'with terrain hazards'
+        : currentLanguage === 'es-419' ? 'sin peligros fuertes' : 'light hazards';
+    return currentLanguage === 'es-419'
+        ? `Tamaño ${profile.targetCells} celdas, ${hazards}. Posibles enemigos: ${enemies || 'avispa'}.`
+        : `${profile.targetCells} cells, ${hazards}. Possible enemies: ${enemies || 'Wasp'}.`;
 }
 
 function getCampActions() {
@@ -1100,6 +1397,18 @@ function getCampActions() {
             name: 'Guard Comb',
             description: 'Cost: 1 pollen + 1 water. Start next room with +1 shield.',
             available: game.player.pollen > 0 && game.player.water > 0
+        },
+        {
+            id: 'scout',
+            name: 'Scout Smoke',
+            description: 'Cost: 1 pollen + 1 water. Reveal nearby enemies next room.',
+            available: game.roomDepth >= 2 && game.player.pollen > 0 && game.player.water > 0
+        },
+        {
+            id: 'rush',
+            name: 'Sugar Rush',
+            description: 'Cost: 1 honey. Start next room with full stamina.',
+            available: game.roomDepth >= 2 && game.player.honey > 0
         },
         {
             id: 'reroll',
@@ -1133,6 +1442,17 @@ function applyCampAction(id) {
         game.campBuffs.nextRoomShield = (game.campBuffs.nextRoomShield || 0) + 1;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'water', amount: -1 }]);
         addLog('Camp', 'Prepared wax guard for the next room.');
+    } else if (id === 'scout' && game.roomDepth >= 2 && game.player.pollen > 0 && game.player.water > 0) {
+        game.player.pollen -= 1;
+        game.player.water -= 1;
+        game.campBuffs.revealEnemies = true;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'water', amount: -1 }]);
+        addLog('Camp', 'Prepared smoke to mark nearby threats next room.');
+    } else if (id === 'rush' && game.roomDepth >= 2 && game.player.honey > 0) {
+        game.player.honey -= 1;
+        game.campBuffs.fullStamina = true;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'honey', amount: -1 }]);
+        addLog('Camp', 'Saved honey for a stamina burst next room.');
     } else if (id === 'reroll' && game.player.honey > 0) {
         game.player.honey -= 1;
         game.campRelicRerolls += 1;
@@ -1159,6 +1479,19 @@ function applyCampRoomBuffs() {
     if (game.campBuffs.revealRoute) {
         revealRouteToExit();
         addLog('Camp Map', 'The camp map revealed a path toward the exit.');
+    }
+    if (game.campBuffs.revealEnemies) {
+        game.cells
+            .filter((cell) => isEnemyObject(cell.object) && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 6)
+            .forEach((cell) => {
+                cell.revealed = true;
+            });
+        addLog('Camp Smoke', 'Smoke marks the closest enemy pressure.');
+    }
+    if (game.campBuffs.fullStamina) {
+        game.player.stamina = game.player.maxStamina;
+        addStatPopups(game.player.q, game.player.r, [{ stat: 'stamina', amount: game.player.maxStamina }]);
+        addLog('Sugar Rush', 'Started with full stamina.');
     }
     game.campBuffs = {};
 }
@@ -1226,6 +1559,14 @@ function renderRelics() {
 }
 
 function generateDanceRoom() {
+    startDanceMusic();
+    showTutorialCallout(
+        'dance',
+        currentLanguage === 'es-419' ? 'Baile final' : 'Final Dance',
+        currentLanguage === 'es-419'
+            ? 'Sigue los pasos antes de que se acabe el tiempo. Fallar baja el volumen y el multiplicador.'
+            : 'Follow the steps before time runs out. Misses duck the music and reduce the multiplier.'
+    );
     game.mode = 'dance';
     game.playerMotion = null;
     game.cells = [];
@@ -1258,12 +1599,18 @@ function generateDanceRoom() {
     game.dance = {
         completed: 0,
         misses: 0,
+        multiplier: 1,
+        pairScores: [],
+        moveQualitySum: 0,
+        moveQualityCount: 0,
+        lastQuality: '',
+        rewardApplied: false,
         move: null,
         active: null,
         holding: false,
         lastType: null
     };
-    addLog('Final Dance', 'Follow 12 arrows. Miss 3 and the path is lost.');
+    addLog('Final Dance', 'Follow 12 dance moves. Clean pairs increase the pollen and water multiplier up to x4.');
     spawnDanceMove();
     draw();
 }
@@ -1276,6 +1623,9 @@ function spawnDanceMove() {
     const type = randomFrom(options);
     game.dance.lastType = type;
     game.dance.holding = false;
+    game.dance.moveQualitySum = 0;
+    game.dance.moveQualityCount = 0;
+    game.dance.lastQuality = '';
 
     if (type === 'fastSequence') {
         const length = DANCE_SEQUENCE_MIN_LENGTH + Math.floor(seededRandom() * (DANCE_SEQUENCE_MAX_LENGTH - DANCE_SEQUENCE_MIN_LENGTH + 1));
@@ -1348,9 +1698,10 @@ function activateDanceStep() {
         q: next.q,
         r: next.r,
         directionIndex: next.directionIndex,
+        createdAt: performance.now(),
         expiresAt: move.type === 'hold'
             ? 0
-            : performance.now() + DANCE_ARROW_MS,
+            : performance.now() + DANCE_CLICK_WINDOW_MS,
         holdStartedAt: 0
     };
     game.dance.holding = false;
@@ -1557,6 +1908,9 @@ function draw() {
     if (game.mode === 'dance' && game.dance?.move?.type === 'hold') {
         drawDanceHoldForeground();
     }
+    if (game.mode === 'dance') {
+        drawDanceScoreOverlay(board);
+    }
     drawStatPopups();
     drawDangerOverlay(board);
     drawHoverTooltip();
@@ -1661,12 +2015,17 @@ function drawThreatPreview(cell, x, y, size) {
     if (!threat.imminent && !nearPlayer) return;
 
     const pulse = (Math.sin(performance.now() / 180) + 1) / 2;
+    const urgent = threat.remaining <= 320;
     ctx.save();
     drawHexPath(x, y, size - 8);
     ctx.strokeStyle = threat.imminent
-        ? `rgba(231, 111, 81, ${0.42 + pulse * 0.28})`
+        ? `rgba(231, 111, 81, ${urgent ? 0.76 + pulse * 0.22 : 0.42 + pulse * 0.28})`
         : 'rgba(231, 111, 81, 0.22)';
-    ctx.lineWidth = threat.imminent ? 4 : 2;
+    ctx.lineWidth = urgent ? 6 : threat.imminent ? 4 : 2;
+    if (urgent) {
+        ctx.fillStyle = `rgba(231, 38, 38, ${0.08 + pulse * 0.08})`;
+        ctx.fill();
+    }
     ctx.stroke();
     ctx.restore();
 }
@@ -1689,7 +2048,8 @@ function getThreatAtCell(q, r) {
             strongest = {
                 enemy: enemyCell.object,
                 imminent: strongest?.imminent || imminent,
-                damage: Math.max(strongest?.damage || 0, enemy.attack || 0)
+                damage: Math.max(strongest?.damage || 0, enemy.attack || 0),
+                remaining: Math.min(strongest?.remaining ?? Infinity, remaining)
             };
         });
     return strongest;
@@ -1844,12 +2204,14 @@ function drawDanceArrow() {
     const move = game.dance.move;
     const target = hexToPixel(active.q, active.r);
     const color = getDirectionColor(active.directionIndex);
-    const remaining = Math.max(0, active.expiresAt - performance.now());
+    const now = performance.now();
+    const remaining = Math.max(0, active.expiresAt - now);
     const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
     const holdProgress = active.holdStartedAt
-        ? Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration)
+        ? Math.min(1, (now - active.holdStartedAt) / holdDuration)
         : 0;
-    const timeoutProgress = move?.type === 'hold' ? holdProgress : remaining / DANCE_ARROW_MS;
+    const clickTiming = getDanceClickTiming(active, now);
+    const ringProgress = move?.type === 'hold' ? holdProgress : Math.min(1.18, clickTiming.elapsed / DANCE_PERFECT_START_MS);
     const angle = getDirectionAngle(active.directionIndex);
 
     drawDancePreviewArrows();
@@ -1883,15 +2245,18 @@ function drawDanceArrow() {
     }
 
     ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4;
+    const isPerfectWindow = move?.type !== 'hold' && clickTiming.quality === 'perfect';
+    ctx.strokeStyle = isPerfectWindow ? '#72ff9d' : color;
+    ctx.shadowColor = isPerfectWindow ? '#72ff9d' : color;
+    ctx.shadowBlur = isPerfectWindow ? 18 : 8;
+    ctx.lineWidth = isPerfectWindow ? 6 : 4;
     ctx.beginPath();
     ctx.arc(
         target.x,
         target.y,
-        target.size * 0.54,
-        -Math.PI / 2,
-        -Math.PI / 2 + Math.PI * 2 * (active.holdStartedAt ? holdProgress : timeoutProgress)
+        target.size * (move?.type === 'hold' ? 0.35 + holdProgress * 0.19 : 0.16 + ringProgress * 0.32),
+        0,
+        Math.PI * 2
     );
     ctx.stroke();
     ctx.restore();
@@ -1910,6 +2275,29 @@ function drawDanceArrow() {
     }
 
     drawDanceStepReference(target, move, active, color);
+}
+
+function getDanceClickTiming(active, now = performance.now()) {
+    const elapsed = Math.max(0, now - (active?.createdAt || now));
+    if (elapsed >= DANCE_PERFECT_START_MS && elapsed <= DANCE_CLICK_WINDOW_MS) {
+        return {
+            quality: 'perfect',
+            score: 1,
+            elapsed
+        };
+    }
+    if (elapsed < DANCE_PERFECT_START_MS) {
+        return {
+            quality: 'good',
+            score: 0.6 + 0.35 * (elapsed / DANCE_PERFECT_START_MS),
+            elapsed
+        };
+    }
+    return {
+        quality: 'miss',
+        score: 0,
+        elapsed
+    };
 }
 
 function drawDanceHoldForeground() {
@@ -1942,9 +2330,12 @@ function drawDanceHoldCountdown(target, holdDuration, holdProgress) {
     ctx.strokeText(`${seconds}s`, target.x, target.y + target.size * 0.02);
     ctx.fillText(`${seconds}s`, target.x, target.y + target.size * 0.02);
 
-    ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = '#fff2a7';
-    ctx.lineWidth = 3;
+    const perfect = holdProgress >= DANCE_HOLD_PERFECT_PROGRESS;
+    ctx.globalAlpha = 0.92;
+    ctx.strokeStyle = perfect ? '#72ff9d' : '#fff2a7';
+    ctx.shadowColor = perfect ? '#72ff9d' : '#fff2a7';
+    ctx.shadowBlur = perfect ? 18 : 8;
+    ctx.lineWidth = perfect ? 5 : 3;
     ctx.beginPath();
     ctx.arc(target.x, target.y, target.size * (0.35 + holdProgress * 0.18), 0, Math.PI * 2);
     ctx.stroke();
@@ -1990,10 +2381,11 @@ function drawDanceStepReference(target, move, active, color) {
 
 function getDanceStepLabel(move) {
     if (!move) return '';
-    if (move.type === 'hold') return 'HOLD BEE';
+    if (game.dance?.lastQuality) return game.dance.lastQuality.toUpperCase();
+    if (move.type === 'hold') return 'HOLD, RELEASE';
     if (move.type === 'multiClick') return `CLICK x${move.clicksLeft}`;
-    if (move.type === 'fastSequence') return 'CLICK FAST';
-    if (move.type === 'spreadSequence') return 'CLICK PATH';
+    if (move.type === 'fastSequence') return 'PULSE STEP';
+    if (move.type === 'spreadSequence') return 'PULSE PATH';
     return 'CLICK';
 }
 
@@ -2019,6 +2411,30 @@ function drawDancePreviewArrows() {
         ctx.fill();
         ctx.restore();
     });
+}
+
+function drawDanceScoreOverlay(board) {
+    if (!game.dance) return;
+    const text = `${game.dance.completed}/${DANCE_MOVES_REQUIRED}   x${game.dance.multiplier.toFixed(2)}   ${game.dance.misses} miss${game.dance.misses === 1 ? '' : 'es'}`;
+    const width = Math.min(board.width - 24, 300);
+    const height = 36;
+    const x = board.width / 2 - width / 2;
+    const y = board.height - height - 12;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(17, 22, 19, 0.68)';
+    ctx.strokeStyle = 'rgba(245, 200, 75, 0.56)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, 10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#fff2a7';
+    ctx.font = '900 15px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, board.width / 2, y + height / 2);
+    ctx.restore();
 }
 
 function getDirectionColor(index) {
@@ -2463,6 +2879,7 @@ function drawPlayer() {
     if (spritesReady) {
         drawSprite('player', x, y, size * 1.1);
         drawPlayerCooldownOverlay(x, y, size);
+        drawDangerBadge(x, y, size);
         return;
     }
 
@@ -2494,6 +2911,45 @@ function drawPlayer() {
     ctx.fill();
     ctx.restore();
     drawPlayerCooldownOverlay(x, y, size);
+    drawDangerBadge(x, y, size);
+}
+
+function drawDangerBadge(x, y, size) {
+    if (game.mode !== 'dungeon' || game.ended) return;
+    const threat = getThreatAtCell(game.player.q, game.player.r);
+    const nearbyThreat = game.cells.some((cell) => (
+        isEnemyObject(cell.object)
+        && cell.revealed
+        && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 2
+    ));
+    const lowHealth = game.player.health <= 2;
+    const state = threat?.imminent || lowHealth ? 'danger' : nearbyThreat ? 'watch' : 'safe';
+    const colors = {
+        safe: '#43aa8b',
+        watch: '#f5c84b',
+        danger: '#e76f51'
+    };
+    const symbols = {
+        safe: 'OK',
+        watch: '!',
+        danger: '!!'
+    };
+    const pulse = (Math.sin(performance.now() / 120) + 1) / 2;
+    ctx.save();
+    ctx.translate(x + size * 0.38, y - size * 0.42);
+    ctx.fillStyle = 'rgba(17, 22, 19, 0.92)';
+    ctx.strokeStyle = colors[state];
+    ctx.lineWidth = state === 'danger' ? 4 + pulse * 2 : 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = colors[state];
+    ctx.font = `900 ${Math.max(10, size * 0.18)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(symbols[state], 0, 1);
+    ctx.restore();
 }
 
 function drawPlayerSelectionRing(x, y, size) {
@@ -2870,6 +3326,7 @@ function moveTo(cell) {
     cell.visited = true;
 
     if (targetObject === 'exit') {
+        updateObjectiveProgress();
         awardXp(XP_REWARDS.room + game.roomDepth * 6, currentLanguage === 'es-419' ? 'Sala completada' : 'Room complete');
         game.roomStack.push(createRoomSnapshot());
         openCampChoice();
@@ -2905,12 +3362,17 @@ function moveTo(cell) {
     revealAroundPlayer();
     if (interaction.consume) {
         if (isEnemyObject(targetObject)) {
+            game.objectiveProgress.kills += 1;
             awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
         } else if (!['empty', 'entry', 'exit', 'finalExit', 'vine', 'stickyTrap'].includes(targetObject)) {
+            if (['pollen', 'water', 'honeyDrop', 'nectarCache', 'cleanWater'].includes(targetObject)) {
+                game.objectiveProgress.supplies += 1;
+            }
             awardXp(getItemXp(targetObject), OBJECTS[targetObject]?.name, { silent: true });
         }
         cell.object = 'empty';
     }
+    updateObjectiveProgress();
     moveBats();
     moveMites();
     recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
@@ -2980,7 +3442,11 @@ function openWaxDoor(cell) {
 }
 
 function handleDanceClick(cell) {
-    return;
+    if (cell && isActiveDanceCell(cell)) {
+        startDanceHold(cell);
+    } else if (game.dance?.active) {
+        registerDanceMiss('Wrong cell.');
+    }
 }
 
 function isPlayerCell(cell) {
@@ -2993,6 +3459,7 @@ function isActiveDanceCell(cell) {
 }
 
 function startDanceHold(cell) {
+    startDanceMusic();
     const active = game.dance?.active;
     const move = game.dance?.move;
     if (!active) return;
@@ -3008,16 +3475,24 @@ function startDanceHold(cell) {
         return;
     }
 
+    const timing = getDanceClickTiming(active);
+    if (timing.quality === 'miss') {
+        registerDanceMiss('Late step.');
+        return;
+    }
+
     if (move.type === 'multiClick') {
+        recordDanceQuality(timing.score, timing.quality);
         move.clicksLeft -= 1;
-        active.expiresAt = performance.now() + DANCE_ARROW_MS;
+        active.createdAt = performance.now();
+        active.expiresAt = active.createdAt + DANCE_CLICK_WINDOW_MS;
         if (move.clicksLeft <= 0) {
-            completeDanceStep();
+            completeDanceStep(0, '', false);
         }
         return;
     }
 
-    completeDanceStep();
+    completeDanceStep(timing.score, timing.quality);
 }
 
 function endDanceHold() {
@@ -3026,10 +3501,14 @@ function endDanceHold() {
     if (!active?.holdStartedAt || game.ended) return;
     if (move?.type !== 'hold') return;
 
-    registerDanceMiss('Released too early.');
+    const holdDuration = move.durationMs || DANCE_HOLD_MIN_MS;
+    const progress = Math.min(1, (performance.now() - active.holdStartedAt) / holdDuration);
+    const perfect = progress >= DANCE_HOLD_PERFECT_PROGRESS;
+    const score = perfect ? 1 : Math.max(0.58, progress * 0.92);
+    completeDanceStep(score, perfect ? 'perfect' : 'good');
 }
 
-function completeDanceStep() {
+function completeDanceStep(score = 1, quality = 'good', recordQuality = true) {
     const active = game.dance?.active;
     if (!active) return;
 
@@ -3045,6 +3524,9 @@ function completeDanceStep() {
     }
     cell.visited = true;
     game.dance.move.index += 1;
+    if (recordQuality) {
+        recordDanceQuality(score, quality);
+    }
     awardXp(XP_REWARDS.danceStep, currentLanguage === 'es-419' ? 'Paso de baile' : 'Dance step', { silent: true });
 
     if (game.dance.move.index >= game.dance.move.steps.length) {
@@ -3055,10 +3537,30 @@ function completeDanceStep() {
     activateDanceStep();
 }
 
+function recordDanceQuality(score, quality) {
+    if (!game.dance) return;
+    const boundedScore = Math.max(0, Math.min(1, score));
+    game.dance.moveQualitySum += boundedScore;
+    game.dance.moveQualityCount += 1;
+    game.dance.lastQuality = quality;
+    addWarningPopup(game.player.q, game.player.r, quality === 'perfect' ? 'Perfect' : 'Good');
+}
+
 function completeDanceMove() {
     game.dance.completed += 1;
+    const moveScore = game.dance.moveQualityCount
+        ? game.dance.moveQualitySum / game.dance.moveQualityCount
+        : 1;
+    game.dance.pairScores.push(moveScore);
+    if (game.dance.pairScores.length >= 2) {
+        const pairScore = game.dance.pairScores.slice(-2).reduce((sum, value) => sum + value, 0) / 2;
+        const increase = 0.5 * pairScore;
+        game.dance.multiplier = Math.min(4, game.dance.multiplier + increase);
+        game.dance.pairScores = [];
+        addWarningPopup(game.player.q, game.player.r, `x${game.dance.multiplier.toFixed(2)}`);
+    }
     awardXp(XP_REWARDS.danceMove, currentLanguage === 'es-419' ? 'Movimiento de baile' : 'Dance move', { silent: true });
-    game.message = `Dance move ${game.dance.completed}/${DANCE_MOVES_REQUIRED}: ${game.dance.move.label}.`;
+    game.message = `Dance move ${game.dance.completed}/${DANCE_MOVES_REQUIRED}: ${game.dance.move.label}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
     addLog('Dance Move', game.message);
 
     if (game.dance.completed >= DANCE_MOVES_REQUIRED) {
@@ -3076,7 +3578,7 @@ function updateDanceArrow() {
     const move = game.dance.move;
     const holdDuration = move?.durationMs || DANCE_HOLD_MIN_MS;
     if (move?.type === 'hold' && active.holdStartedAt && performance.now() - active.holdStartedAt >= holdDuration) {
-        completeDanceStep();
+        completeDanceStep(1, 'perfect');
         return;
     }
 
@@ -3114,14 +3616,15 @@ function registerDanceMiss(reason) {
     if (!game.dance || game.ended) return;
 
     game.dance.misses += 1;
-    game.message = `${reason} Miss ${game.dance.misses}/${DANCE_MAX_MISSES}.`;
+    game.dance.pairScores = [];
+    game.dance.moveQualitySum = 0;
+    game.dance.moveQualityCount = 0;
+    game.dance.lastQuality = 'miss';
+    game.dance.multiplier = Math.max(1, game.dance.multiplier - 0.5);
+    duckDanceMusic();
+    game.message = `${reason} Miss ${game.dance.misses}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
     addLog('Dance Miss', game.message);
-
-    if (game.dance.misses >= DANCE_MAX_MISSES) {
-        endRun('dance-failed');
-        return;
-    }
-
+    addWarningPopup(game.player.q, game.player.r, `x${game.dance.multiplier.toFixed(2)}`);
     spawnDanceMove();
 }
 
@@ -3175,6 +3678,7 @@ function revealRouteToExit() {
     }
     const exit = getCell(game.exitCell.q, game.exitCell.r);
     if (exit) exit.revealed = true;
+    updateObjectiveProgress();
 }
 
 function resolveInteraction(object, cell) {
@@ -3410,6 +3914,7 @@ function applyDamage(amount, q, r, source) {
 
     if (healthDamage > 0) {
         game.player.health = Math.max(0, game.player.health - healthDamage);
+        game.objectiveProgress.tookDamage = true;
         deltas.push({ stat: 'health', amount: -healthDamage });
         game.lastDamageSource = source;
         game.deathTip = getDeathTip(source);
@@ -3455,13 +3960,15 @@ function hasTimedAura(object) {
 function endRun(reason = 'final-exit') {
     if (game.ended) return;
     game.ended = true;
+    applyDanceRewards(reason);
+    stopAllMusic();
     updateProgression();
     const survivedMs = performance.now() - game.runStartedAt;
     const seconds = Math.floor(survivedMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     const danceComplete = game.dance
-        ? Math.round(game.dance.completed / DANCE_MOVES_REQUIRED * 100)
+        ? getDanceFoodPercentage()
         : 100;
 
     game.message = reason === 'death'
@@ -3476,6 +3983,7 @@ function endRun(reason = 'final-exit') {
         [t('stats', 'pollen')[0], game.runStats.pollen],
         [t('stats', 'water')[0], game.runStats.water],
         [t('ui', 'honey'), game.runStats.honey],
+        ...(game.dance ? [[currentLanguage === 'es-419' ? 'Multiplicador de baile' : 'Dance Multiplier', `x${game.dance.multiplier.toFixed(1)}`]] : []),
         [currentLanguage === 'es-419' ? 'XP ganada' : 'XP Gained', game.runStats.xp],
         [currentLanguage === 'es-419' ? 'Nivel de abeja' : 'Bee Level', progression.level],
         [currentLanguage === 'es-419' ? 'Tiempo sobrevivido' : 'Time Survived', `${minutes}:${String(remainingSeconds).padStart(2, '0')}`],
@@ -3569,6 +4077,7 @@ function applyReplaySnapshot(snapshot) {
 
 function startReplay() {
     if (!game.replayEvents.length) return;
+    stopAllMusic();
     const events = game.replayEvents.map((event) => ({
         ...event,
         snapshot: JSON.parse(JSON.stringify(event.snapshot))
@@ -3716,7 +4225,7 @@ function renderStats() {
         [statsText.shield[0], game.player.upgrades, statsText.shield[1]],
         [statsText.doubleSting[0], game.player.stingCharges, statsText.doubleSting[1]],
         [t('ui', 'stamina'), `${game.player.stamina}/${game.player.maxStamina}`, t('ui', 'staminaHint')],
-        [game.mode === 'dance' ? statsText.dance[0] : statsText.room[0], game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, game.mode === 'dance' ? `${DANCE_MAX_MISSES - (game.dance?.misses || 0)} ${statsText.dance[1]}` : statsText.room[1]],
+        [game.mode === 'dance' ? statsText.dance[0] : statsText.room[0], game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, game.mode === 'dance' ? `${game.dance?.misses || 0} misses | x${(game.dance?.multiplier || 1).toFixed(1)}` : statsText.room[1]],
         [statsText.steps[0], game.player.steps, statsText.steps[1]]
     ];
 
@@ -3728,6 +4237,10 @@ function renderStats() {
 }
 
 function renderStatsHud(statsText) {
+    if (game.mode === 'dance') {
+        hudRenderer.renderStats([]);
+        return;
+    }
     const items = [
         { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
         { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, sprite: 'pollen', fallback: 'P', color: '#f7d45c' },
@@ -3737,12 +4250,17 @@ function renderStatsHud(statsText) {
         { id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' },
         { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, icon: 'bolt', color: '#f5c84b' },
         { id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, fallback: 'LV', color: '#fff2a7' },
+        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' },
         { id: 'room', value: game.mode === 'dance' ? `${game.dance?.completed || 0}/${DANCE_MOVES_REQUIRED}` : game.roomDepth, title: game.mode === 'dance' ? `${statsText.dance[0]}: ${DANCE_MAX_MISSES - (game.dance?.misses || 0)} ${statsText.dance[1]}` : `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' }
     ];
     hudRenderer.renderStats(items);
 }
 
 function renderTimerHud() {
+    if (game.mode === 'dance') {
+        hudRenderer.renderTimers([]);
+        return;
+    }
     const items = [];
     const attackRemaining = getAttackCooldownRemaining();
     if (attackRemaining > 0) {
@@ -3815,6 +4333,30 @@ function renderLog() {
         eventToastNode.innerHTML = latest
             ? `<strong>${escapeHtml(latest.title)}</strong><span>${escapeHtml(latest.message)}</span>`
             : '';
+    }
+}
+
+function getDanceFoodPercentage() {
+    const misses = game.dance?.misses || 0;
+    return Math.max(0, Math.min(100, Math.round(100 - misses * 8)));
+}
+
+function applyDanceRewards(reason) {
+    if (!game.dance || game.dance.rewardApplied || reason === 'death') return;
+    const multiplier = Math.min(4, Math.max(1, game.dance.multiplier || 1));
+    const pollenBonus = Math.max(0, Math.round(game.runStats.pollen * (multiplier - 1)));
+    const waterBonus = Math.max(0, Math.round(game.runStats.water * (multiplier - 1)));
+    if (pollenBonus > 0) {
+        game.runStats.pollen += pollenBonus;
+        game.player.pollen += pollenBonus;
+    }
+    if (waterBonus > 0) {
+        game.runStats.water += waterBonus;
+        game.player.water += waterBonus;
+    }
+    game.dance.rewardApplied = true;
+    if (pollenBonus || waterBonus) {
+        addLog('Dance Reward', `Food dance multiplied rewards: +${pollenBonus} pollen, +${waterBonus} water.`);
     }
 }
 
@@ -3958,7 +4500,7 @@ canvas.addEventListener('pointerdown', (event) => {
 
     if (game.mode !== 'dance' || game.ended) return;
 
-    if (cell && (game.dance?.move?.type === 'hold' || isActiveDanceCell(cell))) {
+    if (cell) {
         startDanceHold(cell);
     }
 });
