@@ -414,17 +414,35 @@ function createDanceSystem({ game, config = {}, helpers }) {
 
     function registerMiss(reason) {
         if (!game.dance || game.ended) return;
+        const active = game.dance.active;
+        const move = game.dance.move;
         game.dance.misses += 1;
-        game.dance.pairScores = [];
-        game.dance.moveQualitySum = 0;
-        game.dance.moveQualityCount = 0;
         game.dance.lastQuality = 'miss';
+        game.dance.moveQualitySum += 0;
+        game.dance.moveQualityCount += 1;
         game.dance.multiplier = Math.max(1, game.dance.multiplier - 0.5);
         duckMusic();
         game.message = `${reason} Miss ${game.dance.misses}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
         helpers.addLog('Dance Miss', game.message);
         addFeedback('Miss', 'miss');
-        spawnMove();
+
+        if (!active || !move) {
+            spawnMove();
+            return;
+        }
+
+        if (move.type === 'multiClick') {
+            move.clicksLeft -= 1;
+            if (move.clicksLeft <= 0) {
+                completeStep(0, '', false);
+                return;
+            }
+            active.createdAt = performance.now();
+            active.expiresAt = active.createdAt + getTimingWindow(move).windowMs;
+            return;
+        }
+
+        completeStep(0, '', false);
     }
 
     function getTimingWindow(move = game.dance?.move) {
