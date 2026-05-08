@@ -8,13 +8,33 @@
     <style>
         :root {
             color-scheme: dark;
-            --bg: #18201c;
-            --panel: #232c27;
-            --line: #4f6257;
+            --bg: #101813;
+            --panel: #263026;
+            --line: #7b6741;
             --text: #f3f0df;
-            --muted: #b8c2aa;
+            --muted: #6f5032;
             --accent: #f5c84b;
             --danger: #e76f51;
+            --forest-deep: #0d1711;
+            --forest: #16251b;
+            --forest-soft: #26352a;
+            --wood: #7c5128;
+            --wood-dark: #2f1f12;
+            --wood-edge: #b47a38;
+            --parchment: #efd7a6;
+            --parchment-ink: #1c1209;
+            --parchment-edge: #9f6b34;
+            --honey: #f0bf3e;
+            --art-board-bg: url("assets/ui/forest-board-bg.webp");
+            --art-board-frame: url("assets/ui/alpha/wood-frame.png");
+            --art-leaf-corners: url("assets/ui/alpha/leaf-corners.png");
+            --art-hud-pill: url("assets/ui/alpha/hud-pill.png");
+            --art-hud-icon-backing: url("assets/ui/alpha/hud-icon-backing.png");
+            --art-log-button: url("assets/ui/alpha/log-button.png");
+            --art-objective-panel: url("assets/ui/alpha/objective-panel.png");
+            --art-objective-ribbon: url("assets/ui/alpha/objective-ribbon.png");
+            --art-modal-panel: url("assets/ui/alpha/modal-panel.png");
+            --art-market-branch: url("assets/ui/alpha/market-branch.png");
         }
 
         * {
@@ -29,8 +49,9 @@
             overflow: hidden;
             display: grid;
             background:
-                radial-gradient(circle at 20% 15%, rgba(245, 200, 75, 0.18), transparent 28rem),
-                linear-gradient(135deg, #111613, var(--bg));
+                radial-gradient(circle at 16% 18%, rgba(208, 154, 59, 0.18), transparent 24rem),
+                radial-gradient(circle at 82% 76%, rgba(87, 113, 64, 0.18), transparent 28rem),
+                linear-gradient(135deg, #080d0a, var(--bg));
             color: var(--text);
             font-family: Arial, Helvetica, sans-serif;
         }
@@ -59,26 +80,84 @@
         #logToggle {
             display: block;
             position: fixed;
-            top: 10px;
-            right: 10px;
+            top: 22px;
+            right: 28px;
             z-index: 4;
-            min-width: 44px;
-            min-height: 44px;
-            padding: 0 12px;
+            min-width: 118px;
+            min-height: 56px;
+            padding: 0 18px;
+            border: 3px solid var(--parchment-edge);
+            border-radius: 14px;
+            background:
+                var(--art-log-button),
+                radial-gradient(circle at 88% 10%, rgba(255, 247, 186, 0.75), transparent 20px),
+                linear-gradient(180deg, #f6d983, var(--parchment));
+            background-size: 100% 100%, auto, auto;
+            color: var(--parchment-ink);
+            box-shadow:
+                inset 0 0 0 2px rgba(116, 67, 28, 0.22),
+                0 6px 0 rgba(68, 38, 18, 0.72),
+                0 14px 22px rgba(0, 0, 0, 0.3);
+            font-weight: 900;
+            letter-spacing: 0;
         }
 
         .board-wrap {
             position: relative;
             min-width: 0;
             min-height: 0;
-            border: 1px solid rgba(243, 240, 223, 0.16);
-            background: #16211c;
+            border: 8px solid var(--wood-dark);
+            border-radius: 22px;
+            background:
+                var(--art-board-bg),
+                radial-gradient(circle at 20% 20%, rgba(244, 198, 86, 0.08), transparent 22rem),
+                linear-gradient(135deg, var(--forest-deep), var(--forest));
+            background-size: cover, auto, auto;
             overflow: hidden;
+            box-shadow:
+                inset 0 0 0 3px rgba(201, 130, 48, 0.32),
+                inset 0 0 38px rgba(0, 0, 0, 0.84),
+                0 18px 46px rgba(0, 0, 0, 0.42);
+            isolation: isolate;
+        }
+
+        .board-wrap::before,
+        .board-wrap::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .board-wrap::before {
+            z-index: 2;
+            background:
+                var(--art-leaf-corners),
+                radial-gradient(circle at 8% 18%, rgba(245, 200, 75, 0.08) 0 3px, transparent 4px),
+                radial-gradient(circle at 82% 32%, rgba(245, 200, 75, 0.07) 0 2px, transparent 3px),
+                radial-gradient(circle at 72% 84%, rgba(245, 200, 75, 0.07) 0 2px, transparent 4px),
+                radial-gradient(circle at 18% 76%, rgba(103, 134, 75, 0.18), transparent 180px),
+                linear-gradient(90deg, rgba(255, 218, 122, 0.04) 0 1px, transparent 1px),
+                linear-gradient(0deg, rgba(255, 218, 122, 0.025) 0 1px, transparent 1px);
+            background-size: cover, auto, auto, auto, auto, 72px 72px, 88px 88px;
+            mix-blend-mode: screen;
+            opacity: 0.82;
+        }
+
+        .board-wrap::after {
+            z-index: 3;
+            border-radius: 13px;
+            background-image: var(--art-board-frame);
+            background-size: 100% 100%;
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 210, 113, 0.22),
+                inset 0 0 0 10px rgba(69, 42, 19, 0.54),
+                inset 0 0 42px rgba(0, 0, 0, 0.52);
         }
 
         .hud-cluster {
             position: absolute;
-            z-index: 2;
+            z-index: 4;
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
@@ -87,27 +166,42 @@
         }
 
         .hud-cluster.stats-hud {
-            top: 10px;
-            left: 10px;
+            top: 24px;
+            left: 42px;
+            padding: 6px 10px;
+            border-radius: 20px;
+            background:
+                linear-gradient(180deg, rgba(67, 45, 25, 0.92), rgba(31, 22, 15, 0.92));
+            box-shadow:
+                inset 0 0 0 2px rgba(177, 111, 48, 0.35),
+                0 10px 18px rgba(0, 0, 0, 0.32);
         }
 
         .hud-cluster.timer-hud {
-            top: 10px;
-            right: 76px;
+            top: 92px;
+            right: 34px;
             justify-content: flex-end;
         }
 
         .event-toast {
             position: absolute;
-            left: 12px;
-            bottom: 12px;
-            z-index: 2;
-            max-width: min(430px, calc(100% - 24px));
-            padding: 10px 12px;
-            border-left: 3px solid var(--accent);
-            background: rgba(17, 22, 19, 0.84);
-            color: var(--text);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+            left: 32px;
+            bottom: 28px;
+            z-index: 4;
+            max-width: min(500px, calc(100% - 64px));
+            min-width: min(440px, calc(100% - 64px));
+            padding: 34px 28px 22px;
+            border: 3px dashed rgba(117, 73, 31, 0.66);
+            border-radius: 18px;
+            background:
+                var(--art-objective-panel),
+                radial-gradient(circle at 85% 85%, rgba(255, 244, 188, 0.38), transparent 56px),
+                linear-gradient(180deg, #f4dfb6, var(--parchment));
+            background-size: 100% 100%, auto, auto;
+            color: var(--parchment-ink);
+            box-shadow:
+                inset 0 0 0 4px rgba(255, 245, 206, 0.36),
+                0 16px 28px rgba(0, 0, 0, 0.38);
             opacity: 0;
             transform: translateY(10px);
             transition: opacity 180ms ease, transform 180ms ease;
@@ -125,31 +219,51 @@
         }
 
         .event-toast strong {
-            color: var(--accent);
-            font-size: 12px;
+            position: absolute;
+            top: -19px;
+            left: 22px;
+            display: inline-block;
+            padding: 8px 18px 7px;
+            border: 2px solid rgba(91, 49, 24, 0.72);
+            border-radius: 9px;
+            background: linear-gradient(180deg, #d37b44, #a94f2d);
+            background-image: var(--art-objective-ribbon), linear-gradient(180deg, #d37b44, #a94f2d);
+            background-size: 100% 100%, auto;
+            color: #fff2c7;
+            font-size: 18px;
             line-height: 1.2;
             text-transform: uppercase;
+            text-shadow: 0 2px 0 rgba(70, 35, 18, 0.58);
+            box-shadow: 0 5px 0 rgba(84, 44, 20, 0.52);
         }
 
         .event-toast span {
-            margin-top: 3px;
-            font-size: 13px;
-            line-height: 1.35;
+            margin-top: 0;
+            font-size: 20px;
+            line-height: 1.42;
+            font-weight: 800;
         }
 
         .hud-pill {
-            min-width: 68px;
-            height: 52px;
+            min-width: 86px;
+            height: 58px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 7px;
-            padding: 5px 9px;
-            border: 2px solid rgba(243, 240, 223, 0.18);
-            background: rgba(17, 22, 19, 0.8);
+            gap: 10px;
+            padding: 6px 13px;
+            border: 3px solid var(--parchment-edge);
+            border-radius: 22px;
+            background:
+                var(--art-hud-pill),
+                linear-gradient(180deg, #f2d27b, #d69e45);
+            background-size: 100% 100%, auto;
             backdrop-filter: blur(8px);
-            color: var(--text);
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+            color: var(--parchment-ink);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 241, 178, 0.44),
+                0 5px 0 rgba(82, 48, 22, 0.7),
+                0 11px 18px rgba(0, 0, 0, 0.28);
             position: relative;
         }
 
@@ -170,9 +284,10 @@
             width: max-content;
             max-width: 260px;
             padding: 9px 11px;
-            border: 2px solid var(--accent);
-            background: rgba(17, 22, 19, 0.96);
-            color: var(--text);
+            border: 2px solid var(--parchment-edge);
+            border-radius: 10px;
+            background: var(--parchment);
+            color: var(--parchment-ink);
             font-size: 12px;
             font-weight: 700;
             line-height: 1.35;
@@ -187,14 +302,16 @@
         }
 
         .hud-icon {
-            width: 36px;
-            height: 36px;
-            flex: 0 0 36px;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
             display: grid;
             place-items: center;
             border-radius: 50%;
-            background: rgba(243, 240, 223, 0.1);
-            border: 1px solid rgba(243, 240, 223, 0.18);
+            background: rgba(255, 247, 205, 0.56);
+            background-image: var(--art-hud-icon-backing);
+            background-size: 100% 100%;
+            border: 2px solid rgba(87, 48, 21, 0.38);
             overflow: hidden;
             color: #111613;
             font-size: 12px;
@@ -210,11 +327,12 @@
 
         .hud-value {
             min-width: 14px;
-            color: var(--text);
-            font-size: 19px;
+            color: #fff1b8;
+            font-size: 22px;
             font-weight: 900;
             line-height: 1;
             text-align: right;
+            text-shadow: 0 2px 0 rgba(0, 0, 0, 0.72);
         }
 
         .hud-pill.pulse .hud-icon {
@@ -284,6 +402,8 @@
             width: 100%;
             height: 100%;
             display: block;
+            position: relative;
+            z-index: 1;
         }
 
         .side-panel {
@@ -325,9 +445,17 @@
 
         h2 {
             font-size: 14px;
-            color: var(--accent);
+            color: #ffe07a;
             text-transform: uppercase;
             letter-spacing: 0;
+            text-shadow: 0 2px 0 rgba(0, 0, 0, 0.32);
+        }
+
+        .start-panel h2,
+        .end-panel h2,
+        .relic-panel h2 {
+            color: #6d3318;
+            text-shadow: none;
         }
 
         .stats {
@@ -472,8 +600,8 @@
             width: 100%;
             min-height: 38px;
             border: 1px solid rgba(243, 240, 223, 0.18);
-            background: rgba(0, 0, 0, 0.2);
-            color: var(--text);
+            background: rgba(56, 33, 16, 0.22);
+            color: #1c1209;
             padding: 8px 10px;
             font: inherit;
         }
@@ -531,11 +659,19 @@
         .end-panel,
         .start-panel {
             width: min(720px, 100%);
-            border: 1px solid rgba(243, 240, 223, 0.18);
-            background: #202a24;
-            padding: 24px;
+            border: 3px solid var(--parchment-edge);
+            border-radius: 22px;
+            background:
+                var(--art-modal-panel),
+                linear-gradient(180deg, #f4dfb6, var(--parchment));
+            background-size: 100% 100%, auto;
+            color: var(--parchment-ink);
+            padding: 34px;
             display: grid;
             gap: 18px;
+            box-shadow:
+                inset 0 0 0 4px rgba(255, 245, 206, 0.28),
+                0 24px 54px rgba(0, 0, 0, 0.48);
         }
 
         .relic-panel {
@@ -580,9 +716,13 @@
             display: grid;
             gap: 5px;
             padding: 12px;
-            border: 1px solid rgba(245, 200, 75, 0.38);
-            background: rgba(245, 200, 75, 0.08);
-            color: var(--text);
+            border: 1px solid rgba(117, 73, 31, 0.42);
+            border-radius: 14px;
+            background:
+                var(--art-market-branch),
+                rgba(117, 73, 31, 0.14);
+            background-size: 100% 100%, auto;
+            color: var(--parchment-ink);
         }
 
         .camp-preview strong {
@@ -592,7 +732,7 @@
         }
 
         .camp-preview span {
-            color: var(--muted);
+            color: var(--parchment-ink);
             line-height: 1.35;
         }
 
@@ -749,7 +889,8 @@
                 width: 100vw;
                 height: 100vh;
                 height: 100dvh;
-                border: 0;
+                border-width: 4px;
+                border-radius: 14px;
             }
 
             .hud-cluster {
@@ -757,10 +898,23 @@
                 gap: 5px;
             }
 
+            .hud-cluster.stats-hud {
+                top: 12px;
+                left: 12px;
+                padding: 4px 6px;
+            }
+
+            .hud-cluster.timer-hud {
+                top: 72px;
+                right: 12px;
+            }
+
             .hud-pill {
                 min-width: 54px;
                 height: 42px;
                 padding: 3px 6px;
+                border-width: 2px;
+                border-radius: 16px;
             }
 
             .hud-icon {
@@ -811,7 +965,28 @@
             }
 
             #logToggle {
+                top: 10px;
                 right: 10px;
+                min-width: 78px;
+                min-height: 44px;
+                padding: 0 10px;
+                border-width: 2px;
+            }
+
+            .event-toast {
+                left: 14px;
+                bottom: 14px;
+                min-width: 0;
+                max-width: calc(100vw - 28px);
+                padding: 28px 18px 16px;
+            }
+
+            .event-toast strong {
+                font-size: 14px;
+            }
+
+            .event-toast span {
+                font-size: 16px;
             }
 
             .start-panel,

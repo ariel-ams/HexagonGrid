@@ -63,7 +63,9 @@ function createAudioSystem(config = {}) {
             return;
         }
         const seek = () => {
-            if (!Number.isFinite(track.audio.duration) || track.audio.duration > cue) {
+            const canSeek = !Number.isFinite(track.audio.duration) || track.audio.duration > cue;
+            const farFromCue = Math.abs(track.audio.currentTime - cue) > 1.5;
+            if (canSeek && farFromCue) {
                 track.audio.currentTime = cue;
             }
         };

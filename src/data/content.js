@@ -94,7 +94,7 @@ const I18N = {
         },
         objects: {
             empty: ['Open Cell', 'Move here safely.'],
-            npc: ['Trade Beetle', 'Reduces sting cooldown.'],
+            npc: ['Trade Beetle', 'Opens a market with three supply trades.'],
             upgrade: ['Shield Upgrade', 'Improves your scout.'],
             stingUpgrade: ['Double Sting', 'One-use stronger sting.'],
             pollen: ['Pollen', 'Adds pollen.'],
@@ -132,12 +132,13 @@ const I18N = {
             honeyLeech: ['Honey Leech', 'Stationary drain. Chews through shield first, then health.', 'Shield is not permanent safety near this enemy.']
         },
         relics: {
-            waxArmor: ['Wax Armor', 'Gain +4 shield at the start of each room.'],
-            sharpStinger: ['Sharp Stinger', 'The first sting in each room has no cooldown.'],
-            goldenAntennae: ['Golden Antennae', 'The exit direction is revealed through the mist.'],
-            royalJelly: ['Royal Jelly', 'Every 3 pollen collected heals +3 health.'],
-            mistpiercerWings: ['Mistpiercer Wings', 'Reveal radius increases from 2 to 3.'],
-            storedVenom: ['Stored Venom', 'Start each room with +1 Double Sting.']
+            guardComb: ['Guard Comb', 'Gain +1 shield at the start of each room.'],
+            pathCarver: ['Path Carver', 'The first wax door opened each room costs no pollen or sting.'],
+            battleRhythm: ['Battle Rhythm', 'Defeating an enemy reduces the current sting cooldown by 0.2s.'],
+            foragerPouch: ['Forager Pouch', 'The first pollen and first water collected each room grant +1 extra.'],
+            royalJelly: ['Royal Jelly', 'Every 3 pollen collected heals +2 health.'],
+            scoutLantern: ['Scout Lantern', 'Reveal radius increases by 1 and exit gates start revealed.'],
+            venomPouch: ['Venom Pouch', 'Start each room with +1 Double Sting.']
         }
     },
     'es-419': {
@@ -233,7 +234,7 @@ const I18N = {
         },
         objects: {
             empty: ['Celda abierta', 'Puedes moverte aquí sin peligro.'],
-            npc: ['Escarabajo comerciante', 'Reduce la recarga del aguijón.'],
+            npc: ['Escarabajo comerciante', 'Abre un mercado con tres intercambios de suministros.'],
             upgrade: ['Mejora de escudo', 'Mejora a tu exploradora.'],
             stingUpgrade: ['Aguijón doble', 'Un aguijón más fuerte de un solo uso.'],
             pollen: ['Polen', 'Suma polen.'],
@@ -271,73 +272,83 @@ const I18N = {
             honeyLeech: ['Sanguijuela de miel', 'Drenaje fijo. Come escudo primero y luego salud.', 'El escudo no es seguridad permanente cerca de este enemigo.']
         },
         relics: {
-            waxArmor: ['Armadura de cera', 'Gana +4 escudo al inicio de cada sala.'],
-            sharpStinger: ['Aguijón afilado', 'El primer aguijón de cada sala no tiene recarga.'],
-            goldenAntennae: ['Antenas doradas', 'La dirección de la salida se revela a través de la niebla.'],
-            royalJelly: ['Jalea real', 'Cada 3 polen recogidos cura +3 salud.'],
-            mistpiercerWings: ['Alas antiniebla', 'El radio de revelado aumenta de 2 a 3.'],
-            storedVenom: ['Veneno guardado', 'Empieza cada sala con +1 Aguijón doble.']
+            guardComb: ['Panal guardián', 'Gana +1 escudo al inicio de cada sala.'],
+            pathCarver: ['Tallador de rutas', 'La primera puerta de cera de cada sala no cuesta polen ni aguijón.'],
+            battleRhythm: ['Ritmo de combate', 'Derrotar un enemigo reduce la recarga actual del aguijón en 0.2s.'],
+            foragerPouch: ['Bolsa recolectora', 'El primer polen y la primera agua de cada sala dan +1 extra.'],
+            royalJelly: ['Jalea real', 'Cada 3 polen recogidos cura +2 salud.'],
+            scoutLantern: ['Linterna exploradora', 'El radio de revelado sube 1 y las salidas bloqueadas empiezan reveladas.'],
+            venomPouch: ['Bolsa de veneno', 'Empieza cada sala con +1 Aguijón doble.']
         }
     }
 };
 
 const RELICS = [
     {
-        id: 'waxArmor',
-        name: 'Wax Armor',
-        description: 'Gain +4 shield at the start of each room.',
+        id: 'guardComb',
+        name: 'Guard Comb',
+        description: 'Gain +1 shield at the start of each room.',
         minDepth: 1,
         rarity: 'common',
-        onRoomStart: () => addShield(4, 'Wax Armor')
+        onRoomStart: () => addShield(1, 'Guard Comb')
     },
     {
-        id: 'sharpStinger',
-        name: 'Sharp Stinger',
-        description: 'The first sting in each room has no cooldown.',
+        id: 'pathCarver',
+        name: 'Path Carver',
+        description: 'The first wax door opened each room costs no pollen or sting.',
         minDepth: 1,
         rarity: 'common',
-        apply: () => {
-            game.roomFirstStingAvailable = true;
-        },
         onRoomStart: () => {
-            game.roomFirstStingAvailable = true;
+            game.freeWaxDoorAvailable = true;
         }
     },
     {
-        id: 'goldenAntennae',
-        name: 'Golden Antennae',
-        description: 'The exit direction is revealed through the mist.',
+        id: 'battleRhythm',
+        name: 'Battle Rhythm',
+        description: 'Defeating an enemy reduces the current sting cooldown by 0.2s.',
+        minDepth: 2,
+        rarity: 'common'
+    },
+    {
+        id: 'foragerPouch',
+        name: 'Forager Pouch',
+        description: 'The first pollen and first water collected each room grant +1 extra.',
         minDepth: 1,
         rarity: 'common',
-        onRoomStart: () => revealExitHint()
+        onRoomStart: () => {
+            game.foragerPouchCollected = { pollen: false, water: false };
+        }
     },
     {
         id: 'royalJelly',
         name: 'Royal Jelly',
-        description: 'Every 3 pollen collected heals +3 health.',
+        description: 'Every 3 pollen collected heals +2 health.',
         minDepth: 1,
         rarity: 'common'
     },
     {
-        id: 'mistpiercerWings',
-        name: 'Mistpiercer Wings',
-        description: 'Reveal radius increases from 2 to 3.',
-        minDepth: 1,
+        id: 'scoutLantern',
+        name: 'Scout Lantern',
+        description: 'Reveal radius increases by 1 and exit gates start revealed.',
+        minDepth: 2,
         rarity: 'common',
         apply: () => {
             game.revealRadius = 3;
             revealAroundPlayer();
+        },
+        onRoomStart: () => {
+            revealExitGate();
         }
     },
     {
-        id: 'storedVenom',
-        name: 'Stored Venom',
+        id: 'venomPouch',
+        name: 'Venom Pouch',
         description: 'Start each room with +1 Double Sting.',
-        minDepth: 1,
+        minDepth: 2,
         rarity: 'common',
         onRoomStart: () => {
             game.player.stingCharges += 1;
-            addLog('Stored Venom', 'Gained +1 Double Sting.');
+            addLog('Venom Pouch', 'Gained +1 Double Sting.');
         }
     }
 ];
@@ -348,28 +359,35 @@ const SPRITE_DEFS = {
     enemy: { src: 'assets/wasp-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
     bat: { src: 'assets/bat-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     npc: { src: 'assets/bettle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
-    thornBeetle: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'TB' },
-    fogMoth: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'FM' },
-    waxMoth: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'WM' },
-    broodWasp: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'BW' },
-    stagBeetle: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'SB' },
-    falseFlower: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'FF' },
+    miteSwarm: { src: 'assets/miteSwarm.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
+    thornBeetle: { src: 'assets/thornBeetle.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    fogMoth: { src: 'assets/fogMoth.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    waxMoth: { src: 'assets/waxMoth.png', columns: 4, rows: 1, row: 0, frameMs: 185 },
+    broodWasp: { src: 'assets/broodWasp.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
+    stagBeetle: { src: 'assets/stagBeetle.png', columns: 4, rows: 1, row: 0, frameMs: 195 },
+    falseFlower: { src: 'assets/falseFlower.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
+    guardWasp: { src: 'assets/guardWasp.png', columns: 4, rows: 1, row: 0, frameMs: 175 },
+    sleepingBat: { src: 'assets/sleepingBat.png', columns: 4, rows: 2, row: 0, frameMs: 210 },
+    sleepingBatAwake: { src: 'assets/sleepingBat.png', columns: 4, rows: 2, row: 1, frameMs: 150 },
+    honeyLeech: { src: 'assets/honeyLeech.png', columns: 4, rows: 1, row: 0, frameMs: 185 },
     pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     stingUpgrade: { src: 'assets/sting-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
-    wall: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'W' },
-    glowPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
-    nectarCache: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
-    honeyDrop: { src: '', columns: 1, rows: 1, row: 0, frameMs: 230, fallback: 'HN' },
-    cleanWater: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'CW' },
-    smokePuff: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'SM' },
-    sunShard: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'SUN' },
-    flowerMap: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'MAP' },
-    royalNectar: { src: '', columns: 1, rows: 1, row: 0, frameMs: 200, fallback: 'RN' },
-    stickyHoney: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
-    compassPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
+    wall: { src: 'assets/wall.png', columns: 4, rows: 1, row: 0, frameMs: 180 },
+    glowPollen: { src: 'assets/glowPollen.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
+    nectarCache: { src: 'assets/nectarCache.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    honeyDrop: { src: 'assets/honeyDrop.png', columns: 4, rows: 1, row: 0, frameMs: 230 },
+    cleanWater: { src: 'assets/cleanWater.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    smokePuff: { src: 'assets/smokePuff.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    sunShard: { src: 'assets/sunShard.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    flowerMap: { src: 'assets/flowerMap.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    royalNectar: { src: 'assets/royalNectar.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    waxDoor: { src: 'assets/waxDoor.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    stickyHoney: { src: 'assets/stickyHoney.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
+    stickyTrap: { src: 'assets/stickyTrap.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
+    compassPollen: { src: 'assets/compassPollen.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     exit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     finalExit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 140 }
@@ -379,7 +397,7 @@ const ENEMY_DEFS = {
     enemy: {
         name: 'Wasp',
         color: '#d95c50',
-        sprite: 'enemy',
+        sprite: 'miteSwarm',
         hp: 1,
         attack: 1,
         intervalMs: 500,
@@ -403,7 +421,7 @@ const ENEMY_DEFS = {
     miteSwarm: {
         name: 'Mite Swarm',
         color: '#c98954',
-        sprite: 'enemy',
+        sprite: 'guardWasp',
         hp: 1,
         attack: 1,
         intervalMs: 900,
@@ -499,7 +517,7 @@ const ENEMY_DEFS = {
     sleepingBat: {
         name: 'Sleeping Bat',
         color: '#6c5a9d',
-        sprite: 'bat',
+        sprite: 'sleepingBat',
         hp: 2,
         attack: 1,
         intervalMs: 1000,
@@ -511,7 +529,7 @@ const ENEMY_DEFS = {
     honeyLeech: {
         name: 'Honey Leech',
         color: '#9467a8',
-        sprite: 'enemy',
+        sprite: 'honeyLeech',
         hp: 2,
         attack: 1,
         intervalMs: 850,
@@ -591,8 +609,7 @@ const OBJECTS = {
     npc: {
         name: 'Trade Beetle',
         color: '#64b5f6',
-        description: 'Reduces sting cooldown.',
-        effects: [{ type: 'tradeCooldown', pollen: 1, water: 1, cooldownMs: 100 }]
+        description: 'Opens a market with three supply trades.'
     },
     upgrade: {
         name: 'Shield Upgrade',

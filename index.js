@@ -106,7 +106,7 @@ const ROOM_PROFILES = [
             { object: 'pollen', weight: 18 },
             { object: 'water', weight: 18 },
             { object: 'upgrade', weight: 9 },
-            { object: 'npc', weight: 5 },
+            { object: 'npc', weight: 2 },
             { object: 'vine', weight: 5 },
             { object: 'discovery', weight: 7 }
         ]
@@ -127,7 +127,7 @@ const ROOM_PROFILES = [
             { object: 'water', weight: 15 },
             { object: 'upgrade', weight: 8 },
             { object: 'stingUpgrade', weight: 6 },
-            { object: 'npc', weight: 5 },
+            { object: 'npc', weight: 2 },
             { object: 'vine', weight: 7 },
             { object: 'discovery', weight: 10 },
             { object: 'enemy', weight: 4 }
@@ -149,7 +149,7 @@ const ROOM_PROFILES = [
             { object: 'water', weight: 12 },
             { object: 'upgrade', weight: 7 },
             { object: 'stingUpgrade', weight: 6 },
-            { object: 'npc', weight: 5 },
+            { object: 'npc', weight: 2 },
             { object: 'vine', weight: 8 },
             { object: 'discovery', weight: 14 },
             { object: 'enemy', weight: 10 }
@@ -171,7 +171,7 @@ const ROOM_PROFILES = [
             { object: 'water', weight: 10 },
             { object: 'upgrade', weight: 6 },
             { object: 'stingUpgrade', weight: 6 },
-            { object: 'npc', weight: 5 },
+            { object: 'npc', weight: 2 },
             { object: 'vine', weight: 9 },
             { object: 'discovery', weight: 15 },
             { object: 'enemy', weight: 15 }
@@ -198,9 +198,26 @@ const {
     ENEMY_SPAWN_WEIGHTS
 } = window.HW_CONTENT;
 
+const UI_ART_DEFS = {
+    boardBackground: 'assets/ui/forest-board-bg.webp'
+};
+const TILE_ART_DEFS = {
+    empty: 'assets/tiles/hex-empty.png',
+    visited: 'assets/tiles/hex-visited.png',
+    hidden: 'assets/tiles/hex-hidden.png',
+    path: 'assets/tiles/hex-path.png',
+    exit: 'assets/tiles/alpha/hex-exit.png',
+    danger: 'assets/tiles/hex-danger.png',
+    pickableBorder: 'assets/tiles/hex-pickable-border.png',
+    enemyBorder: 'assets/tiles/hex-enemy-border.png'
+};
+const uiArtAssets = {};
+const tileArtAssets = {};
 const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
+loadUiArt();
+loadTileArt();
 loadSprites();
 
 const hudRenderer = window.HW_HUD.createHudRenderer({
@@ -371,6 +388,9 @@ const game = {
     pendingNextRoomReason: null,
     campBuffs: {},
     campRelicRerolls: 0,
+    claimedRelicRooms: [],
+    marketCell: null,
+    marketChoices: [],
     nextRoomPreview: null,
     roomObjective: null,
     objectiveProgress: {
@@ -385,6 +405,8 @@ const game = {
     danceFeedback: [],
     revealRadius: 2,
     roomFirstStingAvailable: false,
+    freeWaxDoorAvailable: false,
+    foragerPouchCollected: { pollen: false, water: false },
     royalJellyPollen: 0,
     currentRoomCells: [],
     roomProfile: ROOM_PROFILES[0],
@@ -834,7 +856,15 @@ function registerRoomSpawn(object) {
         return object;
     }
 
-    if (['npc', 'stingUpgrade'].includes(object) && !profile.allowedUtility.includes(object)) {
+    if (object === 'npc') {
+        if (!profile.allowedUtility.includes(object)) {
+            return 'empty';
+        }
+        const traderCount = game.cells.filter((cell) => cell.object === 'npc').length;
+        return traderCount >= 1 ? 'empty' : object;
+    }
+
+    if (['stingUpgrade'].includes(object) && !profile.allowedUtility.includes(object)) {
         return 'empty';
     }
 
@@ -934,6 +964,9 @@ function startRunState() {
     game.pendingNextRoomReason = null;
     game.campBuffs = {};
     game.campRelicRerolls = 0;
+    game.claimedRelicRooms = [];
+    game.marketCell = null;
+    game.marketChoices = [];
     game.nextRoomPreview = null;
     game.roomObjective = null;
     game.objectiveProgress = createObjectiveProgress();
@@ -942,6 +975,8 @@ function startRunState() {
     game.danceFeedback = [];
     game.revealRadius = 2;
     game.roomFirstStingAvailable = false;
+    game.freeWaxDoorAvailable = false;
+    game.foragerPouchCollected = { pollen: false, water: false };
     game.royalJellyPollen = 0;
     game.currentRoomCells = [];
     game.roomProfile = ROOM_PROFILES[0];
@@ -966,7 +1001,7 @@ function startRunState() {
 }
 
 function testDanceRun() {
-    startGameplayMusic();
+    stopAllMusic();
     startScreen.classList.add('hidden');
     startRunState();
     game.roomDepth = FINAL_ROOM;
@@ -1023,6 +1058,8 @@ function generateRoom(reason) {
     game.roomProfile = getRoomProfile();
     game.roomObjective = chooseRoomObjective();
     game.objectiveProgress = createObjectiveProgress();
+    game.freeWaxDoorAvailable = false;
+    game.foragerPouchCollected = { pollen: false, water: false };
     game.roomSpawnCounts = {
         enemies: 0,
         hazards: 0,
@@ -1402,6 +1439,13 @@ function revealExitHint() {
     updateObjectiveProgress();
 }
 
+function revealExitGate() {
+    revealExitCell();
+    getExitNeighborCells().forEach((cell) => {
+        cell.revealed = true;
+    });
+}
+
 function slowNearbyEnemies(q, r, radius = 2, durationMs = 1400) {
     game.cells
         .filter((cell) => isEnemyObject(cell.object) && hexDistance(q, r, cell.q, cell.r) <= radius)
@@ -1453,14 +1497,25 @@ function openCampChoice() {
             ? 'Gasta suministros entre salas para sanar, reparar escudo o preparar la próxima sala.'
             : 'Spend supplies between rooms to heal, repair shield, or prepare for the next chamber.'
     );
+    campScreen.querySelector('h2').textContent = currentLanguage === 'es-419' ? 'Campamento entre salas' : 'Between-Room Camp';
+    campScreen.querySelector('p').textContent = currentLanguage === 'es-419'
+        ? 'Gasta suministros antes de elegir una reliquia y abrir la siguiente sala.'
+        : 'Spend supplies before choosing a relic and opening the next chamber.';
+    campContinueButton.textContent = currentLanguage === 'es-419' ? 'Elegir reliquia' : 'Choose Relic';
     renderCampChoices();
     campScreen.classList.add('visible');
     draw();
 }
 
 function renderCampChoices() {
-    const actions = getCampActions();
-    const preview = game.nextRoomPreview
+    const isMarket = game.mode === 'traderMarket';
+    const actions = isMarket ? game.marketChoices : getCampActions();
+    const preview = isMarket
+        ? `<div class="camp-preview">
+            <strong>${currentLanguage === 'es-419' ? 'Escarabajo comerciante' : 'Trade Beetle'}</strong>
+            <span>${currentLanguage === 'es-419' ? 'Elige una compra. El escarabajo se ira cuando cierres el mercado.' : 'Choose a purchase. The beetle leaves when you close the market.'}</span>
+        </div>`
+        : game.nextRoomPreview
         ? `<div class="camp-preview">
             <strong>${currentLanguage === 'es-419' ? 'Próxima sala' : 'Next chamber'}</strong>
             <span>${escapeHtml(game.nextRoomPreview)}</span>
@@ -1472,6 +1527,34 @@ function renderCampChoices() {
             <span>${action.description}</span>
         </button>`
     )).join('');
+}
+
+function openTraderMarket(cell) {
+    game.mode = 'traderMarket';
+    game.marketCell = { q: cell.q, r: cell.r };
+    game.marketChoices = chooseTraderMarketActions();
+    game.message = 'Trade beetle opens a small market.';
+    showTutorialCallout(
+        'traderMarket',
+        currentLanguage === 'es-419' ? 'Mercado del escarabajo' : 'Beetle Market',
+        currentLanguage === 'es-419'
+            ? 'Los escarabajos convierten recursos en curacion, defensa, mapas o preparacion para la siguiente sala.'
+            : 'Trade beetles turn resources into healing, defense, maps, or next-room prep.'
+    );
+    campScreen.querySelector('h2').textContent = currentLanguage === 'es-419' ? 'Mercado del escarabajo' : 'Beetle Market';
+    campScreen.querySelector('p').textContent = currentLanguage === 'es-419'
+        ? 'Compra una mejora con tus recursos. Las opciones crecen con el nivel de la abeja.'
+        : 'Buy one upgrade with your supplies. Options grow with bee level.';
+    renderCampChoices();
+    campContinueButton.textContent = currentLanguage === 'es-419' ? 'Cerrar mercado' : 'Close Market';
+    campScreen.classList.add('visible');
+}
+
+function chooseTraderMarketActions() {
+    const actions = getCampActions().filter((action) => action.market && getPlayerLevel() >= action.minLevel);
+    const available = actions.filter((action) => action.available);
+    const pool = available.length >= 3 ? available : actions;
+    return [...pool].sort(() => seededRandom() - 0.5).slice(0, 3);
 }
 
 function buildNextRoomPreview() {
@@ -1504,92 +1587,132 @@ function getCampActions() {
             id: 'heal',
             name: 'Drink Water',
             description: 'Cost: 1 water. Heal +2 health.',
-            available: game.player.water > 0 && missingHealth > 0
+            available: game.player.water > 0 && missingHealth > 0,
+            market: true,
+            minLevel: 1
         },
         {
             id: 'shield',
             name: 'Pack Wax',
             description: 'Cost: 1 pollen. Repair +1 shield.',
-            available: game.player.pollen > 0 && missingShield > 0
+            available: game.player.pollen > 0 && missingShield > 0,
+            market: true,
+            minLevel: 1
         },
         {
             id: 'map',
             name: 'Study Map',
             description: 'Cost: 1 honey. Reveal exit route next room.',
-            available: game.player.honey > 0
+            available: game.player.honey > 0,
+            market: true,
+            minLevel: 2
         },
         {
             id: 'guard',
             name: 'Guard Comb',
             description: 'Cost: 1 pollen + 1 water. Start next room with +1 shield.',
-            available: game.player.pollen > 0 && game.player.water > 0
+            available: game.player.pollen > 0 && game.player.water > 0,
+            market: true,
+            minLevel: 2
         },
         {
             id: 'scout',
             name: 'Scout Smoke',
             description: 'Cost: 1 pollen + 1 water. Reveal nearby enemies next room.',
-            available: game.roomDepth >= 2 && game.player.pollen > 0 && game.player.water > 0
+            available: game.roomDepth >= 2 && game.player.pollen > 0 && game.player.water > 0,
+            market: true,
+            minLevel: 3
         },
         {
             id: 'rush',
             name: 'Sugar Rush',
             description: 'Cost: 1 honey. Start next room with full stamina.',
-            available: game.roomDepth >= 2 && game.player.honey > 0
+            available: game.roomDepth >= 2 && game.player.honey > 0,
+            market: true,
+            minLevel: 3
         },
         {
             id: 'reroll',
             name: 'Sweet Bargain',
             description: 'Cost: 1 honey. Reroll upcoming relic choices.',
-            available: game.player.honey > 0
+            available: game.player.honey > 0,
+            market: false,
+            minLevel: 99
         }
     ];
 }
 
 function applyCampAction(id) {
-    if (game.mode !== 'camp') return;
+    if (game.mode !== 'camp' && game.mode !== 'traderMarket') return;
+    let purchased = false;
     if (id === 'heal' && game.player.water > 0 && game.player.health < getPlayerMaxHealth()) {
         game.player.water -= 1;
         const healed = healPlayer(2);
         addStatPopups(game.player.q, game.player.r, [{ stat: 'water', amount: -1 }, { stat: 'health', amount: healed }]);
         addLog('Camp', 'Spent water to recover health.');
+        purchased = true;
     } else if (id === 'shield' && game.player.pollen > 0 && game.player.upgrades < game.player.maxShield) {
         game.player.pollen -= 1;
         game.player.upgrades += 1;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'upgrades', amount: 1 }]);
         addLog('Camp', 'Spent pollen to repair shield.');
+        purchased = true;
     } else if (id === 'map' && game.player.honey > 0) {
         game.player.honey -= 1;
         game.campBuffs.revealRoute = true;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'honey', amount: -1 }]);
         addLog('Camp', 'Spent honey to reveal the next exit route.');
+        purchased = true;
     } else if (id === 'guard' && game.player.pollen > 0 && game.player.water > 0) {
         game.player.pollen -= 1;
         game.player.water -= 1;
         game.campBuffs.nextRoomShield = (game.campBuffs.nextRoomShield || 0) + 1;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'water', amount: -1 }]);
         addLog('Camp', 'Prepared wax guard for the next room.');
+        purchased = true;
     } else if (id === 'scout' && game.roomDepth >= 2 && game.player.pollen > 0 && game.player.water > 0) {
         game.player.pollen -= 1;
         game.player.water -= 1;
         game.campBuffs.revealEnemies = true;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'pollen', amount: -1 }, { stat: 'water', amount: -1 }]);
         addLog('Camp', 'Prepared smoke to mark nearby threats next room.');
+        purchased = true;
     } else if (id === 'rush' && game.roomDepth >= 2 && game.player.honey > 0) {
         game.player.honey -= 1;
         game.campBuffs.fullStamina = true;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'honey', amount: -1 }]);
         addLog('Camp', 'Saved honey for a stamina burst next room.');
+        purchased = true;
     } else if (id === 'reroll' && game.player.honey > 0) {
         game.player.honey -= 1;
         game.campRelicRerolls += 1;
         addStatPopups(game.player.q, game.player.r, [{ stat: 'honey', amount: -1 }]);
         addLog('Camp', 'Spent honey to stir new relic options.');
+        purchased = true;
+    }
+    if (game.mode === 'traderMarket' && purchased) {
+        continueFromCamp();
+        return;
     }
     renderCampChoices();
     renderStats();
 }
 
 function continueFromCamp() {
+    if (game.mode === 'traderMarket') {
+        const cell = game.marketCell ? getCell(game.marketCell.q, game.marketCell.r) : null;
+        if (cell?.object === 'npc') {
+            cell.object = 'empty';
+        }
+        game.marketCell = null;
+        game.marketChoices = [];
+        game.mode = 'dungeon';
+        campScreen.classList.remove('visible');
+        campContinueButton.textContent = currentLanguage === 'es-419' ? 'Elegir reliquia' : 'Choose Relic';
+        renderStats();
+        draw();
+        return;
+    }
     if (game.mode !== 'camp') return;
     campScreen.classList.remove('visible');
     openRelicChoice();
@@ -1640,11 +1763,17 @@ function chooseRelicRewards() {
     const available = RELICS.filter((relic) => (
         relic.minDepth <= game.roomDepth && !hasRelic(relic.id)
     ));
-    const pool = available.length >= 3 ? available : RELICS.filter((relic) => relic.minDepth <= game.roomDepth);
-    return [...pool].sort(() => seededRandom() - 0.5).slice(0, 3);
+    return [...available].sort(() => seededRandom() - 0.5).slice(0, 3);
 }
 
 function renderRelicChoices() {
+    if (!game.relicChoices.length) {
+        relicChoicesNode.innerHTML = `<button class="relic-card" type="button" data-relic-id="skip">
+            <strong>${currentLanguage === 'es-419' ? 'Sin reliquias nuevas' : 'No New Relics'}</strong>
+            <span>${currentLanguage === 'es-419' ? 'La abeja ya conoce todas las reliquias disponibles.' : 'The bee already has every available relic.'}</span>
+        </button>`;
+        return;
+    }
     relicChoicesNode.innerHTML = game.relicChoices.map((relic) => (
         `<button class="relic-card" type="button" data-relic-id="${relic.id}">
             <strong>${relic.name}</strong>
@@ -1654,6 +1783,14 @@ function renderRelicChoices() {
 }
 
 function chooseRelic(id) {
+    if (id === 'skip' && game.mode === 'relicChoice') {
+        relicScreen.classList.remove('visible');
+        game.relicChoices = [];
+        game.pendingNextRoomReason = null;
+        game.roomDepth += 1;
+        generateRoom('exit');
+        return;
+    }
     const relic = getRelic(id);
     if (!relic || game.mode !== 'relicChoice') return;
 
@@ -1855,16 +1992,37 @@ function animate() {
 }
 
 function drawBackground(board) {
-    ctx.fillStyle = '#16211c';
-    ctx.fillRect(0, 0, board.width, board.height);
+    const boardBackground = uiArtAssets.boardBackground;
+    if (boardBackground?.complete && boardBackground.naturalWidth) {
+        drawImageCover(boardBackground, 0, 0, board.width, board.height);
+    } else {
+        const gradient = ctx.createRadialGradient(
+            board.width * 0.54,
+            board.height * 0.42,
+            Math.min(board.width, board.height) * 0.12,
+            board.width * 0.5,
+            board.height * 0.5,
+            Math.max(board.width, board.height) * 0.82
+        );
+        gradient.addColorStop(0, '#1b2a20');
+        gradient.addColorStop(0.58, '#101a14');
+        gradient.addColorStop(1, '#07100b');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, board.width, board.height);
+    }
+
+    ctx.save();
+    ctx.globalAlpha = boardBackground?.complete && boardBackground.naturalWidth ? 0.45 : 1;
+    drawForestTexture(board);
+    ctx.restore();
 
     if (game.mode === 'dance') {
         drawDiscoFloor(board);
     }
 
     ctx.save();
-    ctx.globalAlpha = 0.2;
-    ctx.strokeStyle = '#f5c84b';
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = '#e5bc58';
     ctx.lineWidth = 1;
     for (let x = -80; x < board.width + 80; x += 84) {
         ctx.beginPath();
@@ -1873,6 +2031,68 @@ function drawBackground(board) {
         ctx.stroke();
     }
     ctx.restore();
+}
+
+function drawImageCover(image, x, y, width, height) {
+    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+    const drawWidth = image.naturalWidth * scale;
+    const drawHeight = image.naturalHeight * scale;
+    const drawX = x + (width - drawWidth) / 2;
+    const drawY = y + (height - drawHeight) / 2;
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+}
+
+function loadUiArt() {
+    Object.entries(UI_ART_DEFS).forEach(([key, src]) => {
+        const image = new Image();
+        image.onload = () => {
+            uiArtAssets[key] = image;
+        };
+        image.onerror = () => {
+            uiArtAssets[key] = null;
+        };
+        image.src = src;
+    });
+}
+
+function loadTileArt() {
+    Object.entries(TILE_ART_DEFS).forEach(([key, src]) => {
+        const image = new Image();
+        image.onload = () => {
+            tileArtAssets[key] = image;
+        };
+        image.onerror = () => {
+            tileArtAssets[key] = null;
+        };
+        image.src = src;
+    });
+}
+
+function drawForestTexture(board) {
+    ctx.save();
+    const seed = (game.seed || 1) + (game.depth || 0) * 97 + (game.mode === 'dance' ? 503 : 0);
+    for (let i = 0; i < 120; i++) {
+        const x = seededNoise(seed, i * 2) * board.width;
+        const y = seededNoise(seed, i * 2 + 1) * board.height;
+        const radius = 1.2 + seededNoise(seed, i * 3 + 7) * 3.4;
+        ctx.globalAlpha = 0.05 + seededNoise(seed, i * 5 + 11) * 0.08;
+        ctx.fillStyle = i % 5 === 0 ? '#e7c15f' : '#6f8a54';
+        drawTinyLeaf(x, y, radius);
+    }
+    ctx.restore();
+}
+
+function seededNoise(seed, index) {
+    const value = Math.sin(seed * 12.9898 + index * 78.233) * 43758.5453;
+    return value - Math.floor(value);
+}
+
+function drawTinyLeaf(x, y, radius) {
+    ctx.beginPath();
+    ctx.ellipse(x - radius * 0.45, y, radius, radius * 0.44, -0.7, 0, Math.PI * 2);
+    ctx.ellipse(x + radius * 0.45, y, radius, radius * 0.44, 0.7, 0, Math.PI * 2);
+    ctx.ellipse(x, y - radius * 0.45, radius, radius * 0.44, 0, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 function drawDiscoFloor(board) {
@@ -1906,11 +2126,18 @@ function drawCell(cell) {
 
     drawHexPath(x, y, size - 2);
     ctx.lineWidth = visibleObject !== 'empty' && !hidden ? 3 : 1.5;
-    ctx.strokeStyle = visibleObject !== 'empty' && !hidden ? object.color : 'rgba(243, 240, 223, 0.32)';
+    ctx.strokeStyle = visibleObject !== 'empty' && !hidden ? object.color : 'rgba(233, 199, 110, 0.38)';
     ctx.stroke();
 
     if (!hidden && visibleObject !== 'empty') {
-        drawSprite(visibleObject, x, y, size);
+        if (visibleObject === 'exit' || visibleObject === 'finalExit') {
+            drawTileArt('exit', x, y, size, visibleObject === 'finalExit' ? 1 : 0.88);
+        } else if (isEnemyObject(visibleObject)) {
+            drawTileArt('enemyBorder', x, y, size, 0.9);
+        } else if (!['entry', 'vine', 'stickyTrap'].includes(visibleObject)) {
+            drawTileArt('pickableBorder', x, y, size, 0.9);
+        }
+        drawSprite(visibleObject, x, y, size, cell);
         if (!disguised && isEnemyObject(cell.object)) {
             drawEnemyHealthPips(cell, x, y, size);
             drawEnemyTypeBadge(cell.object, x, y, size);
@@ -1947,6 +2174,7 @@ function drawThreatPreview(cell, x, y, size) {
     const pulse = (Math.sin(performance.now() / 180) + 1) / 2;
     const urgent = threat.remaining <= 320;
     ctx.save();
+    drawTileArt('danger', x, y, size, urgent ? 0.72 + pulse * 0.18 : 0.3 + pulse * 0.18);
     drawHexPath(x, y, size - 8);
     ctx.strokeStyle = threat.imminent
         ? `rgba(231, 111, 81, ${urgent ? 0.76 + pulse * 0.22 : 0.42 + pulse * 0.28})`
@@ -2039,20 +2267,72 @@ function drawCellBackground(cell, x, y, size, hidden) {
     drawHexPath(x, y, size - 2);
     ctx.save();
     ctx.clip();
-    ctx.fillStyle = hidden ? '#17211d' : cell.visited ? '#33433d' : '#3f4e48';
-    ctx.globalAlpha = hidden ? 0.96 : game.mode === 'dance'
-        ? (cell.visited ? 0.52 : 0.34)
-        : 0.9;
-    ctx.fill();
+    const tileKey = getCellTileKey(cell, hidden);
+    const hasTileArt = game.mode !== 'dance' && drawTileArt(tileKey, x, y, size, hidden ? 0.92 : 0.96);
+    if (!hasTileArt) {
+        const baseGradient = ctx.createLinearGradient(x - size, y - size, x + size, y + size);
+        if (hidden) {
+            baseGradient.addColorStop(0, '#101a15');
+            baseGradient.addColorStop(1, '#1f2c24');
+        } else if (cell.visited) {
+            baseGradient.addColorStop(0, '#2d3d34');
+            baseGradient.addColorStop(1, '#1d2b24');
+        } else {
+            baseGradient.addColorStop(0, '#3c4d43');
+            baseGradient.addColorStop(1, '#26372f');
+        }
+        ctx.fillStyle = baseGradient;
+        ctx.globalAlpha = hidden ? 0.96 : game.mode === 'dance'
+            ? (cell.visited ? 0.52 : 0.34)
+            : 0.9;
+        ctx.fill();
+    }
+
+    drawHexPath(x, y, size - 6);
+    ctx.globalAlpha = hasTileArt ? 0.04 : hidden ? 0.06 : 0.12;
+    ctx.strokeStyle = '#e8c76b';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.globalAlpha = hasTileArt ? 0.06 : hidden ? 0.08 : 0.16;
+    ctx.fillStyle = '#f1cf79';
+    for (let i = 0; i < 7; i++) {
+        const offsetX = (seededNoise(cell.q * 37 + cell.r * 101, i) - 0.5) * size * 1.1;
+        const offsetY = (seededNoise(cell.q * 53 + cell.r * 89, i + 10) - 0.5) * size * 1.05;
+        ctx.beginPath();
+        ctx.arc(x + offsetX, y + offsetY, 0.9 + (i % 3) * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     if (!hidden && cell.object !== 'empty') {
         ctx.fillStyle = objectTint(cell.object);
-        ctx.globalAlpha = 0.22;
+        ctx.globalAlpha = hasTileArt ? 0.08 : 0.22;
         ctx.fill();
     }
 
     ctx.restore();
     ctx.globalAlpha = 1;
+}
+
+function getCellTileKey(cell, hidden) {
+    if (hidden) return 'empty';
+    if (cell.object === 'exit' || cell.object === 'finalExit') return 'path';
+    if (cell.object !== 'empty') return 'visited';
+    if (cell.visited) return 'visited';
+    return 'hidden';
+}
+
+function drawTileArt(key, x, y, size, alpha = 1) {
+    const image = tileArtAssets[key];
+    if (!image?.complete || !image.naturalWidth) return false;
+    const drawSize = size * 2;
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.translate(x, y);
+    ctx.rotate(-Math.PI / 6);
+    ctx.drawImage(image, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
+    ctx.restore();
+    return true;
 }
 
 function objectTint(object) {
@@ -2154,8 +2434,8 @@ function loadSprites() {
 
     loadableEntries.forEach(([key, definition]) => {
         const image = new Image();
-        spriteAssets[key] = image;
         image.onload = () => {
+            spriteAssets[key] = createTransparentSpriteCanvas(image);
             loaded += 1;
             if (loaded === loadableEntries.length) {
                 spriteFrames = buildSpriteFrames();
@@ -2164,6 +2444,7 @@ function loadSprites() {
             }
         };
         image.onerror = () => {
+            spriteAssets[key] = null;
             loaded += 1;
             if (loaded === loadableEntries.length) {
                 spriteFrames = buildSpriteFrames();
@@ -2175,6 +2456,64 @@ function loadSprites() {
     });
 }
 
+function createTransparentSpriteCanvas(image) {
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const spriteCtx = canvas.getContext('2d', { willReadFrequently: true });
+    spriteCtx.drawImage(image, 0, 0);
+
+    try {
+        const imageData = spriteCtx.getImageData(0, 0, canvas.width, canvas.height);
+        removeConnectedWhiteBackground(imageData, canvas.width, canvas.height);
+        spriteCtx.putImageData(imageData, 0, 0);
+    } catch (error) {
+        return image;
+    }
+    return canvas;
+}
+
+function removeConnectedWhiteBackground(imageData, width, height) {
+    const data = imageData.data;
+    const visited = new Uint8Array(width * height);
+    const queue = [];
+
+    function enqueue(x, y) {
+        if (x < 0 || y < 0 || x >= width || y >= height) return;
+        const index = y * width + x;
+        if (visited[index]) return;
+        const offset = index * 4;
+        const nearWhite = data[offset + 3] > 0
+            && data[offset] >= 238
+            && data[offset + 1] >= 238
+            && data[offset + 2] >= 238;
+        if (!nearWhite) return;
+        visited[index] = 1;
+        queue.push(index);
+    }
+
+    for (let x = 0; x < width; x++) {
+        enqueue(x, 0);
+        enqueue(x, height - 1);
+    }
+    for (let y = 0; y < height; y++) {
+        enqueue(0, y);
+        enqueue(width - 1, y);
+    }
+
+    while (queue.length) {
+        const index = queue.shift();
+        const offset = index * 4;
+        data[offset + 3] = 0;
+        const x = index % width;
+        const y = Math.floor(index / width);
+        enqueue(x + 1, y);
+        enqueue(x - 1, y);
+        enqueue(x, y + 1);
+        enqueue(x, y - 1);
+    }
+}
+
 function buildSpriteFrames() {
     const frames = {};
     const analysisCanvas = document.createElement('canvas');
@@ -2182,7 +2521,9 @@ function buildSpriteFrames() {
 
     Object.entries(SPRITE_DEFS).forEach(([key, definition]) => {
         const image = spriteAssets[key];
-        if (!image || !image.naturalWidth || !image.naturalHeight) {
+        const imageWidth = getSpriteAssetWidth(image);
+        const imageHeight = getSpriteAssetHeight(image);
+        if (!image || !imageWidth || !imageHeight) {
             frames[key] = [];
             return;
         }
@@ -2190,10 +2531,10 @@ function buildSpriteFrames() {
         frames[key] = [];
 
         for (let column = 0; column < definition.columns; column++) {
-            const sourceX = Math.round(column * image.naturalWidth / definition.columns);
-            const nextSourceX = Math.round((column + 1) * image.naturalWidth / definition.columns);
-            const sourceY = Math.round(definition.row * image.naturalHeight / definition.rows);
-            const nextSourceY = Math.round((definition.row + 1) * image.naturalHeight / definition.rows);
+            const sourceX = Math.round(column * imageWidth / definition.columns);
+            const nextSourceX = Math.round((column + 1) * imageWidth / definition.columns);
+            const sourceY = Math.round(definition.row * imageHeight / definition.rows);
+            const nextSourceY = Math.round((definition.row + 1) * imageHeight / definition.rows);
             const sourceWidth = nextSourceX - sourceX;
             const sourceHeight = nextSourceY - sourceY;
 
@@ -2212,8 +2553,13 @@ function buildSpriteFrames() {
                 sourceHeight
             );
 
-            const imageData = analysisCtx.getImageData(0, 0, sourceWidth, sourceHeight).data;
-            const bounds = findAlphaBounds(imageData, sourceWidth, sourceHeight);
+            let bounds;
+            try {
+                const imageData = analysisCtx.getImageData(0, 0, sourceWidth, sourceHeight).data;
+                bounds = findAlphaBounds(imageData, sourceWidth, sourceHeight);
+            } catch (error) {
+                bounds = { x: 0, y: 0, width: sourceWidth, height: sourceHeight };
+            }
 
             frames[key].push({
                 sourceX: sourceX + bounds.x,
@@ -2225,6 +2571,14 @@ function buildSpriteFrames() {
     });
 
     return frames;
+}
+
+function getSpriteAssetWidth(asset) {
+    return asset?.naturalWidth || asset?.width || 0;
+}
+
+function getSpriteAssetHeight(asset) {
+    return asset?.naturalHeight || asset?.height || 0;
 }
 
 function findAlphaBounds(data, width, height) {
@@ -2263,10 +2617,10 @@ function findAlphaBounds(data, width, height) {
     };
 }
 
-function drawSprite(type, x, y, size) {
+function drawSprite(type, x, y, size, cell = null) {
     const spriteKey = type === 'player'
         ? (performance.now() < game.player.attackAnimationUntil ? 'playerAttack' : 'playerIdle')
-        : getSpriteKey(type);
+        : getSpriteKey(type, cell);
     const definition = SPRITE_DEFS[spriteKey];
     const image = spriteAssets[spriteKey];
 
@@ -2302,7 +2656,10 @@ function drawSprite(type, x, y, size) {
     ctx.restore();
 }
 
-function getSpriteKey(type) {
+function getSpriteKey(type, cell = null) {
+    if (type === 'sleepingBat' && cell?.awake) {
+        return 'sleepingBatAwake';
+    }
     return getEnemyDef(type)?.sprite || type;
 }
 
@@ -3030,7 +3387,13 @@ function moveTo(cell) {
         updateObjectiveProgress();
         awardXp(XP_REWARDS.room + game.roomDepth * 6, currentLanguage === 'es-419' ? 'Sala completada' : 'Room complete');
         game.roomStack.push(createRoomSnapshot());
-        openCampChoice();
+        if (game.claimedRelicRooms.includes(game.roomDepth)) {
+            game.roomDepth += 1;
+            generateRoom('exit');
+        } else {
+            game.claimedRelicRooms.push(game.roomDepth);
+            openRelicChoice();
+        }
         return;
     }
 
@@ -3050,7 +3413,16 @@ function moveTo(cell) {
         if (game.ended) return;
     }
 
+    if (targetObject === 'npc') {
+        openTraderMarket(cell);
+        revealAroundPlayer();
+        recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
+        draw();
+        return;
+    }
+
     const interaction = resolveInteraction(targetObject, cell);
+    applyRelicCollectionBonus(targetObject, interaction);
     game.message = interaction.message;
     addLog(OBJECTS[targetObject].name, interaction.message);
     addStatPopups(cell.q, cell.r, interaction.deltas);
@@ -3065,6 +3437,7 @@ function moveTo(cell) {
         if (isEnemyObject(targetObject)) {
             game.objectiveProgress.kills += 1;
             awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
+            applyEnemyKillRelics(cell);
         } else if (!['empty', 'entry', 'exit', 'finalExit', 'vine', 'stickyTrap'].includes(targetObject)) {
             if (['pollen', 'water', 'honeyDrop', 'nectarCache', 'cleanWater'].includes(targetObject)) {
                 game.objectiveProgress.supplies += 1;
@@ -3083,6 +3456,26 @@ function moveTo(cell) {
 function spendStamina(amount) {
     game.player.stamina = Math.max(0, game.player.stamina - amount);
     game.lastStaminaRegenAt = performance.now();
+}
+
+function applyRelicCollectionBonus(object, interaction) {
+    if (!hasRelic('foragerPouch')) return;
+    if (object !== 'pollen' && object !== 'water') return;
+    if (game.foragerPouchCollected?.[object]) return;
+    game.foragerPouchCollected[object] = true;
+    game.player[object] += 1;
+    game.runStats[object] += 1;
+    interaction.deltas.push({ stat: object, amount: 1 });
+    interaction.message += ` Forager Pouch added +1 ${object}.`;
+}
+
+function applyEnemyKillRelics(cell) {
+    if (!hasRelic('battleRhythm')) return;
+    const before = getAttackCooldownRemaining();
+    if (before <= 0) return;
+    game.player.attackReadyAt = Math.max(performance.now(), game.player.attackReadyAt - 200);
+    addStatPopups(cell.q, cell.r, [{ stat: 'cooldown', amount: -0.2 }]);
+    addLog('Battle Rhythm', 'Enemy defeat shortened the current sting cooldown.');
 }
 
 function hasStaminaRecoveryResource() {
@@ -3105,6 +3498,21 @@ function ensureStaminaForAction() {
 }
 
 function openWaxDoor(cell) {
+    if (game.freeWaxDoorAvailable) {
+        if (!ensureStaminaForAction()) {
+            showBlockedAction(cell, t('ui', 'blockedStamina'));
+            return;
+        }
+        spendStamina(1);
+        game.freeWaxDoorAvailable = false;
+        cell.object = 'empty';
+        game.message = 'Path Carver opened the wax door for free.';
+        addLog('Path Carver', game.message);
+        recordReplayEvent('playerAction', { object: 'waxDoor', q: cell.q, r: cell.r, method: 'pathCarver' });
+        draw();
+        return;
+    }
+
     if (game.player.pollen > 0) {
         if (!ensureStaminaForAction()) {
             showBlockedAction(cell, t('ui', 'blockedStamina'));
@@ -4018,7 +4426,7 @@ function getCellActionState(cell) {
         };
     }
     if (object === 'waxDoor') {
-        const canOpen = game.player.pollen > 0 || getAttackCooldownRemaining() <= 0;
+        const canOpen = game.freeWaxDoorAvailable || game.player.pollen > 0 || getAttackCooldownRemaining() <= 0;
         return {
             available: canOpen,
             reason: canOpen ? '' : t('ui', 'blockedWaxDoor'),
