@@ -39,6 +39,7 @@ const endMenuButton = document.getElementById('endMenuButton');
 const replayControls = document.getElementById('replayControls');
 const replayPauseButton = document.getElementById('replayPauseButton');
 const replayCloseButton = document.getElementById('replayCloseButton');
+const replaySpeedButtons = [...document.querySelectorAll('.replay-speed')];
 
 const HEX_RADIUS = 4;
 const VISIBLE_RADIUS = 4;
@@ -58,7 +59,11 @@ const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const BASE_XP_TO_LEVEL = 24;
 const GAMEPLAY_MUSIC_SRC = 'assets/main_song.mp3';
+const DANCE_MUSIC_SRC = 'assets/dancefloor.mp3';
 const GAMEPLAY_MUSIC_VOLUME = 0.45;
+const DANCE_MUSIC_VOLUME = 0.56;
+const DANCE_MISS_VOLUME = 0.18;
+const DANCE_MUSIC_START_AT = 48;
 const HEX_DIRECTIONS = [
     { q: 1, r: 0 },
     { q: 1, r: -1 },
@@ -209,9 +214,22 @@ const hudRenderer = window.HW_HUD.createHudRenderer({
 let itemSystem = null;
 let enemySystem = null;
 let danceSystem = null;
-const gameplayMusic = new Audio(GAMEPLAY_MUSIC_SRC);
-gameplayMusic.loop = true;
-gameplayMusic.volume = GAMEPLAY_MUSIC_VOLUME;
+let replaySpeed = 1;
+const audioSystem = window.HW_AUDIO.createAudioSystem({
+    tracks: {
+        gameplay: {
+            src: GAMEPLAY_MUSIC_SRC,
+            volume: GAMEPLAY_MUSIC_VOLUME,
+            loop: true
+        },
+        dance: {
+            src: DANCE_MUSIC_SRC,
+            volume: DANCE_MUSIC_VOLUME,
+            startAt: DANCE_MUSIC_START_AT,
+            loopFrom: DANCE_MUSIC_START_AT
+        }
+    }
+});
 
 const OBJECT_UNLOCK_LEVELS = {
     empty: 1,
@@ -453,8 +471,9 @@ danceSystem = window.HW_DANCE.createDanceSystem({
         startPlayerMotion,
         awardXp,
         addLog,
+        recordReplayEvent,
         showTutorialCallout,
-        stopGameplayMusic,
+        audio: audioSystem,
         endRun,
         draw
     }
@@ -675,6 +694,9 @@ function randomObjectFor(q, r, entryCell, exitCell) {
     const profile = getRoomProfile();
     const distance = hexDistance(entryCell.q, entryCell.r, q, r);
     if (distance <= profile.safeRadius) {
+        if (game.roomDepth === 1) {
+            return 'empty';
+        }
         return chooseWeightedObject([
             { object: 'empty', weight: 48 },
             { object: 'pollen', weight: 25 },
@@ -734,22 +756,15 @@ function saveProgression() {
 }
 
 function startGameplayMusic() {
-    danceSystem?.stopMusic();
-    if (!gameplayMusic.paused) return;
-    gameplayMusic.currentTime = gameplayMusic.currentTime || 0;
-    gameplayMusic.play().catch(() => {
-        // Browsers may block audio until a direct user gesture. The next run/replay click will try again.
-    });
+    audioSystem.play('gameplay');
 }
 
 function stopGameplayMusic() {
-    gameplayMusic.pause();
-    gameplayMusic.currentTime = 0;
+    audioSystem.stop('gameplay');
 }
 
 function stopAllMusic() {
-    stopGameplayMusic();
-    danceSystem?.stopMusic();
+    audioSystem.stopAll();
 }
 
 function seededRandom() {
@@ -1033,6 +1048,7 @@ function generateRoom(reason) {
         });
     });
 
+    placeFirstRoomTeachingPickups();
     placeTeachingEnemy();
     placeBats();
     const startCell = getCell(game.player.q, game.player.r);
@@ -1177,6 +1193,27 @@ function placeTeachingEnemy() {
     const cell = randomFrom(candidates);
     cell.object = 'enemy';
     game.roomSpawnCounts.enemies += 1;
+}
+
+function placeFirstRoomTeachingPickups() {
+    if (game.roomDepth !== 1) return;
+    const lessons = ['pollen', 'water', 'upgrade'];
+    const candidates = game.cells
+        .filter((cell) => (
+            cell.object === 'empty'
+            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 2
+            && !(cell.q === game.player.q && cell.r === game.player.r)
+            && !(cell.q === game.exitCell.q && cell.r === game.exitCell.r)
+        ))
+        .sort((a, b) => (
+            hexDistance(a.q, a.r, game.player.q, game.player.r)
+            - hexDistance(b.q, b.r, game.player.q, game.player.r)
+        ));
+
+    lessons.forEach((object, index) => {
+        const cell = candidates[index];
+        if (cell) cell.object = object;
+    });
 }
 
 function placeBats() {
@@ -3434,6 +3471,7 @@ function recordReplayEvent(type, payload = {}) {
 
 function createReplaySnapshot() {
     return {
+        capturedAt: performance.now(),
         seed: game.runSeed,
         mode: game.mode,
         roomDepth: game.roomDepth,
@@ -3450,6 +3488,8 @@ function createReplaySnapshot() {
 }
 
 function applyReplaySnapshot(snapshot) {
+    const now = performance.now();
+    const capturedAt = snapshot.capturedAt || now;
     game.mode = snapshot.mode;
     game.roomDepth = snapshot.roomDepth;
     game.cells = snapshot.cells.map((cell) => ({ ...cell }));
@@ -3459,11 +3499,41 @@ function applyReplaySnapshot(snapshot) {
         ...popup,
         createdAt: performance.now() + index * 60
     }));
-    game.playerMotion = snapshot.playerMotion ? { ...snapshot.playerMotion, startedAt: performance.now() } : null;
+    game.playerMotion = snapshot.playerMotion ? { ...snapshot.playerMotion, startedAt: now } : null;
     game.cameraPan = snapshot.cameraPan ? { ...snapshot.cameraPan } : { x: 0, y: 0 };
     game.message = snapshot.message;
-    game.dance = snapshot.dance ? JSON.parse(JSON.stringify(snapshot.dance)) : null;
+    game.dance = snapshot.dance ? normalizeReplayDanceTiming(JSON.parse(JSON.stringify(snapshot.dance)), capturedAt, now) : null;
     game.ended = snapshot.ended;
+    syncReplayAudio();
+}
+
+function normalizeReplayDanceTiming(dance, capturedAt, now) {
+    if (!dance?.active) return dance;
+    const active = dance.active;
+    if (active.createdAt) {
+        active.createdAt = now - Math.max(0, capturedAt - active.createdAt);
+    }
+    if (active.expiresAt) {
+        active.expiresAt = now + Math.max(0, active.expiresAt - capturedAt);
+    }
+    if (active.holdStartedAt) {
+        active.holdStartedAt = now - Math.max(0, capturedAt - active.holdStartedAt);
+    }
+    return dance;
+}
+
+function syncReplayAudio() {
+    if (!game.replay || game.replay.paused || game.ended) {
+        audioSystem.pauseAll();
+        return;
+    }
+    if (game.mode === 'dance') {
+        audioSystem.play('dance');
+    } else if (game.mode === 'dungeon') {
+        audioSystem.play('gameplay');
+    } else {
+        audioSystem.pauseAll();
+    }
 }
 
 function startReplay() {
@@ -3483,14 +3553,16 @@ function startReplay() {
         timer: 0
     };
     applyReplaySnapshot(events[0].snapshot);
+    setReplaySpeed(1);
     replayPauseButton.textContent = 'II';
+    syncReplayAudio();
     scheduleReplayStep();
 }
 
 function scheduleReplayStep() {
     if (!game.replay || game.replay.paused) return;
     window.clearTimeout(game.replay.timer);
-    game.replay.timer = window.setTimeout(advanceReplay, REPLAY_STEP_MS);
+    game.replay.timer = window.setTimeout(advanceReplay, REPLAY_STEP_MS / replaySpeed);
 }
 
 function advanceReplay() {
@@ -3500,6 +3572,7 @@ function advanceReplay() {
         game.replay.index = game.replay.events.length - 1;
         game.replay.paused = true;
         replayPauseButton.textContent = '>';
+        syncReplayAudio();
         return;
     }
     applyReplaySnapshot(game.replay.events[game.replay.index].snapshot);
@@ -3510,6 +3583,7 @@ function toggleReplayPause() {
     if (!game.replay) return;
     game.replay.paused = !game.replay.paused;
     replayPauseButton.textContent = game.replay.paused ? '>' : 'II';
+    syncReplayAudio();
     scheduleReplayStep();
 }
 
@@ -3518,8 +3592,19 @@ function closeReplay() {
         window.clearTimeout(game.replay.timer);
     }
     game.replay = null;
+    stopAllMusic();
     replayControls.classList.remove('visible');
     showMainMenu();
+}
+
+function setReplaySpeed(speed) {
+    replaySpeed = Math.max(1, Number(speed) || 1);
+    replaySpeedButtons.forEach((button) => {
+        button.classList.toggle('active', Number(button.dataset.speed) === replaySpeed);
+    });
+    if (game.replay && !game.replay.paused) {
+        scheduleReplayStep();
+    }
 }
 
 function getAttackCooldownRemaining() {
@@ -3632,18 +3717,31 @@ function renderStatsHud(statsText) {
         hudRenderer.renderStats([]);
         return;
     }
+    const firstRoom = game.roomDepth === 1;
     const items = [
         { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
-        { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, sprite: 'pollen', fallback: 'P', color: '#f7d45c' },
-        { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, sprite: 'water', fallback: 'W', color: '#4bb6f2' },
-        { id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' },
         { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
-        { id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' },
         { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, icon: 'bolt', color: '#f5c84b' },
-        { id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, fallback: 'LV', color: '#fff2a7' },
-        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' },
-        { id: 'room', value: game.mode === 'dance' ? `${game.dance?.completed || 0}/${danceSystem.getMovesRequired()}` : game.roomDepth, title: game.mode === 'dance' ? `${statsText.dance[0]}: ${game.dance?.misses || 0} misses` : `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' }
+        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
     ];
+    if (!firstRoom || game.player.pollen > 0) {
+        items.splice(1, 0, { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, sprite: 'pollen', fallback: 'P', color: '#f7d45c' });
+    }
+    if (!firstRoom || game.player.water > 0) {
+        items.splice(2, 0, { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, sprite: 'water', fallback: 'W', color: '#4bb6f2' });
+    }
+    if (!firstRoom || game.player.honey > 0) {
+        items.push({ id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' });
+    }
+    if (!firstRoom || game.player.stingCharges > 0) {
+        items.push({ id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' });
+    }
+    if (!firstRoom || progression.xp > 0) {
+        items.push({ id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, fallback: 'LV', color: '#fff2a7' });
+    }
+    if (!firstRoom) {
+        items.push({ id: 'room', value: game.roomDepth, title: `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' });
+    }
     hudRenderer.renderStats(items);
 }
 
@@ -3691,7 +3789,17 @@ function renderTimerHud() {
             }
         });
 
-    hudRenderer.renderTimers(items.slice(0, 14));
+    const visibleItems = items.slice(0, 14);
+    if (visibleItems.length && !game.replay) {
+        showTutorialCallout(
+            'dangerTimers',
+            currentLanguage === 'es-419' ? 'Peligro cercano' : 'Nearby danger',
+            currentLanguage === 'es-419'
+                ? 'Los temporizadores de la esquina superior derecha muestran cuÃ¡ndo recibirÃ¡s daÃ±o si sigues en peligro.'
+                : 'Top-right timers show when nearby enemies will deal damage if you stay in danger.'
+        );
+    }
+    hudRenderer.renderTimers(visibleItems);
 }
 
 function renderCooldown() {
@@ -3721,8 +3829,9 @@ function renderLog() {
     if (eventToastNode) {
         const latest = game.logs[game.logs.length - 1];
         eventToastNode.classList.toggle('visible', Boolean(latest));
+        eventToastNode.setAttribute('aria-label', latest ? `${latest.title}. ${latest.message}` : '');
         eventToastNode.innerHTML = latest
-            ? `<strong>${escapeHtml(latest.title)}</strong><span>${escapeHtml(latest.message)}</span>`
+            ? `<strong>${escapeHtml(latest.title)}</strong> <span>${escapeHtml(latest.message)}</span>`
             : '';
     }
 }
@@ -3939,6 +4048,9 @@ endReplayButton.addEventListener('click', startReplay);
 endMenuButton.addEventListener('click', showMainMenu);
 replayPauseButton.addEventListener('click', toggleReplayPause);
 replayCloseButton.addEventListener('click', closeReplay);
+replaySpeedButtons.forEach((button) => {
+    button.addEventListener('click', () => setReplaySpeed(button.dataset.speed));
+});
 newRunButton.addEventListener('click', createGrid);
 testDanceButton.addEventListener('click', testDanceRun);
 statsToggle.addEventListener('click', () => {

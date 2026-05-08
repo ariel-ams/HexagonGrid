@@ -4,7 +4,7 @@ const I18N = {
     en: {
         ui: {
             title: 'Honeycomb Wayfinder',
-            objective: 'Guide the bee through misty honeycomb chambers, collect pollen, water, shields, and relics, survive wasps, bats, and vines, then finish the run by completing the final food dance.',
+            objective: 'Guide the bee through misty honeycomb chambers. Start by collecting pollen, water, and shield, avoid danger rings, use the sting only when it is ready, spend supplies between rooms, then finish the run by matching the final food dance.',
             language: 'Language',
             languageSettings: 'Language Settings',
             newRun: 'New Run',
@@ -41,7 +41,7 @@ const I18N = {
             cooldown: 'Cooldown',
             chooseNeighbor: 'Choose a highlighted neighboring cell.',
             relicChoiceMessage: 'Choose one relic to shape the next chamber.',
-            danceMessage: 'Click the colored arrow before it fades.',
+            danceMessage: 'Click when the pulse reaches the step border. Green is perfect, blue is good, and misses lower the music and multiplier.',
             runCompleteMessage: 'Run complete.',
             deadMessage: 'The run is over. Restart the draft.',
             blockedNotAdjacent: 'Move next to that cell first.',
@@ -142,7 +142,7 @@ const I18N = {
     'es-419': {
         ui: {
             title: 'Guía del Panal',
-            objective: 'Guía a la abeja por cámaras llenas de niebla, junta polen, agua, escudos y reliquias, sobrevive a avispas, murciélagos y enredaderas, y termina la partida completando el baile final hacia la comida.',
+            objective: 'Guía a la abeja por cámaras llenas de niebla. Empieza juntando polen, agua y escudo, evita los anillos de peligro, usa el aguijón solo cuando esté listo, gasta suministros entre salas y termina la partida siguiendo el baile final hacia la comida.',
             language: 'Idioma',
             languageSettings: 'Configuración de idioma',
             newRun: 'Nueva partida',
@@ -179,7 +179,7 @@ const I18N = {
             cooldown: 'Recarga',
             chooseNeighbor: 'Elige una celda vecina resaltada.',
             relicChoiceMessage: 'Elige una reliquia para definir la siguiente cámara.',
-            danceMessage: 'Haz clic en la flecha de color antes de que desaparezca.',
+            danceMessage: 'Haz clic cuando el pulso llegue al borde del paso. Verde es perfecto, azul es bueno, y fallar baja la música y el multiplicador.',
             runCompleteMessage: 'Partida completa.',
             deadMessage: 'La partida terminó. Reinicia el borrador.',
             blockedNotAdjacent: 'Primero acércate a esa celda.',

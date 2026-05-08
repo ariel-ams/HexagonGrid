@@ -10,6 +10,7 @@ const DEFAULT_CONFIG = {
     holdPerfectProgress: 0.85,
     holdMinMs: 1000,
     holdMaxMs: 3000,
+    firstStepGraceMs: 1800,
     sequenceMinLength: 3,
     sequenceMaxLength: 6,
     multiMaxClicks: 5,
@@ -30,25 +31,14 @@ function createDanceSystem({ game, config = {}, helpers }) {
             ...(config.clickWindows || {})
         }
     };
-    const music = new Audio(settings.musicSrc);
-    music.loop = false;
-    music.volume = settings.musicVolume;
-    let volumeTimer = 0;
-
-    music.addEventListener('ended', () => {
-        if (game.mode !== 'dance' || game.ended) return;
-        music.currentTime = settings.musicStartAt;
-        music.play().catch(() => {});
-    });
-
     function start() {
         startMusic();
         helpers.showTutorialCallout(
             'dance',
             helpers.getLanguage() === 'es-419' ? 'Baile final' : 'Final Dance',
             helpers.getLanguage() === 'es-419'
-                ? 'Sigue los pasos antes de que se acabe el tiempo. Fallar baja el volumen y el multiplicador.'
-                : 'Follow the steps before time runs out. Misses duck the music and reduce the multiplier.'
+                ? 'Haz clic cuando el pulso llegue al borde del paso. Mantén presionada a la abeja en los pasos de hold.'
+                : 'Click when the pulse reaches the step border. Hold the bee on hold steps.'
         );
         game.mode = 'dance';
         game.playerMotion = null;
@@ -88,38 +78,33 @@ function createDanceSystem({ game, config = {}, helpers }) {
             moveQualityCount: 0,
             lastQuality: '',
             rewardApplied: false,
+            firstStepGraceApplied: false,
             move: null,
             active: null,
             holding: false,
             lastType: null
         };
-        helpers.addLog('Final Dance', 'Follow 12 dance moves. Clean pairs increase the pollen and water multiplier up to x4.');
+        helpers.addLog(
+            helpers.getLanguage() === 'es-419' ? 'Baile final' : 'Final Dance',
+            helpers.getLanguage() === 'es-419'
+                ? 'Sigue 12 movimientos. Verde es perfecto, azul es bueno, y los pares limpios suben el multiplicador hasta x4.'
+                : 'Follow 12 moves. Green is perfect, blue is good, and clean pairs raise the multiplier up to x4.'
+        );
         spawnMove();
+        helpers.recordReplayEvent('danceStart', { movesRequired: settings.movesRequired });
         helpers.draw();
     }
 
     function startMusic() {
-        helpers.stopGameplayMusic();
-        window.clearTimeout(volumeTimer);
-        music.volume = settings.musicVolume;
-        if (!music.paused) return;
-        music.currentTime = settings.musicStartAt;
-        music.play().catch(() => {});
+        helpers.audio.play('dance');
     }
 
     function stopMusic() {
-        window.clearTimeout(volumeTimer);
-        music.pause();
-        music.currentTime = 0;
-        music.volume = settings.musicVolume;
+        helpers.audio.stop('dance');
     }
 
     function duckMusic() {
-        window.clearTimeout(volumeTimer);
-        music.volume = settings.missVolume;
-        volumeTimer = window.setTimeout(() => {
-            music.volume = settings.musicVolume;
-        }, 900);
+        helpers.audio.duck('dance', settings.missVolume, 900);
     }
 
     function spawnMove() {
@@ -200,12 +185,17 @@ function createDanceSystem({ game, config = {}, helpers }) {
         }
 
         const now = performance.now();
+        const isOpeningStep = !game.dance.firstStepGraceApplied && game.dance.completed === 0 && move.index === 0;
+        const createdAt = now + (isOpeningStep ? settings.firstStepGraceMs : 0);
+        if (isOpeningStep) {
+            game.dance.firstStepGraceApplied = true;
+        }
         game.dance.active = {
             q: next.q,
             r: next.r,
             directionIndex: next.directionIndex,
-            createdAt: now,
-            expiresAt: move.type === 'hold' ? 0 : now + getTimingWindow(move).windowMs,
+            createdAt,
+            expiresAt: move.type === 'hold' ? 0 : createdAt + getTimingWindow(move).windowMs,
             holdStartedAt: 0
         };
         game.dance.holding = false;
@@ -358,6 +348,13 @@ function createDanceSystem({ game, config = {}, helpers }) {
             recordQuality(score, quality);
         }
         helpers.awardXp(helpers.xpRewards.danceStep, helpers.getLanguage() === 'es-419' ? 'Paso de baile' : 'Dance step', { silent: true });
+        helpers.recordReplayEvent('danceStep', {
+            moveType: game.dance.move.type,
+            quality,
+            score,
+            q: cell.q,
+            r: cell.r
+        });
 
         if (game.dance.move.index >= game.dance.move.steps.length) {
             completeMove();
@@ -403,6 +400,11 @@ function createDanceSystem({ game, config = {}, helpers }) {
         helpers.awardXp(helpers.xpRewards.danceMove, helpers.getLanguage() === 'es-419' ? 'Movimiento de baile' : 'Dance move', { silent: true });
         game.message = `Dance move ${game.dance.completed}/${settings.movesRequired}: ${game.dance.move.label}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
         helpers.addLog('Dance Move', game.message);
+        helpers.recordReplayEvent('danceMove', {
+            completed: game.dance.completed,
+            multiplier: game.dance.multiplier,
+            misses: game.dance.misses
+        });
 
         if (game.dance.completed >= settings.movesRequired) {
             helpers.endRun('dance-complete');
@@ -425,6 +427,11 @@ function createDanceSystem({ game, config = {}, helpers }) {
         game.message = `${reason} Miss ${game.dance.misses}. Multiplier x${game.dance.multiplier.toFixed(2)}.`;
         helpers.addLog('Dance Miss', game.message);
         addFeedback('Miss', 'miss');
+        helpers.recordReplayEvent('danceMiss', {
+            reason,
+            misses: game.dance.misses,
+            multiplier: game.dance.multiplier
+        });
 
         if (!active || !move) {
             spawnMove();
