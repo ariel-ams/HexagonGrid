@@ -236,6 +236,7 @@ const OBJECT_UNLOCK_LEVELS = {
     entry: 1,
     exit: 1,
     finalExit: 1,
+    wall: 1,
     pollen: 1,
     water: 1,
     upgrade: 1,
@@ -281,9 +282,9 @@ const ROOM_OBJECTIVES = [
     {
         id: 'findExit',
         minDepth: 1,
-        label: { en: 'Find the exit', 'es-419': 'Encuentra la salida' },
-        hint: { en: 'Move through mist and reveal the room.', 'es-419': 'Muévete por la niebla y revela la sala.' },
-        isComplete: () => game.objectiveProgress.exitSeen
+        label: { en: 'Reach the exit', 'es-419': 'Llega a la salida' },
+        hint: { en: 'The exit is visible. Plan a route and step onto it.', 'es-419': 'La salida está visible. Planea una ruta y pisa esa celda.' },
+        isComplete: () => game.objectiveProgress.exitReached
     },
     {
         id: 'collectTwo',
@@ -297,14 +298,14 @@ const ROOM_OBJECTIVES = [
         minDepth: 2,
         label: { en: 'Reach the exit with shield', 'es-419': 'Llega a la salida con escudo' },
         hint: { en: 'Shield blocks the next mistake.', 'es-419': 'El escudo bloquea el próximo error.' },
-        isComplete: () => game.objectiveProgress.exitSeen && game.player.upgrades > 0
+        isComplete: () => game.objectiveProgress.exitReached && game.player.upgrades > 0
     },
     {
         id: 'avoidDamage',
         minDepth: 2,
         label: { en: 'Avoid damage this room', 'es-419': 'Evita daño en esta sala' },
         hint: { en: 'Leave danger rings before timers fill.', 'es-419': 'Sal de los anillos de peligro antes de que se llenen.' },
-        isComplete: () => game.objectiveProgress.exitSeen && !game.objectiveProgress.tookDamage
+        isComplete: () => game.objectiveProgress.exitReached && !game.objectiveProgress.tookDamage
     },
     {
         id: 'defeatEnemy',
@@ -1049,6 +1050,8 @@ function generateRoom(reason) {
     });
 
     placeFirstRoomTeachingPickups();
+    placeRoomLessonGate();
+    revealExitCell();
     placeTeachingEnemy();
     placeBats();
     const startCell = getCell(game.player.q, game.player.r);
@@ -1076,6 +1079,7 @@ function createObjectiveProgress() {
         kills: 0,
         tookDamage: false,
         exitSeen: false,
+        exitReached: false,
         rewarded: false
     };
 }
@@ -1214,6 +1218,113 @@ function placeFirstRoomTeachingPickups() {
         const cell = candidates[index];
         if (cell) cell.object = object;
     });
+}
+
+function placeRoomLessonGate() {
+    if (!game.exitCell || game.roomDepth <= 1) return;
+    if (game.roomDepth === 2) {
+        placeWaxDoorExitGate();
+        placeResourceNearPlayer('pollen');
+        return;
+    }
+    if (game.roomDepth === 3) {
+        placeEnemyExitGate('enemy');
+        placeResourceNearPlayer('pollen');
+        return;
+    }
+    placeMixedExitGate();
+}
+
+function revealExitCell() {
+    const exit = game.exitCell ? getCell(game.exitCell.q, game.exitCell.r) : null;
+    if (exit) {
+        exit.revealed = true;
+    }
+}
+
+function placeWaxDoorExitGate() {
+    const neighbors = getExitNeighborCells()
+        .filter(isGateCandidateCell)
+        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
+    const gate = neighbors[0];
+    if (!gate) return;
+    gate.object = 'waxDoor';
+    game.roomSpawnCounts.hazards += 1;
+    neighbors.slice(1, 4).forEach((cell) => {
+        if (isGateCandidateCell(cell)) cell.object = 'wall';
+    });
+}
+
+function placeEnemyExitGate(enemyObject = 'enemy') {
+    const neighbors = getExitNeighborCells()
+        .filter(isGateCandidateCell)
+        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
+    const guard = neighbors[0];
+    if (!guard) return;
+    guard.object = enemyObject;
+    guard.nextAuraAt = 0;
+    guard.nextAttackAt = 0;
+    guard.hits = 0;
+    game.roomSpawnCounts.enemies += 1;
+    neighbors.slice(1, 3).forEach((cell) => {
+        if (isGateCandidateCell(cell)) cell.object = 'wall';
+    });
+}
+
+function placeMixedExitGate() {
+    const profile = getRoomProfile();
+    const enemy = profile.allowedEnemies.includes('guardWasp') && getObjectUnlockLevel('guardWasp') <= getPlayerLevel()
+        ? 'guardWasp'
+        : 'enemy';
+    const neighbors = getExitNeighborCells()
+        .filter(isGateCandidateCell)
+        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
+    const guard = neighbors[0];
+    if (guard) {
+        guard.object = enemy;
+        guard.nextAuraAt = 0;
+        guard.nextAttackAt = 0;
+        guard.hits = 0;
+        game.roomSpawnCounts.enemies += 1;
+    }
+    const door = neighbors[1];
+    if (door) {
+        door.object = 'waxDoor';
+        game.roomSpawnCounts.hazards += 1;
+        placeResourceNearPlayer('pollen');
+    }
+    neighbors.slice(2, 4).forEach((cell) => {
+        if (isGateCandidateCell(cell)) cell.object = 'wall';
+    });
+}
+
+function isGateCandidateCell(cell) {
+    return Boolean(cell
+        && cell.object !== 'entry'
+        && cell.object !== 'exit'
+        && cell.object !== 'finalExit'
+        && !(cell.q === game.player.q && cell.r === game.player.r));
+}
+
+function getExitNeighborCells() {
+    if (!game.exitCell) return [];
+    return HEX_DIRECTIONS
+        .map((direction) => getCell(game.exitCell.q + direction.q, game.exitCell.r + direction.r))
+        .filter(Boolean);
+}
+
+function placeResourceNearPlayer(object) {
+    const target = game.cells
+        .filter((cell) => (
+            cell.object === 'empty'
+            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 3
+            && !(cell.q === game.player.q && cell.r === game.player.r)
+        ))
+        .sort((a, b) => (
+            hexDistance(a.q, a.r, game.player.q, game.player.r)
+            - hexDistance(b.q, b.r, game.player.q, game.player.r)
+        ))[0];
+    if (target) target.object = object;
 }
 
 function placeBats() {
@@ -2297,6 +2408,24 @@ function drawTokenFallback(type, x, y, size) {
         ctx.strokeRect(-size * 0.22, -size * 0.28, size * 0.44, size * 0.56);
     }
 
+    if (type === 'wall') {
+        ctx.fillStyle = '#65716a';
+        ctx.strokeStyle = '#2d3430';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(-size * 0.34, -size * 0.26, size * 0.68, size * 0.52, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(243, 240, 223, 0.24)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.22, -size * 0.08);
+        ctx.lineTo(size * 0.24, -size * 0.08);
+        ctx.moveTo(-size * 0.12, size * 0.1);
+        ctx.lineTo(size * 0.3, size * 0.1);
+        ctx.stroke();
+    }
+
     if (type === 'stickyTrap') {
         ctx.fillStyle = 'rgba(214, 140, 57, 0.74)';
         ctx.beginPath();
@@ -2767,7 +2896,7 @@ function getObjectRole(object) {
     if (object === 'vine') return `${roles.hazard} | ${VINE_DAMAGE} ${currentLanguage === 'es-419' ? 'daño al cruzar' : 'damage when crossed'}`;
     if (object === 'npc') return roles.trade;
     if (object === 'entry' || object === 'exit' || object === 'finalExit') return roles.route;
-    if (object === 'waxDoor') return roles.blocker;
+    if (object === 'waxDoor' || object === 'wall') return roles.blocker;
     if (object === 'stickyTrap') return roles.control;
     return roles.item;
 }
@@ -2779,6 +2908,7 @@ function getActionPreview(cell) {
 
     const object = cell.object;
     if (isEnemyObject(object)) return getAttackCooldownRemaining() > 0 ? t('actions', 'waitSting') : t('actions', 'sting');
+    if (object === 'wall') return OBJECTS.wall?.description || t('ui', 'blockedGeneric');
     if (object === 'waxDoor') return game.player.pollen > 0 ? t('actions', 'openPollen') : t('actions', 'openSting');
     if (object === 'vine') return t('actions', 'crossHazard');
     if (object === 'npc') return t('actions', 'trade');
@@ -2896,6 +3026,7 @@ function moveTo(cell) {
     cell.visited = true;
 
     if (targetObject === 'exit') {
+        game.objectiveProgress.exitReached = true;
         updateObjectiveProgress();
         awardXp(XP_REWARDS.room + game.roomDepth * 6, currentLanguage === 'es-419' ? 'Sala completada' : 'Room complete');
         game.roomStack.push(createRoomSnapshot());
@@ -3876,6 +4007,14 @@ function getCellActionState(cell) {
             reason: ready ? '' : t('ui', 'blockedCooldown'),
             symbol: '!',
             color: '#ff8a72'
+        };
+    }
+    if (object === 'wall') {
+        return {
+            available: false,
+            reason: OBJECTS.wall?.description || t('ui', 'blockedGeneric'),
+            symbol: 'X',
+            color: '#7c8780'
         };
     }
     if (object === 'waxDoor') {

@@ -109,6 +109,7 @@ const I18N = {
             flowerMap: ['Flower Map', 'Reveals a rough route toward the exit.'],
             royalNectar: ['Royal Nectar', 'Rare recovery. Heals now, or grants permanent health if already full.'],
             waxDoor: ['Wax Door', 'Blocks movement. Spend 1 pollen or a ready sting to open it.'],
+            wall: ['Stone Wall', 'Blocks movement. Find a door or another route.'],
             stickyHoney: ['Sticky Honey', 'Leaves sticky honey behind that slows nearby moving enemies.'],
             stickyTrap: ['Sticky Patch', 'Moving enemies near this patch lose momentum.'],
             compassPollen: ['Compass Pollen', 'Reveals the exit through the mist.'],
@@ -247,6 +248,7 @@ const I18N = {
             flowerMap: ['Mapa floral', 'Revela una ruta aproximada hacia la salida.'],
             royalNectar: ['Néctar real', 'Recuperación rara. Cura ahora o da salud permanente si ya estás al máximo.'],
             waxDoor: ['Puerta de cera', 'Bloquea el paso. Gasta 1 polen o un aguijón listo para abrirla.'],
+            wall: ['Muro de piedra', 'Bloquea el paso. Busca una puerta u otra ruta.'],
             stickyHoney: ['Miel pegajosa', 'Deja miel en el panal y ralentiza enemigos cercanos.'],
             stickyTrap: ['Parche pegajoso', 'Los enemigos que se mueven cerca pierden impulso.'],
             compassPollen: ['Polen brújula', 'Revela la salida a través de la niebla.'],
@@ -357,6 +359,7 @@ const SPRITE_DEFS = {
     upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     stingUpgrade: { src: 'assets/sting-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    wall: { src: '', columns: 1, rows: 1, row: 0, frameMs: 180, fallback: 'W' },
     glowPollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
     nectarCache: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     honeyDrop: { src: '', columns: 1, rows: 1, row: 0, frameMs: 230, fallback: 'HN' },
@@ -677,6 +680,11 @@ const OBJECTS = {
         name: 'Wax Door',
         color: '#d6b25f',
         description: 'Blocks movement. Spend 1 pollen or a ready sting to open it.'
+    },
+    wall: {
+        name: 'Stone Wall',
+        color: '#65716a',
+        description: 'Blocks movement. Find a door or another route.'
     },
     stickyHoney: {
         name: 'Sticky Honey',
