@@ -199,19 +199,11 @@ const {
     ENEMY_SPAWN_WEIGHTS
 } = window.HW_CONTENT;
 
-const UI_ART_DEFS = {
-    boardBackground: 'assets/ui/forest-board-bg.webp'
-};
-const TILE_ART_DEFS = {
-    empty: 'assets/tiles/hex-empty.png',
-    visited: 'assets/tiles/hex-visited.png',
-    hidden: 'assets/tiles/hex-hidden.png',
-    path: 'assets/tiles/hex-path.png',
-    exit: 'assets/tiles/alpha/hex-exit.png',
-    danger: 'assets/tiles/hex-danger.png',
-    pickableBorder: 'assets/tiles/hex-pickable-border.png',
-    enemyBorder: 'assets/tiles/hex-enemy-border.png'
-};
+const {
+    UI_ART_DEFS,
+    TILE_ART_DEFS,
+    HUD_ICON_ROWS
+} = window.HW_ART;
 const uiArtAssets = {};
 const tileArtAssets = {};
 const spriteAssets = {};
@@ -4260,28 +4252,28 @@ function renderStatsHud(statsText) {
     }
     const firstRoom = game.roomDepth === 1;
     const items = [
-        { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, hudIcon: 0, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
-        { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, hudIcon: 1, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
-        { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, hudIcon: 2, icon: 'bolt', color: '#f5c84b' },
-        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), hudIcon: 4, fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
+        { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, hudIcon: HUD_ICON_ROWS.health, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
+        { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, hudIcon: HUD_ICON_ROWS.shield, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
+        { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, hudIcon: HUD_ICON_ROWS.stamina, icon: 'bolt', color: '#f5c84b' },
+        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), hudIcon: HUD_ICON_ROWS.objective, fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
     ];
     if (!firstRoom || game.player.pollen > 0) {
-        items.splice(1, 0, { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, hudIcon: 5, sprite: 'pollen', fallback: 'P', color: '#f7d45c' });
+        items.splice(1, 0, { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, hudIcon: HUD_ICON_ROWS.pollen, sprite: 'pollen', fallback: 'P', color: '#f7d45c' });
     }
     if (!firstRoom || game.player.water > 0) {
-        items.splice(2, 0, { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, hudIcon: 6, sprite: 'water', fallback: 'W', color: '#4bb6f2' });
+        items.splice(2, 0, { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, hudIcon: HUD_ICON_ROWS.water, sprite: 'water', fallback: 'W', color: '#4bb6f2' });
     }
     if (!firstRoom || game.player.honey > 0) {
-        items.push({ id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, hudIcon: 7, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' });
+        items.push({ id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, hudIcon: HUD_ICON_ROWS.honey, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' });
     }
     if (!firstRoom || game.player.stingCharges > 0) {
-        items.push({ id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, hudIcon: 8, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' });
+        items.push({ id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, hudIcon: HUD_ICON_ROWS.sting, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' });
     }
     if (!firstRoom || progression.xp > 0) {
-        items.push({ id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, hudIcon: 3, fallback: 'LV', color: '#fff2a7' });
+        items.push({ id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, hudIcon: HUD_ICON_ROWS.level, fallback: 'LV', color: '#fff2a7' });
     }
     if (!firstRoom) {
-        items.push({ id: 'room', value: game.roomDepth, title: `${statsText.room[0]}: ${statsText.room[1]}`, hudIcon: 4, icon: 'room', color: '#43aa8b' });
+        items.push({ id: 'room', value: game.roomDepth, title: `${statsText.room[0]}: ${statsText.room[1]}`, hudIcon: HUD_ICON_ROWS.room, icon: 'room', color: '#43aa8b' });
     }
     hudRenderer.renderStats(items);
 }
@@ -4298,7 +4290,7 @@ function renderTimerHud() {
             id: 'attackCooldown',
             value: `${(attackRemaining / 1000).toFixed(1)}`,
             title: `${t('ui', 'locked')}: ${t('ui', 'avoidEnemies')}`,
-            hudIcon: 8,
+            hudIcon: HUD_ICON_ROWS.attackCooldown,
             sprite: 'stingUpgrade',
             fallback: '!',
             color: '#ff8a72',
@@ -4323,7 +4315,7 @@ function renderTimerHud() {
                     id: `enemy-${cell.q},${cell.r}`,
                     value: `${Math.ceil(remaining / 100) / 10}`,
                     title: `${enemy.name}: ${damage}. ${enemy.behavior}`,
-                    hudIcon: 9,
+                    hudIcon: HUD_ICON_ROWS.danger,
                     sprite: enemy.sprite,
                     fallback: getFallbackLabel(cell.object) || enemy.name.slice(0, 1),
                     color: enemy.color,
