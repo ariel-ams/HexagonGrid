@@ -55,6 +55,7 @@ const BASE_ATTACK_COOLDOWN_MS = 1200;
 const MIN_ATTACK_COOLDOWN_MS = 300;
 const MAX_STAMINA = 6;
 const MAX_SHIELD = 5;
+const DUNGEON_GRID_ZOOM = 1.12;
 const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const BASE_XP_TO_LEVEL = 24;
@@ -1847,10 +1848,11 @@ function layout() {
     const maxY = Math.max(...unitPoints.map((point) => point.y));
     const unitWidth = maxX - minX;
     const unitHeight = maxY - minY;
-    const size = Math.max(18, Math.min(
+    const baseSize = Math.max(18, Math.min(
         (rect.width - padding * 2) / unitWidth,
         (rect.height - padding * 2) / unitHeight
     ));
+    const size = game.mode === 'dance' ? baseSize : baseSize * DUNGEON_GRID_ZOOM;
 
     if (game.mode === 'dance') {
         return {
@@ -4258,28 +4260,28 @@ function renderStatsHud(statsText) {
     }
     const firstRoom = game.roomDepth === 1;
     const items = [
-        { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
-        { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
-        { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, icon: 'bolt', color: '#f5c84b' },
-        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
+        { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, hudIcon: 0, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
+        { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, hudIcon: 1, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
+        { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, hudIcon: 2, icon: 'bolt', color: '#f5c84b' },
+        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), hudIcon: 4, fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
     ];
     if (!firstRoom || game.player.pollen > 0) {
-        items.splice(1, 0, { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, sprite: 'pollen', fallback: 'P', color: '#f7d45c' });
+        items.splice(1, 0, { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, hudIcon: 5, sprite: 'pollen', fallback: 'P', color: '#f7d45c' });
     }
     if (!firstRoom || game.player.water > 0) {
-        items.splice(2, 0, { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, sprite: 'water', fallback: 'W', color: '#4bb6f2' });
+        items.splice(2, 0, { id: 'water', value: game.player.water, title: `${statsText.water[0]}: ${statsText.water[1]}`, hudIcon: 6, sprite: 'water', fallback: 'W', color: '#4bb6f2' });
     }
     if (!firstRoom || game.player.honey > 0) {
-        items.push({ id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' });
+        items.push({ id: 'honey', value: game.player.honey, title: `${t('ui', 'honey')}: ${t('ui', 'honeyHint')}`, hudIcon: 7, sprite: 'honeyDrop', fallback: 'H', color: '#f2b544' });
     }
     if (!firstRoom || game.player.stingCharges > 0) {
-        items.push({ id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' });
+        items.push({ id: 'sting', value: game.player.stingCharges, title: `${statsText.doubleSting[0]}: ${statsText.doubleSting[1]}`, hudIcon: 8, sprite: 'stingUpgrade', fallback: '2x', color: '#f28f3b' });
     }
     if (!firstRoom || progression.xp > 0) {
-        items.push({ id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, fallback: 'LV', color: '#fff2a7' });
+        items.push({ id: 'level', value: getPlayerLevel(), title: `XP ${progression.xp}/${getXpForNextLevel()} - ${currentLanguage === 'es-419' ? 'desbloquea objetos y enemigos gradualmente' : 'gradually unlocks objects and enemies'}`, hudIcon: 3, fallback: 'LV', color: '#fff2a7' });
     }
     if (!firstRoom) {
-        items.push({ id: 'room', value: game.roomDepth, title: `${statsText.room[0]}: ${statsText.room[1]}`, icon: 'room', color: '#43aa8b' });
+        items.push({ id: 'room', value: game.roomDepth, title: `${statsText.room[0]}: ${statsText.room[1]}`, hudIcon: 4, icon: 'room', color: '#43aa8b' });
     }
     hudRenderer.renderStats(items);
 }
@@ -4296,6 +4298,7 @@ function renderTimerHud() {
             id: 'attackCooldown',
             value: `${(attackRemaining / 1000).toFixed(1)}`,
             title: `${t('ui', 'locked')}: ${t('ui', 'avoidEnemies')}`,
+            hudIcon: 8,
             sprite: 'stingUpgrade',
             fallback: '!',
             color: '#ff8a72',
@@ -4320,6 +4323,7 @@ function renderTimerHud() {
                     id: `enemy-${cell.q},${cell.r}`,
                     value: `${Math.ceil(remaining / 100) / 10}`,
                     title: `${enemy.name}: ${damage}. ${enemy.behavior}`,
+                    hudIcon: 9,
                     sprite: enemy.sprite,
                     fallback: getFallbackLabel(cell.object) || enemy.name.slice(0, 1),
                     color: enemy.color,

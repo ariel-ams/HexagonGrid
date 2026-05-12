@@ -38,6 +38,9 @@ function createHudRenderer({ statsNode, timerNode, spriteDefs, escapeHtml, escap
     }
 
     function renderIcon(item) {
+        if (item.hudIcon !== undefined && item.hudIcon !== null) {
+            return `<span class="hud-icon hud-sheet-icon" style="--hud-icon-row:${Number(item.hudIcon) || 0}" aria-hidden="true"></span>`;
+        }
         const src = item.sprite ? spriteDefs[item.sprite]?.src : '';
         if (src) {
             return `<span class="hud-icon" style="background:${item.color || 'rgba(243, 240, 223, 0.1)'}"><img src="${escapeAttr(src)}" alt=""></span>`;
