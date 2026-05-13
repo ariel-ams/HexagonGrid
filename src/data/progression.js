@@ -48,7 +48,7 @@ const ROOM_PROFILES = [
         maxEnemies: 4,
         maxHazards: 4,
         maxSpecialItems: 4,
-        allowedEnemies: ['enemy', 'thornBeetle', 'miteSwarm', 'bat'],
+        allowedEnemies: ['enemy', 'thornBeetle', 'miteSwarm', 'bat', 'honeySnareSpider', 'pollenThiefMoth'],
         allowedDiscovery: ['honeyDrop', 'glowPollen', 'stingUpgrade', 'cleanWater'],
         allowedUtility: ['npc', 'upgrade', 'stingUpgrade'],
         itemWeights: [
@@ -70,7 +70,7 @@ const ROOM_PROFILES = [
         maxEnemies: 7,
         maxHazards: 7,
         maxSpecialItems: 7,
-        allowedEnemies: ['enemy', 'thornBeetle', 'miteSwarm', 'bat', 'guardWasp', 'sleepingBat', 'waxMoth', 'fogMoth', 'honeyLeech'],
+        allowedEnemies: ['enemy', 'thornBeetle', 'miteSwarm', 'bat', 'guardWasp', 'sleepingBat', 'waxMoth', 'fogMoth', 'honeyLeech', 'waspHive', 'crawlingFire', 'honeySnareSpider', 'pollenThiefMoth', 'burrowBeetle', 'queenSignaler', 'fogShepherd', 'waterLeech', 'waxSentinel'],
         allowedDiscovery: ['honeyDrop', 'glowPollen', 'cleanWater', 'smokePuff', 'flowerMap', 'compassPollen', 'nectarCache', 'waxDoor', 'stickyHoney'],
         allowedUtility: ['npc', 'upgrade', 'stingUpgrade'],
         itemWeights: [
@@ -92,7 +92,7 @@ const ROOM_PROFILES = [
         maxEnemies: 10,
         maxHazards: 9,
         maxSpecialItems: 9,
-        allowedEnemies: ['enemy', 'thornBeetle', 'miteSwarm', 'bat', 'guardWasp', 'sleepingBat', 'waxMoth', 'fogMoth', 'honeyLeech', 'broodWasp', 'stagBeetle', 'falseFlower'],
+        allowedEnemies: ['enemy', 'thornBeetle', 'miteSwarm', 'bat', 'guardWasp', 'sleepingBat', 'waxMoth', 'fogMoth', 'honeyLeech', 'broodWasp', 'stagBeetle', 'falseFlower', 'waspHive', 'crawlingFire', 'honeySnareSpider', 'burrowBeetle', 'queenSignaler', 'fogShepherd', 'pollenThiefMoth', 'waxSentinel', 'mirrorWasp', 'combBomber', 'waterLeech', 'larvaBrood'],
         allowedDiscovery: ['honeyDrop', 'glowPollen', 'cleanWater', 'smokePuff', 'sunShard', 'flowerMap', 'royalNectar', 'compassPollen', 'nectarCache', 'waxDoor', 'stickyHoney'],
         allowedUtility: ['npc', 'upgrade', 'stingUpgrade'],
         itemWeights: [
@@ -131,19 +131,34 @@ const OBJECT_UNLOCK_LEVELS = {
     nectarCache: 3,
     compassPollen: 3,
     stickyHoney: 3,
+    honeySnareSpider: 3,
+    pollenThiefMoth: 3,
     waxDoor: 3,
+    burningCell: 3,
+    waspHive: 4,
+    crawlingFire: 4,
+    waterLeech: 4,
     smokePuff: 4,
     flowerMap: 4,
     guardWasp: 4,
     sleepingBat: 4,
     waxMoth: 4,
     fogMoth: 4,
+    fogShepherd: 4,
     honeyLeech: 4,
+    burrowBeetle: 5,
+    queenSignaler: 5,
+    waxSentinel: 5,
     royalNectar: 5,
     sunShard: 5,
     broodWasp: 5,
     stagBeetle: 5,
-    falseFlower: 5
+    falseFlower: 5,
+    mirrorWasp: 6,
+    combBomber: 6,
+    larvaBrood: 6,
+    burrowWarningCell: 6,
+    bomberMarkedCell: 6
 };
 
 const XP_REWARDS = {

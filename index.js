@@ -1,5 +1,5 @@
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d');
 const statsPanel = document.getElementById('statsPanel');
 const logPanel = document.getElementById('logPanel');
 const statsToggle = document.getElementById('statsToggle');
@@ -31,6 +31,12 @@ const relicListNode = document.getElementById('relicList');
 const campScreen = document.getElementById('campScreen');
 const campActionsNode = document.getElementById('campActions');
 const campContinueButton = document.getElementById('campContinueButton');
+const testScreen = document.getElementById('testScreen');
+const testObjectListNode = document.getElementById('testObjectList');
+const testBackButton = document.getElementById('testBackButton');
+const testControls = document.getElementById('testControls');
+const testPauseButton = document.getElementById('testPauseButton');
+const testListButton = document.getElementById('testListButton');
 const endScreen = document.getElementById('endScreen');
 const endStatsNode = document.getElementById('endStats');
 const endRestartButton = document.getElementById('endRestartButton');
@@ -109,6 +115,7 @@ const tileArtAssets = {};
 const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
+const rendererTools = window.HW_RENDERER.createRendererTools();
 loadUiArt();
 loadTileArt();
 loadSprites();
@@ -121,9 +128,16 @@ const hudRenderer = window.HW_HUD.createHudRenderer({
     escapeAttr
 });
 
+const choiceUi = window.HW_CHOICE_UI.createChoiceUi({
+    escapeHtml,
+    escapeAttr
+});
+
 let itemSystem = null;
 let enemySystem = null;
 let danceSystem = null;
+let dungeonGenerator = null;
+let replaySystem = null;
 let replaySpeed = 1;
 const audioSystem = window.HW_AUDIO.createAudioSystem({
     tracks: {
@@ -192,7 +206,20 @@ const DISCOVERY_CALLOUT_OBJECTS = new Set([
     'guardWasp',
     'sleepingBat',
     'honeyLeech',
+    'waspHive',
+    'crawlingFire',
+    'honeySnareSpider',
+    'burrowBeetle',
+    'queenSignaler',
+    'fogShepherd',
+    'pollenThiefMoth',
+    'waxSentinel',
+    'mirrorWasp',
+    'combBomber',
+    'waterLeech',
+    'larvaBrood',
     'vine',
+    'burningCell',
     'npc',
     'upgrade',
     'stingUpgrade',
@@ -249,6 +276,9 @@ const game = {
     lastDamageSource: null,
     deathTip: '',
     danceFeedback: [],
+    isTestScenario: false,
+    testPaused: false,
+    activeTestObject: null,
     revealRadius: 2,
     roomFirstStingAvailable: false,
     freeWaxDoorAvailable: false,
@@ -320,6 +350,23 @@ enemySystem = window.HW_ENEMIES.createEnemySystem({
         hexDistance,
         recordReplayEvent,
         seededRandom
+    }
+});
+
+dungeonGenerator = window.HW_DUNGEON_GENERATION.createDungeonGenerator({
+    directions: HEX_DIRECTIONS,
+    helpers: {
+        cellKey,
+        hexDistance,
+        seededRandom
+    }
+});
+
+replaySystem = window.HW_REPLAY.createReplaySystem({
+    game,
+    helpers: {
+        now: () => performance.now(),
+        createSnapshot: createReplaySnapshot
     }
 });
 
@@ -819,6 +866,9 @@ function startRunState() {
     game.lastDamageSource = null;
     game.deathTip = '';
     game.danceFeedback = [];
+    game.isTestScenario = false;
+    game.testPaused = false;
+    game.activeTestObject = null;
     game.revealRadius = 2;
     game.roomFirstStingAvailable = false;
     game.freeWaxDoorAvailable = false;
@@ -841,6 +891,8 @@ function startRunState() {
     game.player = createFreshPlayer();
     relicScreen.classList.remove('visible');
     campScreen.classList.remove('visible');
+    testScreen.classList.remove('visible');
+    testControls.classList.remove('visible');
     endScreen.classList.remove('visible');
     replayControls.classList.remove('visible');
     renderRelics();
@@ -854,6 +906,188 @@ function testDanceRun() {
     generateDanceRoom();
 }
 
+function getTestObjectEntries() {
+    return Object.entries(OBJECTS)
+        .filter(([id]) => !['empty', 'entry', 'exit', 'finalExit'].includes(id))
+        .map(([id, object]) => ({
+            id,
+            name: getDisplayNameForObject(id),
+            description: getEnemyDef(id)?.behavior || object.description || '',
+            kind: isEnemyObject(id)
+                ? (currentLanguage === 'es-419' ? 'Enemigo' : 'Enemy')
+                : ['vine', 'burningCell', 'burrowWarningCell', 'bomberMarkedCell', 'wall', 'waxDoor', 'stickyTrap'].includes(id)
+                ? (currentLanguage === 'es-419' ? 'Terreno' : 'Terrain')
+                : (currentLanguage === 'es-419' ? 'Objeto' : 'Item')
+        }))
+        .sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name));
+}
+
+function renderTestObjectList() {
+    choiceUi.renderObjectTests(testObjectListNode, getTestObjectEntries());
+    drawTestObjectIcons();
+}
+
+function drawTestObjectIcons() {
+    testObjectListNode.querySelectorAll('[data-test-icon]').forEach((icon) => {
+        const iconCtx = icon.getContext('2d');
+        const objectId = icon.dataset.testIcon;
+        renderObjectIcon(iconCtx, objectId, icon.width, icon.height);
+    });
+}
+
+function renderObjectIcon(targetCtx, objectId, width, height) {
+    const previousCtx = ctx;
+    try {
+        ctx = targetCtx;
+        ctx.clearRect(0, 0, width, height);
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.fillStyle = 'rgba(255, 246, 207, 0.82)';
+        ctx.strokeStyle = OBJECTS[objectId]?.color || '#7b4a21';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.min(width, height) * 0.42, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+        drawSprite(objectId, width / 2, height / 2, Math.min(width, height) * 0.42);
+    } finally {
+        ctx = previousCtx;
+    }
+}
+
+function startObjectTestScenario(objectId) {
+    const object = OBJECTS[objectId];
+    if (!object) return;
+
+    startGameplayMusic();
+    startScreen.classList.add('hidden');
+    testScreen.classList.remove('visible');
+    startRunState();
+    game.mode = 'dungeon';
+    game.isTestScenario = true;
+    game.testPaused = false;
+    game.activeTestObject = objectId;
+    game.runSeed = (Date.now() >>> 0) ^ objectId.length;
+    game.rngState = game.runSeed;
+    game.roomDepth = Math.max(1, getObjectUnlockLevel(objectId));
+    game.roomProfile = getRoomProfile();
+    game.roomObjective = null;
+    game.currentRoomCells = getAllCoordinatesForRadius(2);
+    game.entryCell = { q: -2, r: 0 };
+    game.exitCell = { q: 2, r: 0 };
+    game.player = createFreshPlayer();
+    game.player.q = 0;
+    game.player.r = 0;
+    game.player.health = Math.min(5, game.player.maxHealth);
+    game.player.pollen = 3;
+    game.player.water = 3;
+    game.player.honey = 2;
+    game.player.upgrades = 1;
+    game.player.stingCharges = 2;
+    game.player.attackReadyAt = 0;
+    game.cells = game.currentRoomCells.map(({ q, r }) => ({
+        q,
+        r,
+        object: 'empty',
+        visited: q === 0 && r === 0,
+        revealed: true,
+        nextAttackAt: 0,
+        nextAuraAt: 0,
+        hits: 0
+    }));
+
+    const target = getCell(1, 0);
+    if (target) {
+        target.object = objectId;
+        target.awake = objectId === 'sleepingBat';
+    }
+
+    seedTestSupportCells(objectId);
+    game.message = `Testing ${getDisplayNameForObject(objectId)}. Hover it, then click the adjacent cell to interact.`;
+    addLog('Test Scenario', game.message);
+    showTutorialCallout('testScenario', 'Test Scenario', game.message);
+    testControls.classList.add('visible');
+    testPauseButton.textContent = currentLanguage === 'es-419' ? 'Pausar' : 'Pause';
+    revealAroundPlayer();
+    draw();
+}
+
+function seedTestSupportCells(objectId) {
+    const support = [
+        { q: 0, r: 1, object: 'water' },
+        { q: -1, r: 1, object: 'pollen' },
+        { q: 1, r: -1, object: 'empty' },
+        { q: 0, r: -1, object: 'empty' },
+        { q: -1, r: 0, object: 'empty' },
+        { q: 2, r: 0, object: 'exit' }
+    ];
+
+    if (objectId === 'waterLeech') {
+        support[0].object = 'water';
+    } else if (objectId === 'crawlingFire' || objectId === 'burningCell') {
+        support[0].object = 'water';
+    } else if (objectId === 'waxDoor') {
+        support[1].object = 'pollen';
+    } else if (objectId === 'npc') {
+        game.player.pollen = 4;
+        game.player.water = 4;
+        game.player.honey = 3;
+    } else if (objectId === 'upgrade') {
+        game.player.upgrades = 0;
+    } else if (objectId === 'water' || objectId === 'honeyDrop' || objectId === 'royalNectar') {
+        game.player.health = 3;
+    }
+
+    support.forEach(({ q, r, object }) => {
+        const cell = getCell(q, r);
+        if (cell && cell.object === 'empty') cell.object = object;
+    });
+}
+
+function openTestMenu() {
+    stopAllMusic();
+    renderTestObjectList();
+    optionsPanel.classList.remove('visible');
+    startScreen.classList.add('hidden');
+    testScreen.querySelector('h2').textContent = currentLanguage === 'es-419' ? 'Escenario de prueba' : 'Test Scenario';
+    testScreen.querySelector('p').textContent = currentLanguage === 'es-419'
+        ? 'Elige un objeto para crear una sala enfocada en esa interaccion.'
+        : 'Choose an object to build a focused interaction room.';
+    testScreen.classList.add('visible');
+}
+
+function closeTestMenu() {
+    testScreen.classList.remove('visible');
+    startScreen.classList.remove('hidden');
+}
+
+function returnToTestList() {
+    stopAllMusic();
+    game.ended = true;
+    game.mode = 'menu';
+    game.isTestScenario = false;
+    game.testPaused = false;
+    game.activeTestObject = null;
+    testControls.classList.remove('visible');
+    renderTestObjectList();
+    startScreen.classList.add('hidden');
+    testScreen.classList.add('visible');
+}
+
+function toggleTestPause() {
+    if (!game.isTestScenario) return;
+    game.testPaused = !game.testPaused;
+    testPauseButton.textContent = game.testPaused
+        ? (currentLanguage === 'es-419' ? 'Continuar' : 'Resume')
+        : (currentLanguage === 'es-419' ? 'Pausar' : 'Pause');
+    if (game.testPaused) {
+        audioSystem.pauseAll();
+    } else {
+        startGameplayMusic();
+    }
+}
+
 function showMainMenu() {
     stopAllMusic();
     game.ended = true;
@@ -862,6 +1096,8 @@ function showMainMenu() {
     game.playerMotion = null;
     relicScreen.classList.remove('visible');
     campScreen.classList.remove('visible');
+    testScreen.classList.remove('visible');
+    testControls.classList.remove('visible');
     endScreen.classList.remove('visible');
     startScreen.classList.remove('hidden');
     renderMessage();
@@ -994,39 +1230,7 @@ function updateObjectiveProgress() {
 }
 
 function generateCaveBlob(targetCount) {
-    const cells = new Map();
-    const frontier = [{ q: 0, r: 0 }];
-    cells.set(cellKey(0, 0), { q: 0, r: 0 });
-
-    while (cells.size < targetCount) {
-        const origin = randomFrom(frontier);
-        const shuffled = [...HEX_DIRECTIONS].sort(() => seededRandom() - 0.5);
-
-        shuffled.forEach((direction) => {
-            if (cells.size >= targetCount) return;
-            const q = origin.q + direction.q;
-            const r = origin.r + direction.r;
-            const key = cellKey(q, r);
-            if (cells.has(key)) return;
-
-            const neighborCount = HEX_DIRECTIONS.filter((neighbor) => (
-                cells.has(cellKey(q + neighbor.q, r + neighbor.r))
-            )).length;
-            const acceptance = neighborCount >= 2 ? 0.92 : 0.58;
-
-            if (seededRandom() < acceptance) {
-                const cell = { q, r };
-                cells.set(key, cell);
-                frontier.push(cell);
-            }
-        });
-
-        if (seededRandom() < 0.12) {
-            frontier.push(randomFrom([...cells.values()]));
-        }
-    }
-
-    return [...cells.values()];
+    return dungeonGenerator.generateCaveBlob(targetCount);
 }
 
 function cellKey(q, r) {
@@ -1034,20 +1238,7 @@ function cellKey(q, r) {
 }
 
 function choosePortalCells(cells) {
-    const centerSorted = [...cells].sort((a, b) => (
-        hexDistance(0, 0, b.q, b.r) - hexDistance(0, 0, a.q, a.r)
-    ));
-    const outerCells = centerSorted.slice(0, Math.max(12, Math.floor(cells.length * 0.22)));
-    const entry = randomFrom(outerCells);
-    const exit = [...outerCells]
-        .filter((cell) => cell !== entry)
-        .sort((a, b) => (
-            hexDistance(entry.q, entry.r, b.q, b.r) - hexDistance(entry.q, entry.r, a.q, a.r)
-        ))[0];
-    return {
-        entry,
-        exit
-    };
+    return dungeonGenerator.choosePortalCells(cells);
 }
 
 function getAllCoordinates() {
@@ -1064,7 +1255,7 @@ function getAllCoordinates() {
 }
 
 function randomFrom(items) {
-    return items[Math.floor(seededRandom() * items.length)];
+    return dungeonGenerator.randomFrom(items);
 }
 
 function placeTeachingEnemy() {
@@ -1354,6 +1545,25 @@ function openCampChoice() {
 }
 
 function renderCampChoices() {
+    {
+        const isMarket = game.mode === 'traderMarket';
+        const actions = isMarket ? game.marketChoices : getCampActions();
+        const preview = isMarket
+            ? choiceUi.preview(
+                currentLanguage === 'es-419' ? 'Escarabajo comerciante' : 'Trade Beetle',
+                currentLanguage === 'es-419'
+                    ? 'Elige una compra. El escarabajo se ira cuando cierres el mercado.'
+                    : 'Choose a purchase. The beetle leaves when you close the market.'
+            )
+            : game.nextRoomPreview
+            ? choiceUi.preview(
+                currentLanguage === 'es-419' ? 'Proxima sala' : 'Next chamber',
+                game.nextRoomPreview
+            )
+            : '';
+        choiceUi.renderCampActions(campActionsNode, actions, preview);
+        return;
+    }
     const isMarket = game.mode === 'traderMarket';
     const actions = isMarket ? game.marketChoices : getCampActions();
     const preview = isMarket
@@ -1613,19 +1823,12 @@ function chooseRelicRewards() {
 }
 
 function renderRelicChoices() {
-    if (!game.relicChoices.length) {
-        relicChoicesNode.innerHTML = `<button class="relic-card" type="button" data-relic-id="skip">
-            <strong>${currentLanguage === 'es-419' ? 'Sin reliquias nuevas' : 'No New Relics'}</strong>
-            <span>${currentLanguage === 'es-419' ? 'La abeja ya conoce todas las reliquias disponibles.' : 'The bee already has every available relic.'}</span>
-        </button>`;
-        return;
-    }
-    relicChoicesNode.innerHTML = game.relicChoices.map((relic) => (
-        `<button class="relic-card" type="button" data-relic-id="${relic.id}">
-            <strong>${relic.name}</strong>
-            <span>${relic.description}</span>
-        </button>`
-    )).join('');
+    choiceUi.renderRelicChoices(relicChoicesNode, game.relicChoices, {
+        emptyTitle: currentLanguage === 'es-419' ? 'Sin reliquias nuevas' : 'No New Relics',
+        emptyCopy: currentLanguage === 'es-419'
+            ? 'La abeja ya conoce todas las reliquias disponibles.'
+            : 'The bee already has every available relic.'
+    });
 }
 
 function chooseRelic(id) {
@@ -1798,12 +2001,28 @@ function pixelToClosestHex(x, y) {
 
 function draw() {
     if (!canvas.width || !canvas.height) return;
+    if (game.testPaused) {
+        const board = layout();
+        ctx.clearRect(0, 0, board.width, board.height);
+        drawBackground(board);
+        game.cells.forEach(drawCell);
+        drawPlayer();
+        drawStatPopups();
+        drawDangerOverlay(board);
+        drawHoverTooltip();
+        renderStats();
+        renderCooldown();
+        renderMessage();
+        return;
+    }
+
     updateStamina();
     if (game.replay) {
         // Replay snapshots advance on their own timer.
     } else if (game.mode === 'dance') {
         danceSystem.update();
     } else if (game.mode === 'dungeon') {
+        updateTerrainEffects();
         updateSleepingEnemies();
         updateEnemyAuras();
         updateBatAttacks();
@@ -1835,6 +2054,9 @@ function draw() {
 
 function animate() {
     draw();
+    if (testScreen.classList.contains('visible')) {
+        drawTestObjectIcons();
+    }
     requestAnimationFrame(animate);
 }
 
@@ -1881,38 +2103,15 @@ function drawBackground(board) {
 }
 
 function drawImageCover(image, x, y, width, height) {
-    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
-    const drawWidth = image.naturalWidth * scale;
-    const drawHeight = image.naturalHeight * scale;
-    const drawX = x + (width - drawWidth) / 2;
-    const drawY = y + (height - drawHeight) / 2;
-    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    rendererTools.drawImageCover(ctx, image, x, y, width, height);
 }
 
 function loadUiArt() {
-    Object.entries(UI_ART_DEFS).forEach(([key, src]) => {
-        const image = new Image();
-        image.onload = () => {
-            uiArtAssets[key] = image;
-        };
-        image.onerror = () => {
-            uiArtAssets[key] = null;
-        };
-        image.src = src;
-    });
+    rendererTools.loadImages(UI_ART_DEFS, uiArtAssets);
 }
 
 function loadTileArt() {
-    Object.entries(TILE_ART_DEFS).forEach(([key, src]) => {
-        const image = new Image();
-        image.onload = () => {
-            tileArtAssets[key] = image;
-        };
-        image.onerror = () => {
-            tileArtAssets[key] = null;
-        };
-        image.src = src;
-    });
+    rendererTools.loadImages(TILE_ART_DEFS, tileArtAssets);
 }
 
 function drawForestTexture(board) {
@@ -2171,15 +2370,7 @@ function getCellTileKey(cell, hidden) {
 
 function drawTileArt(key, x, y, size, alpha = 1) {
     const image = tileArtAssets[key];
-    if (!image?.complete || !image.naturalWidth) return false;
-    const drawSize = size * 2;
-    ctx.save();
-    ctx.globalAlpha *= alpha;
-    ctx.translate(x, y);
-    ctx.rotate(-Math.PI / 6);
-    ctx.drawImage(image, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
-    ctx.restore();
-    return true;
+    return rendererTools.drawTileArt(ctx, image, x, y, size, alpha);
 }
 
 function objectTint(object) {
@@ -2255,18 +2446,7 @@ function drawMist(x, y, size) {
 }
 
 function drawHexPath(x, y, size) {
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-        const angle = Math.PI / 3 * i - Math.PI / 6;
-        const cornerX = x + size * Math.cos(angle);
-        const cornerY = y + size * Math.sin(angle);
-        if (i === 0) {
-            ctx.moveTo(cornerX, cornerY);
-        } else {
-            ctx.lineTo(cornerX, cornerY);
-        }
-    }
-    ctx.closePath();
+    rendererTools.drawHexPath(ctx, x, y, size);
 }
 
 function loadSprites() {
@@ -3097,11 +3277,12 @@ function getCellInfo(cell) {
 function getObjectRole(object) {
     const roles = I18N[currentLanguage].roles;
     if (object === 'empty') return roles.safe;
+    if (object === 'burningCell') return `${roles.hazard} | ${currentLanguage === 'es-419' ? 'gasta 1 agua o recibe 1 dano' : 'spend 1 water or take 1 damage'}`;
     if (object === 'vine') return `${roles.hazard} | ${VINE_DAMAGE} ${currentLanguage === 'es-419' ? 'daño al cruzar' : 'damage when crossed'}`;
     if (object === 'npc') return roles.trade;
     if (object === 'entry' || object === 'exit' || object === 'finalExit') return roles.route;
     if (object === 'waxDoor' || object === 'wall') return roles.blocker;
-    if (object === 'stickyTrap') return roles.control;
+    if (object === 'stickyTrap' || object === 'burrowWarningCell' || object === 'bomberMarkedCell') return roles.control;
     return roles.item;
 }
 
@@ -3114,12 +3295,12 @@ function getActionPreview(cell) {
     if (isEnemyObject(object)) return getAttackCooldownRemaining() > 0 ? t('actions', 'waitSting') : t('actions', 'sting');
     if (object === 'wall') return OBJECTS.wall?.description || t('ui', 'blockedGeneric');
     if (object === 'waxDoor') return game.player.pollen > 0 ? t('actions', 'openPollen') : t('actions', 'openSting');
-    if (object === 'vine') return t('actions', 'crossHazard');
+    if (object === 'vine' || object === 'burningCell') return t('actions', 'crossHazard');
     if (object === 'npc') return t('actions', 'trade');
     if (object === 'exit') return t('actions', 'nextRoom');
     if (object === 'finalExit') return t('actions', 'finalDance');
     if (object === 'entry') return t('actions', 'previousRoom');
-    if (object === 'empty' || object === 'stickyTrap') return t('actions', 'move');
+    if (object === 'empty' || object === 'stickyTrap' || object === 'burrowWarningCell' || object === 'bomberMarkedCell') return t('actions', 'move');
     return t('actions', 'collect');
 }
 
@@ -3218,6 +3399,10 @@ function moveTo(cell) {
     }
 
     const previousPosition = { q: game.player.q, r: game.player.r };
+    game.lastMoveDirection = {
+        q: cell.q - game.player.q,
+        r: cell.r - game.player.r
+    };
     if (!ensureStaminaForAction()) {
         showBlockedAction(cell, t('ui', 'blockedStamina'));
         return;
@@ -3260,6 +3445,19 @@ function moveTo(cell) {
         if (game.ended) return;
     }
 
+    if (targetObject === 'burningCell') {
+        if (game.player.water > 0) {
+            game.player.water -= 1;
+            addStatPopups(cell.q, cell.r, [{ stat: 'water', amount: -1 }]);
+            addLog('Burning Cell', 'Spent 1 water to put out the fire.');
+            cell.object = 'empty';
+        } else {
+            applyDamage(1, cell.q, cell.r, 'Burning Cell');
+            addLog('Burning Cell', 'The crawling fire burned the bee.');
+            if (game.ended) return;
+        }
+    }
+
     if (targetObject === 'npc') {
         openTraderMarket(cell);
         revealAroundPlayer();
@@ -3296,6 +3494,7 @@ function moveTo(cell) {
     updateObjectiveProgress();
     moveBats();
     moveMites();
+    moveMirrorWasps();
     recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
     draw();
 }
@@ -3498,6 +3697,13 @@ function revealRouteToExit() {
 function resolveInteraction(object, cell) {
     if (isEnemyObject(object)) {
         const enemy = getEnemyDef(object);
+        if (object === 'waxSentinel' && (!cell.weakPointUntil || performance.now() > cell.weakPointUntil)) {
+            return {
+                message: `${enemy.name} is sealed. Wait for its weak point to open.`,
+                deltas: [],
+                consume: false
+            };
+        }
         if (game.roomFirstStingAvailable) {
             game.roomFirstStingAvailable = false;
             game.player.attackReadyAt = performance.now();
@@ -3528,7 +3734,22 @@ function resolveInteraction(object, cell) {
         };
     }
 
+    if (object === 'water' && isWaterDrained(cell.q, cell.r)) {
+        return {
+            message: 'Water Leech drained this water before the bee could use it.',
+            deltas: [],
+            consume: true
+        };
+    }
+
     return itemSystem.resolve(object, cell);
+}
+
+function isWaterDrained(q, r) {
+    return game.cells.some((cell) => (
+        cell.object === 'waterLeech'
+        && hexDistance(cell.q, cell.r, q, r) <= (getEnemyDef('waterLeech')?.range || 2)
+    ));
 }
 
 function createRoomSnapshot() {
@@ -3608,12 +3829,14 @@ function moveBats() {
 }
 
 function moveMites() {
-    if (game.player.steps % MITE_MOVE_STEP_INTERVAL !== 0) return;
-
-    const mites = game.cells.filter((cell) => cell.object === 'miteSwarm');
+    const movers = game.cells.filter((cell) => {
+        const behavior = enemySystem.getBehavior(cell.object, 'moveEverySteps');
+        if (!behavior) return false;
+        return game.player.steps % (behavior.stepInterval || MITE_MOVE_STEP_INTERVAL) === 0;
+    });
     const plannedMoves = [];
 
-    mites.forEach((mite) => {
+    movers.forEach((mite) => {
         const candidates = HEX_DIRECTIONS
             .map((direction) => getCell(mite.q + direction.q, mite.r + direction.r))
             .filter((cell) => cell && cell.object === 'empty' && !(cell.q === game.player.q && cell.r === game.player.r));
@@ -3629,20 +3852,22 @@ function moveMites() {
             .sort((a, b) => a.distance - b.distance)[0];
 
         if (best.distance < currentDistance && !plannedMoves.some((move) => move.to === best.cell)) {
-            plannedMoves.push({ from: mite, to: best.cell });
+            plannedMoves.push({ from: mite, to: best.cell, object: mite.object, hits: mite.hits || 0 });
         }
     });
 
     plannedMoves.forEach((move) => {
         move.from.object = 'empty';
         move.from.nextAuraAt = 0;
-        move.to.object = 'miteSwarm';
+        move.to.object = move.object;
         move.to.nextAuraAt = 0;
+        move.to.hits = move.hits || 0;
+        move.from.hits = 0;
     });
 
     if (plannedMoves.length) {
-        addLog('Mite Movement', `${plannedMoves.length} mite swarm${plannedMoves.length === 1 ? '' : 's'} crept closer.`);
-        recordReplayEvent('enemyMove', { enemy: 'miteSwarm', count: plannedMoves.length });
+        addLog('Enemy Movement', `${plannedMoves.length} moving threat${plannedMoves.length === 1 ? '' : 's'} crept closer.`);
+        recordReplayEvent('enemyMove', { enemy: 'stepMover', count: plannedMoves.length });
     }
 }
 
@@ -3846,13 +4071,7 @@ function getCell(q, r) {
 }
 
 function recordReplayEvent(type, payload = {}) {
-    if (game.replay || game.mode === 'menu') return;
-    game.replayEvents.push({
-        type,
-        payload,
-        at: Math.round(performance.now() - game.runStartedAt),
-        snapshot: createReplaySnapshot()
-    });
+    replaySystem.record(type, payload);
 }
 
 function createReplaySnapshot() {
@@ -3894,18 +4113,7 @@ function applyReplaySnapshot(snapshot) {
 }
 
 function normalizeReplayDanceTiming(dance, capturedAt, now) {
-    if (!dance?.active) return dance;
-    const active = dance.active;
-    if (active.createdAt) {
-        active.createdAt = now - Math.max(0, capturedAt - active.createdAt);
-    }
-    if (active.expiresAt) {
-        active.expiresAt = now + Math.max(0, active.expiresAt - capturedAt);
-    }
-    if (active.holdStartedAt) {
-        active.holdStartedAt = now - Math.max(0, capturedAt - active.holdStartedAt);
-    }
-    return dance;
+    return replaySystem.normalizeDanceTiming(dance, capturedAt, now);
 }
 
 function syncReplayAudio() {
@@ -3925,10 +4133,7 @@ function syncReplayAudio() {
 function startReplay() {
     if (!game.replayEvents.length) return;
     stopAllMusic();
-    const events = game.replayEvents.map((event) => ({
-        ...event,
-        snapshot: JSON.parse(JSON.stringify(event.snapshot))
-    }));
+    const events = replaySystem.cloneEvents();
     endScreen.classList.remove('visible');
     startScreen.classList.add('hidden');
     replayControls.classList.add('visible');
@@ -4284,9 +4489,10 @@ function getCellActionState(cell) {
         };
     }
     if (object === 'vine') return { available: true, symbol: '!', color: '#78a94e' };
+    if (object === 'burningCell') return { available: true, symbol: '!', color: '#ff6a2a' };
     if (object === 'npc') return { available: true, symbol: '$', color: '#64b5f6' };
     if (object === 'exit' || object === 'entry' || object === 'finalExit') return { available: true, symbol: '>', color: '#f2bd4b' };
-    if (object === 'empty' || object === 'stickyTrap') return { available: true, symbol: '.', color: '#fff2a7' };
+    if (object === 'empty' || object === 'stickyTrap' || object === 'burrowWarningCell' || object === 'bomberMarkedCell') return { available: true, symbol: '.', color: '#fff2a7' };
     return { available: true, symbol: '+', color: '#fff2a7' };
 }
 
@@ -4299,6 +4505,26 @@ function getCursorForCell(cell) {
     const action = getCellActionState(cell);
     return makeCursor(action.symbol, action.color, action.available);
 }
+
+window.HW_TEST_API = {
+    getState: () => ({
+        mode: game.mode,
+        isTestScenario: game.isTestScenario,
+        testPaused: game.testPaused,
+        activeTestObject: game.activeTestObject,
+        cells: game.cells.length,
+        player: { ...game.player }
+    }),
+    getCellPoint: (q, r) => {
+        const point = hexToPixel(q, r);
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: rect.left + point.x,
+            y: rect.top + point.y,
+            size: point.size
+        };
+    }
+};
 
 function makeCursor(symbol, color, available = true) {
     const border = available ? '#f5c84b' : '#ff8a72';
@@ -4448,7 +4674,8 @@ replaySpeedButtons.forEach((button) => {
     button.addEventListener('click', () => setReplaySpeed(button.dataset.speed));
 });
 newRunButton.addEventListener('click', createGrid);
-testDanceButton.addEventListener('click', testDanceRun);
+testDanceButton.addEventListener('click', openTestMenu);
+testBackButton.addEventListener('click', closeTestMenu);
 statsToggle.addEventListener('click', () => {
     statsPanel.classList.toggle('open');
     logPanel.classList.remove('open');
@@ -4478,6 +4705,14 @@ campActionsNode.addEventListener('click', (event) => {
     }
 });
 campContinueButton.addEventListener('click', continueFromCamp);
+testPauseButton.addEventListener('click', toggleTestPause);
+testListButton.addEventListener('click', returnToTestList);
+testObjectListNode.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-test-object]');
+    if (button) {
+        startObjectTestScenario(button.dataset.testObject);
+    }
+});
 window.addEventListener('resize', resizeCanvas);
 
 setLanguage(currentLanguage);

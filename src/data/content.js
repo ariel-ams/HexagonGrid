@@ -9,7 +9,7 @@ const I18N = {
             languageSettings: 'Language Settings',
             newRun: 'New Run',
             startNewRun: 'Start New Run',
-            testDance: 'Test Dance',
+            testDance: 'Test',
             options: 'Options',
             mainMenu: 'Main Menu',
             beeStats: 'Bee Stats',
@@ -149,7 +149,7 @@ const I18N = {
             languageSettings: 'Configuración de idioma',
             newRun: 'Nueva partida',
             startNewRun: 'Empezar otra partida',
-            testDance: 'Probar baile',
+            testDance: 'Probar',
             options: 'Opciones',
             mainMenu: 'Menú principal',
             beeStats: 'Stats de la abeja',
@@ -370,6 +370,18 @@ const SPRITE_DEFS = {
     sleepingBat: { src: 'assets/sleepingBat.png', columns: 4, rows: 2, row: 0, frameMs: 210 },
     sleepingBatAwake: { src: 'assets/sleepingBat.png', columns: 4, rows: 2, row: 1, frameMs: 150 },
     honeyLeech: { src: 'assets/honeyLeech.png', columns: 4, rows: 1, row: 0, frameMs: 185 },
+    waspHive: { src: 'assets/enemies/wasp-hive-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 210 },
+    crawlingFire: { src: 'assets/enemies/crawling-fire-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 150 },
+    honeySnareSpider: { src: 'assets/enemies/honey-snare-spider-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 175 },
+    burrowBeetle: { src: 'assets/enemies/burrow-beetle-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 190 },
+    queenSignaler: { src: 'assets/enemies/queen-signaler-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 175 },
+    fogShepherd: { src: 'assets/enemies/fog-shepherd-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 210 },
+    pollenThiefMoth: { src: 'assets/enemies/pollen-thief-moth-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 140 },
+    waxSentinel: { src: 'assets/enemies/wax-sentinel-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 230 },
+    mirrorWasp: { src: 'assets/enemies/mirror-wasp-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 150 },
+    combBomber: { src: 'assets/enemies/comb-bomber-alpha.png', columns: 4, rows: 3, row: 0, frameMs: 180 },
+    waterLeech: { src: 'assets/enemies/water-leech-alpha.png', columns: 4, rows: 4, row: 0, frameMs: 190 },
+    larvaBrood: { src: 'assets/enemies/larva-brood-alpha.png', columns: 4, rows: 4, row: 0, frameMs: 220 },
     pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
@@ -386,7 +398,10 @@ const SPRITE_DEFS = {
     royalNectar: { src: 'assets/royalNectar.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
     waxDoor: { src: 'assets/waxDoor.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     stickyHoney: { src: 'assets/stickyHoney.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
-    stickyTrap: { src: 'assets/stickyTrap.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
+    stickyTrap: { src: 'assets/effects/sticky-trap-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 260 },
+    burningCell: { src: 'assets/effects/burning-cell-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
+    burrowWarningCell: { src: 'assets/effects/burrow-warning-cell-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
+    bomberMarkedCell: { src: 'assets/effects/bomber-marked-cell-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 150 },
     compassPollen: { src: 'assets/compassPollen.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     entry: { src: 'assets/entry-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     exit: { src: 'assets/exit-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
@@ -537,6 +552,162 @@ const ENEMY_DEFS = {
         behavior: 'Stationary drain. Chews through shield first, then health.',
         lesson: 'Shield is not permanent safety near this enemy.',
         behaviors: [{ type: 'damageAura' }]
+    },
+    waspHive: {
+        name: 'Wasp Hive',
+        color: '#dd8a2f',
+        sprite: 'waspHive',
+        plannedAsset: 'assets/enemies/wasp-hive.png',
+        hp: 3,
+        attack: 1,
+        intervalMs: 5000,
+        range: 2,
+        behavior: 'Living hive. After a warning pulse, releases a wasp into a nearby empty cell.',
+        lesson: 'Clear it before fighting other threats or the room slowly fills with wasps.',
+        behaviors: [{ type: 'spawnEnemyAura', object: 'enemy' }, { type: 'damageAura', fallbackOnly: true }]
+    },
+    crawlingFire: {
+        name: 'Crawling Fire',
+        color: '#ff6a2a',
+        sprite: 'crawlingFire',
+        plannedAsset: 'assets/enemies/crawling-fire.png',
+        hp: 1,
+        attack: 1,
+        intervalMs: 900,
+        range: 1,
+        behavior: 'Low living ember. Creeps toward the bee and leaves burning cells nearby.',
+        lesson: 'Use water routes and avoid chasing it through its own trail.',
+        behaviors: [{ type: 'damageAura' }, { type: 'spawnTerrainAura', object: 'burningCell' }, { type: 'moveEverySteps', stepInterval: 2 }]
+    },
+    honeySnareSpider: {
+        name: 'Honey Snare Spider',
+        color: '#c98a34',
+        sprite: 'honeySnareSpider',
+        plannedAsset: 'assets/enemies/honey-snare-spider.png',
+        hp: 1,
+        attack: 0,
+        intervalMs: 1600,
+        range: 2,
+        behavior: 'Casts sticky honey traps that slow nearby moving enemies and complicate routes.',
+        lesson: 'A trap can help or hurt. Decide whether to kill the spider or use its terrain.',
+        behaviors: [{ type: 'spawnTerrainAura', object: 'stickyTrap' }]
+    },
+    burrowBeetle: {
+        name: 'Burrow Beetle',
+        color: '#6f5b37',
+        sprite: 'burrowBeetle',
+        plannedAsset: 'assets/enemies/burrow-beetle.png',
+        hp: 2,
+        attack: 1,
+        intervalMs: 1200,
+        range: 1,
+        behavior: 'Armored ambusher. Dives underground, marks a cracked warning cell, then resurfaces there.',
+        lesson: 'Treat cracked warning cells like a delayed attack and step away first.',
+        behaviors: [{ type: 'burrowAmbush', warningMs: 900 }]
+    },
+    queenSignaler: {
+        name: 'Queen Signaler',
+        color: '#f2c34b',
+        sprite: 'queenSignaler',
+        plannedAsset: 'assets/enemies/queen-signaler.png',
+        hp: 2,
+        attack: 0,
+        intervalMs: 1500,
+        range: 3,
+        behavior: 'Commander enemy. Sends signal pulses that speed up nearby enemy timers.',
+        lesson: 'Kill it before engaging grouped enemies or every timer becomes harder to read.',
+        behaviors: [{ type: 'buffEnemiesAura', range: 3, accelerateMs: 350 }]
+    },
+    fogShepherd: {
+        name: 'Fog Shepherd',
+        color: '#8caebd',
+        sprite: 'fogShepherd',
+        plannedAsset: 'assets/enemies/fog-shepherd.png',
+        hp: 1,
+        attack: 0,
+        intervalMs: 1200,
+        range: 3,
+        behavior: 'Moth carrier. Rolls mist back over revealed cells outside the bee reveal radius.',
+        lesson: 'If you scout too slowly near it, the map gets harder to plan.',
+        behaviors: [{ type: 'refogAura' }, { type: 'moveEverySteps', stepInterval: 3 }]
+    },
+    pollenThiefMoth: {
+        name: 'Pollen Thief Moth',
+        color: '#d8c07a',
+        sprite: 'pollenThiefMoth',
+        plannedAsset: 'assets/enemies/pollen-thief-moth.png',
+        hp: 1,
+        attack: 0,
+        intervalMs: 800,
+        range: 1,
+        behavior: 'Quick thief. Steals pollen when adjacent, then flees away from the bee.',
+        lesson: 'Spend or protect pollen before crossing near it.',
+        behaviors: [{ type: 'stealResourceAura', resource: 'pollen', amount: 1 }, { type: 'fleeFromPlayer' }]
+    },
+    waxSentinel: {
+        name: 'Wax Sentinel',
+        color: '#c9a85b',
+        sprite: 'waxSentinel',
+        plannedAsset: 'assets/enemies/wax-sentinel.png',
+        hp: 3,
+        attack: 0,
+        intervalMs: 1600,
+        range: 1,
+        behavior: 'Living wax blocker. Opens a weak point on a timer and ignores stings while sealed.',
+        lesson: 'Plan around it unless the route or reward behind it is worth the cooldown.',
+        behaviors: [{ type: 'weakPointWindow', openMs: 1700 }]
+    },
+    mirrorWasp: {
+        name: 'Mirror Wasp',
+        color: '#9fd9ef',
+        sprite: 'mirrorWasp',
+        plannedAsset: 'assets/enemies/mirror-wasp.png',
+        hp: 1,
+        attack: 1,
+        intervalMs: 700,
+        range: 1,
+        behavior: 'Reflective wasp. Copies the bee last movement direction when that line is open.',
+        lesson: 'Change direction and avoid letting it mirror you into a chokepoint.',
+        behaviors: [{ type: 'damageAura' }, { type: 'mirrorMove' }]
+    },
+    combBomber: {
+        name: 'Comb Bomber',
+        color: '#e98231',
+        sprite: 'combBomber',
+        plannedAsset: 'assets/enemies/comb-bomber.png',
+        hp: 1,
+        attack: 1,
+        intervalMs: 1400,
+        range: 2,
+        behavior: 'Volatile bug. Marks nearby danger zones, then detonates those marked cells.',
+        lesson: 'Leave marked cells before the countdown finishes.',
+        behaviors: [{ type: 'markCellsAura', object: 'bomberMarkedCell', detonateMs: 1100 }]
+    },
+    waterLeech: {
+        name: 'Water Leech',
+        color: '#3f83b7',
+        sprite: 'waterLeech',
+        plannedAsset: 'assets/enemies/water-leech.png',
+        hp: 2,
+        attack: 0,
+        intervalMs: 1200,
+        range: 2,
+        behavior: 'Wet drain. Suppresses water utility while the bee stays nearby.',
+        lesson: 'Do not rely on water recovery inside its draining aura.',
+        behaviors: [{ type: 'waterDrainAura' }]
+    },
+    larvaBrood: {
+        name: 'Larva Brood',
+        color: '#e0b66e',
+        sprite: 'larvaBrood',
+        plannedAsset: 'assets/enemies/larva-brood.png',
+        hp: 2,
+        attack: 0,
+        intervalMs: 5000,
+        range: 2,
+        behavior: 'Growing brood cell. If ignored, hatches mite swarms into nearby cells.',
+        lesson: 'It is harmless early, but every second you leave it alive makes the room louder.',
+        behaviors: [{ type: 'spawnEnemyAura', object: 'miteSwarm' }]
     }
 };
 
@@ -714,6 +885,21 @@ const OBJECTS = {
         color: '#9a6a32',
         description: 'Moving enemies near this patch lose momentum.'
     },
+    burningCell: {
+        name: 'Burning Cell',
+        color: '#d34f22',
+        description: 'Lingering fire. Crossing it costs health unless you can spend water.'
+    },
+    burrowWarningCell: {
+        name: 'Burrow Warning',
+        color: '#c45a2a',
+        description: 'Cracked ground. A burrow beetle is about to emerge here.'
+    },
+    bomberMarkedCell: {
+        name: 'Marked Blast Cell',
+        color: '#ef8a2f',
+        description: 'A comb bomber has marked this cell. Leave before the blast lands.'
+    },
     compassPollen: {
         name: 'Compass Pollen',
         color: '#f7df72',
@@ -736,6 +922,16 @@ const OBJECTS = {
         description: 'End the run.'
     }
 };
+
+Object.entries(ENEMY_DEFS).forEach(([id, enemy]) => {
+    if (!OBJECTS[id]) {
+        OBJECTS[id] = {
+            name: enemy.name,
+            color: enemy.color,
+            description: enemy.behavior
+        };
+    }
+});
 
 const DEFAULT_OBJECT_COLORS = Object.fromEntries(Object.entries(OBJECTS).map(([id, object]) => [id, object.color]));
 const DEFAULT_ENEMY_NUMBERS = Object.fromEntries(Object.entries(ENEMY_DEFS).map(([id, enemy]) => [id, {
@@ -770,7 +966,19 @@ const ENEMY_SPAWN_WEIGHTS = [
     { object: 'sleepingBat', minDepth: 2, weight: 3 },
     { object: 'honeyLeech', minDepth: 3, weight: 4 },
     { object: 'broodWasp', minDepth: 3, weight: 3 },
-    { object: 'stagBeetle', minDepth: 4, weight: 3 }
+    { object: 'stagBeetle', minDepth: 4, weight: 3 },
+    { object: 'waspHive', minDepth: 3, weight: 2 },
+    { object: 'crawlingFire', minDepth: 3, weight: 2 },
+    { object: 'honeySnareSpider', minDepth: 3, weight: 3 },
+    { object: 'burrowBeetle', minDepth: 4, weight: 2 },
+    { object: 'queenSignaler', minDepth: 4, weight: 2 },
+    { object: 'fogShepherd', minDepth: 4, weight: 2 },
+    { object: 'pollenThiefMoth', minDepth: 3, weight: 3 },
+    { object: 'waxSentinel', minDepth: 4, weight: 2 },
+    { object: 'mirrorWasp', minDepth: 5, weight: 2 },
+    { object: 'combBomber', minDepth: 5, weight: 2 },
+    { object: 'waterLeech', minDepth: 4, weight: 2 },
+    { object: 'larvaBrood', minDepth: 5, weight: 2 }
 ];
 
 window.HW_CONTENT = {

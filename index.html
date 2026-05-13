@@ -407,6 +407,29 @@
             display: flex;
         }
 
+        .test-controls {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            z-index: 6;
+            display: none;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            border-radius: 16px;
+            background: rgba(14, 22, 16, 0.78);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+        }
+
+        .test-controls.visible {
+            display: flex;
+        }
+
+        .test-controls button {
+            min-width: 78px;
+            min-height: 42px;
+        }
+
         .replay-controls button,
         .mobile-toggle {
             min-width: 44px;
@@ -673,6 +696,75 @@
 
         .relic-screen.visible {
             display: grid;
+        }
+
+        .test-object-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            max-height: min(58vh, 560px);
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .test-object {
+            min-height: 94px;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 68px minmax(0, 1fr);
+            gap: 12px;
+            text-align: left;
+            align-items: center;
+            border: 1px solid rgba(243, 240, 223, 0.16);
+            background: rgba(74, 45, 18, 0.06);
+            color: #321b0d;
+            text-shadow: none;
+        }
+
+        .test-object:hover {
+            background: rgba(255, 246, 216, 0.28);
+            filter: none;
+        }
+
+        .test-object-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle, rgba(255, 245, 195, 0.88), rgba(198, 130, 47, 0.28));
+            border: 2px solid rgba(103, 58, 24, 0.48);
+            box-shadow:
+                inset 0 0 0 2px rgba(255, 244, 200, 0.32),
+                0 4px 8px rgba(65, 35, 16, 0.18);
+        }
+
+        .test-object-copy {
+            min-width: 0;
+            display: grid;
+            gap: 4px;
+        }
+
+        .test-object .test-kind {
+            width: max-content;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(103, 58, 24, 0.14);
+            color: #6f3417;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: none;
+        }
+
+        .test-object strong {
+            color: #48220f;
+            text-shadow: none;
+        }
+
+        .test-object small {
+            color: #5a3821;
+            line-height: 1.3;
+            text-shadow: none;
         }
 
         .start-screen {
@@ -1051,6 +1143,11 @@
                 max-height: calc(100dvh - 32px);
                 overflow-y: auto;
             }
+
+            .test-object-list {
+                grid-template-columns: 1fr;
+                max-height: min(60vh, 520px);
+            }
         }
     </style>
 </head>
@@ -1063,6 +1160,10 @@
         <button class="replay-speed" type="button" data-speed="2">2x</button>
         <button class="replay-speed" type="button" data-speed="4">4x</button>
         <button id="replayCloseButton" type="button">X</button>
+    </div>
+    <div class="test-controls" id="testControls" aria-live="polite">
+        <button id="testPauseButton" type="button">Pause</button>
+        <button id="testListButton" type="button">Tests</button>
     </div>
     <main class="shell">
         <aside class="side-panel" id="statsPanel">
@@ -1118,7 +1219,7 @@
             </label>
             <div class="menu-actions">
                 <button id="newRunButton" type="button" data-i18n="newRun">New Run</button>
-                <button id="testDanceButton" type="button" data-i18n="testDance">Test Dance</button>
+                <button id="testDanceButton" type="button" data-i18n="testDance">Test</button>
                 <button id="optionsButton" type="button" data-i18n="options">Options</button>
             </div>
             <div class="menu-options" id="optionsPanel">
@@ -1168,6 +1269,15 @@
         </div>
     </section>
 
+    <section class="relic-screen" id="testScreen" aria-live="polite">
+        <div class="relic-panel">
+            <h2>Test Scenario</h2>
+            <p>Choose an object to build a focused interaction room.</p>
+            <div class="test-object-list" id="testObjectList"></div>
+            <button id="testBackButton" type="button" data-i18n="mainMenu">Main Menu</button>
+        </div>
+    </section>
+
     <section class="end-screen" id="endScreen" aria-live="polite">
         <div class="end-panel">
             <h2 data-i18n="runComplete">Run Complete</h2>
@@ -1184,10 +1294,14 @@
     <script src="src/data/content.js"></script>
     <script src="src/data/art.js"></script>
     <script src="src/data/progression.js"></script>
+    <script src="src/systems/renderer.js"></script>
     <script src="src/systems/audio.js"></script>
     <script src="src/systems/hud.js"></script>
+    <script src="src/systems/choice-ui.js"></script>
     <script src="src/systems/items.js"></script>
     <script src="src/systems/enemies.js"></script>
+    <script src="src/systems/dungeon-generation.js"></script>
+    <script src="src/systems/replay.js"></script>
     <script src="src/systems/dance.js"></script>
     <script src="index.js"></script>
 </body>
