@@ -65,8 +65,11 @@ const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const GAMEPLAY_MUSIC_SRC = 'assets/main_song.mp3';
 const DANCE_MUSIC_SRC = 'assets/dancefloor.mp3';
+const BOSS_MUSIC_SRC = '';
+const PLANNED_BOSS_MUSIC_SRC = 'assets/boss_music.mp3';
 const GAMEPLAY_MUSIC_VOLUME = 0.45;
 const DANCE_MUSIC_VOLUME = 0.56;
+const BOSS_MUSIC_VOLUME = 0.52;
 const DANCE_MISS_VOLUME = 0.18;
 const DANCE_MUSIC_START_AT = 48;
 const HEX_DIRECTIONS = [
@@ -139,20 +142,30 @@ let danceSystem = null;
 let dungeonGenerator = null;
 let replaySystem = null;
 let replaySpeed = 1;
-const audioSystem = window.HW_AUDIO.createAudioSystem({
-    tracks: {
-        gameplay: {
-            src: GAMEPLAY_MUSIC_SRC,
-            volume: GAMEPLAY_MUSIC_VOLUME,
-            loop: true
-        },
-        dance: {
-            src: DANCE_MUSIC_SRC,
-            volume: DANCE_MUSIC_VOLUME,
-            startAt: DANCE_MUSIC_START_AT,
-            loopFrom: DANCE_MUSIC_START_AT
-        }
+const audioTracks = {
+    gameplay: {
+        src: GAMEPLAY_MUSIC_SRC,
+        volume: GAMEPLAY_MUSIC_VOLUME,
+        loop: true
+    },
+    dance: {
+        src: DANCE_MUSIC_SRC,
+        volume: DANCE_MUSIC_VOLUME,
+        startAt: DANCE_MUSIC_START_AT,
+        loopFrom: DANCE_MUSIC_START_AT
     }
+};
+
+if (BOSS_MUSIC_SRC) {
+    audioTracks.boss = {
+        src: BOSS_MUSIC_SRC,
+        volume: BOSS_MUSIC_VOLUME,
+        loop: true
+    };
+}
+
+const audioSystem = window.HW_AUDIO.createAudioSystem({
+    tracks: audioTracks
 });
 
 const ROOM_OBJECTIVES = [
@@ -279,6 +292,10 @@ const game = {
     isTestScenario: false,
     testPaused: false,
     activeTestObject: null,
+    pathPreview: null,
+    pathCache: {},
+    autoPath: [],
+    attackEffects: [],
     revealRadius: 2,
     roomFirstStingAvailable: false,
     freeWaxDoorAvailable: false,
@@ -397,6 +414,12 @@ danceSystem = window.HW_DANCE.createDanceSystem({
 
 function t(section, key) {
     return I18N[currentLanguage]?.[section]?.[key] ?? I18N.en[section]?.[key] ?? key;
+}
+
+function formatText(section, key, values = {}) {
+    return Object.entries(values).reduce((text, [name, value]) => (
+        text.replaceAll(`{${name}}`, value)
+    ), t(section, key));
 }
 
 function loadObjectOverrides() {
@@ -675,6 +698,10 @@ function startGameplayMusic() {
     audioSystem.play('gameplay');
 }
 
+function startBossMusic() {
+    audioSystem.play(BOSS_MUSIC_SRC ? 'boss' : 'gameplay');
+}
+
 function stopGameplayMusic() {
     audioSystem.stop('gameplay');
 }
@@ -847,6 +874,7 @@ function startRunState() {
     game.cameraPan = { x: 0, y: 0 };
     game.pointer = null;
     game.dragAction = null;
+    game.lastMoveDirection = null;
     hudRenderer.reset();
     game.suppressNextClick = false;
     game.lastStaminaRegenAt = performance.now();
@@ -869,6 +897,10 @@ function startRunState() {
     game.isTestScenario = false;
     game.testPaused = false;
     game.activeTestObject = null;
+    game.pathPreview = null;
+    game.pathCache = {};
+    game.autoPath = [];
+    game.attackEffects = [];
     game.revealRadius = 2;
     game.roomFirstStingAvailable = false;
     game.freeWaxDoorAvailable = false;
@@ -1001,16 +1033,50 @@ function startObjectTestScenario(objectId) {
     if (target) {
         target.object = objectId;
         target.awake = objectId === 'sleepingBat';
+        if (isEnemyObject(objectId) && hasTimedAura(objectId)) {
+            target.nextAuraAt = performance.now() + getTestInitialTimer(objectId);
+        }
     }
 
     seedTestSupportCells(objectId);
-    game.message = `Testing ${getDisplayNameForObject(objectId)}. Hover it, then click the adjacent cell to interact.`;
+    game.message = getTestScenarioMessage(objectId);
     addLog('Test Scenario', game.message);
     showTutorialCallout('testScenario', 'Test Scenario', game.message);
     testControls.classList.add('visible');
     testPauseButton.textContent = currentLanguage === 'es-419' ? 'Pausar' : 'Pause';
     revealAroundPlayer();
     draw();
+}
+
+function getTestInitialTimer(objectId) {
+    const quick = {
+        waspHive: 650,
+        larvaBrood: 780,
+        honeySnareSpider: 520,
+        combBomber: 450,
+        burrowBeetle: 420,
+        queenSignaler: 480,
+        fogShepherd: 520,
+        waterLeech: 520
+    };
+    return quick[objectId] || Math.min(600, getEnemyDef(objectId)?.intervalMs || 600);
+}
+
+function getTestScenarioMessage(objectId) {
+    const name = getDisplayNameForObject(objectId);
+    const messageKeys = {
+        waspHive: 'testWaspHive',
+        larvaBrood: 'testLarvaBrood',
+        honeySnareSpider: 'testHoneySnareSpider',
+        combBomber: 'testCombBomber',
+        burrowBeetle: 'testBurrowBeetle',
+        queenSignaler: 'testQueenSignaler',
+        fogShepherd: 'testFogShepherd',
+        waterLeech: 'testWaterLeech',
+        mirrorWasp: 'testMirrorWasp',
+        waxSentinel: 'testWaxSentinel'
+    };
+    return formatText('messages', messageKeys[objectId] || 'testingDefault', { name });
 }
 
 function seedTestSupportCells(objectId) {
@@ -1025,8 +1091,19 @@ function seedTestSupportCells(objectId) {
 
     if (objectId === 'waterLeech') {
         support[0].object = 'water';
+        support.push({ q: -2, r: 1, object: 'water' });
+    } else if (objectId === 'queenSignaler') {
+        support.push({ q: 0, r: 1, object: 'enemy' });
+    } else if (objectId === 'fogShepherd') {
+        support.push({ q: -2, r: 1, object: 'pollen' }, { q: -1, r: 2, object: 'water' });
+    } else if (objectId === 'waspHive' || objectId === 'larvaBrood') {
+        support.push({ q: 1, r: -1, object: 'empty' }, { q: 2, r: -1, object: 'empty' }, { q: 0, r: 1, object: 'empty' });
     } else if (objectId === 'crawlingFire' || objectId === 'burningCell') {
         support[0].object = 'water';
+    } else if (objectId === 'combBomber') {
+        support.push({ q: 0, r: -1, object: 'empty' }, { q: -1, r: 0, object: 'empty' });
+    } else if (objectId === 'burrowBeetle') {
+        support.push({ q: 0, r: -1, object: 'empty' }, { q: -1, r: 0, object: 'empty' });
     } else if (objectId === 'waxDoor') {
         support[1].object = 'pollen';
     } else if (objectId === 'npc') {
@@ -1127,7 +1204,7 @@ function createFreshPlayer() {
 
 function generateRoom(reason) {
     if (game.roomDepth >= FINAL_ROOM) {
-        generateDanceRoom();
+        generateBossRoom();
         return;
     }
 
@@ -1181,14 +1258,83 @@ function generateRoom(reason) {
     updateObjectiveProgress();
 
     if (reason === 'restart') {
-        addLog('Start', 'Scout the dungeon, manage sting cooldown, and use exits to crawl deeper.');
+        addLog(t('logs', 'start'), t('messages', 'startRun'));
     } else {
-        addLog('Exit', `Entered chamber ${game.roomDepth}.`);
+        addLog(t('logs', 'exit'), formatText('messages', 'enteredChamber', { room: game.roomDepth }));
     }
     if (game.roomObjective) {
         addLog(currentLanguage === 'es-419' ? 'Objetivo' : 'Objective', getRoomObjectiveText());
     }
     recordReplayEvent('roomStart', { reason, depth: game.roomDepth });
+    draw();
+}
+
+function generateBossRoom() {
+    game.mode = 'dungeon';
+    game.dance = null;
+    game.cells = [];
+    game.statPopups = [];
+    game.attackEffects = [];
+    game.pathPreview = null;
+    game.pathCache = {};
+    game.autoPath = [];
+    game.cameraPan = { x: 0, y: 0 };
+    game.roomDepth = FINAL_ROOM;
+    game.roomProfile = ROOM_PROFILES[ROOM_PROFILES.length - 1];
+    game.roomObjective = null;
+    game.currentRoomCells = getAllCoordinatesForRadius(3);
+    game.entryCell = { q: -3, r: 0 };
+    game.exitCell = null;
+    game.player.q = game.entryCell.q;
+    game.player.r = game.entryCell.r;
+    const bossPosition = { q: 1, r: -1 };
+    const spawnerPositions = [
+        { q: 0, r: -1 },
+        { q: 1, r: 0 }
+    ];
+    game.currentRoomCells.forEach(({ q, r }) => {
+        const isSpawner = spawnerPositions.some((position) => position.q === q && position.r === r);
+        const object = q === game.entryCell.q && r === game.entryCell.r
+            ? 'entry'
+            : q === bossPosition.q && r === bossPosition.r
+            ? 'queenSignaler'
+            : isSpawner
+            ? 'waspHive'
+            : hexDistance(q, r, bossPosition.q, bossPosition.r) === 1 && seededRandom() < 0.35
+            ? chooseWeightedObject([
+                { object: 'enemy', weight: 3 },
+                { object: 'guardWasp', weight: 2 },
+                { object: 'miteSwarm', weight: 2 },
+                { object: 'empty', weight: 3 }
+            ], 'empty')
+            : chooseWeightedObject([
+                { object: 'empty', weight: 55 },
+                { object: 'pollen', weight: 9 },
+                { object: 'water', weight: 9 },
+                { object: 'stingUpgrade', weight: 5 },
+                { object: 'burningCell', weight: 3 },
+                { object: 'vine', weight: 3 }
+            ], 'empty');
+        game.cells.push({
+            q,
+            r,
+            object,
+            visited: false,
+            revealed: true,
+            nextAttackAt: 0,
+            nextAuraAt: object === 'queenSignaler' || object === 'waspHive' ? performance.now() + 900 : 0,
+            hits: 0,
+            isBoss: object === 'queenSignaler'
+        });
+    });
+    const boss = game.cells.find((cell) => cell.isBoss);
+    if (boss) {
+        boss.bossHp = 6;
+    }
+    game.message = t('messages', 'bossStart');
+    addLog(t('logs', 'finalBoss'), game.message);
+    startBossMusic();
+    revealAroundPlayer();
     draw();
 }
 
@@ -1622,8 +1768,8 @@ function buildNextRoomPreview() {
 
     if (nextDepth >= FINAL_ROOM) {
         return currentLanguage === 'es-419'
-            ? 'Baile final: guarda salud y concentración.'
-            : 'Final dance: save health and focus.';
+            ? 'Jefe final: guarda salud, escudo y recursos.'
+            : 'Final boss: save health, shield, and supplies.';
     }
 
     const enemies = profile.allowedEnemies.map(getDisplayNameForObject).slice(0, 3).join(', ');
@@ -2026,6 +2172,7 @@ function draw() {
         updateSleepingEnemies();
         updateEnemyAuras();
         updateBatAttacks();
+        updateAutoPath();
     }
 
     const board = layout();
@@ -2033,10 +2180,12 @@ function draw() {
     drawBackground(board);
 
     game.cells.forEach(drawCell);
+    drawPathPreview();
     if (game.mode === 'dance') {
         danceSystem.drawArrow();
     }
     drawPlayer();
+    drawAttackEffects();
     if (game.mode === 'dance' && game.dance?.move?.type === 'hold') {
         danceSystem.drawHoldForeground();
     }
@@ -2234,6 +2383,48 @@ function drawThreatPreview(cell, x, y, size) {
     ctx.restore();
 }
 
+function drawPathPreview() {
+    const preview = game.pathPreview;
+    if (!preview || game.mode !== 'dungeon') return;
+    const now = performance.now();
+    ctx.save();
+    preview.path.forEach((step, index) => {
+        const { x, y, size } = hexToPixel(step.q, step.r);
+        const isLast = index === preview.path.length - 1;
+        const pulse = (Math.sin(now / 150 + index * 0.5) + 1) / 2;
+        drawHexPath(x, y, size - 9);
+        ctx.strokeStyle = preview.complete
+            ? `rgba(245, 200, 75, ${0.55 + pulse * 0.28})`
+            : isLast
+            ? `rgba(255, 166, 65, ${0.62 + pulse * 0.28})`
+            : 'rgba(184, 194, 170, 0.35)';
+        ctx.lineWidth = isLast ? 5 : 3;
+        ctx.stroke();
+    });
+    if (preview.deathCell) {
+        const { x, y, size } = hexToPixel(preview.deathCell.q, preview.deathCell.r);
+        const pulse = (Math.sin(now / 110) + 1) / 2;
+        drawHexPath(x, y, size - 6);
+        ctx.fillStyle = `rgba(128, 12, 24, ${0.22 + pulse * 0.12})`;
+        ctx.strokeStyle = `rgba(255, 72, 87, ${0.7 + pulse * 0.25})`;
+        ctx.lineWidth = 6;
+        ctx.fill();
+        ctx.stroke();
+        drawSprite('deathCell', x, y, size * 0.72);
+    }
+    if (preview.blockedTarget && !preview.deathCell) {
+        const { x, y, size } = hexToPixel(preview.blockedTarget.q, preview.blockedTarget.r);
+        const pulse = (Math.sin(now / 160) + 1) / 2;
+        drawHexPath(x, y, size - 6);
+        ctx.strokeStyle = `rgba(255, 173, 66, ${0.55 + pulse * 0.28})`;
+        ctx.lineWidth = 5;
+        ctx.setLineDash([8, 7]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+    ctx.restore();
+}
+
 function getThreatAtCell(q, r) {
     if (game.mode !== 'dungeon') return null;
     let strongest = null;
@@ -2358,6 +2549,54 @@ function drawCellBackground(cell, x, y, size, hidden) {
 
     ctx.restore();
     ctx.globalAlpha = 1;
+}
+
+function drawAttackEffects() {
+    const now = performance.now();
+    game.attackEffects = game.attackEffects.filter((effect) => now - effect.startedAt < effect.duration);
+    game.attackEffects.forEach((effect) => {
+        const progress = Math.min(1, (now - effect.startedAt) / effect.duration);
+        const from = hexToPixel(effect.from.q, effect.from.r);
+        const to = hexToPixel(effect.to.q, effect.to.r);
+        const x = from.x + (to.x - from.x) * progress;
+        const y = from.y + (to.y - from.y) * progress;
+        const pulse = Math.sin(progress * Math.PI);
+        ctx.save();
+        if (effect.kind === 'projectile') {
+            ctx.strokeStyle = effect.color || '#ff8a72';
+            ctx.fillStyle = effect.color || '#ff8a72';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x, y, Math.max(5, from.size * 0.12), 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.strokeStyle = effect.color || '#fff2a7';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.arc(to.x, to.y, to.size * (0.24 + pulse * 0.34), -Math.PI * 0.2, Math.PI * 1.2);
+            ctx.stroke();
+        }
+        ctx.restore();
+    });
+}
+
+function addAttackEffect(fromQ, fromR, toQ, toR, sourceObject = '', kind = '') {
+    const enemy = getEnemyDef(sourceObject);
+    const distance = hexDistance(fromQ, fromR, toQ, toR);
+    const effectKind = kind || (distance > 1 ? 'projectile' : 'melee');
+    game.attackEffects.push({
+        kind: effectKind,
+        from: { q: fromQ, r: fromR },
+        to: { q: toQ, r: toR },
+        color: enemy?.color || (effectKind === 'projectile' ? '#ff8a72' : '#fff2a7'),
+        startedAt: performance.now(),
+        duration: effectKind === 'projectile' ? 360 : 260
+    });
+    audioSystem.playEffect(effectKind === 'projectile' ? 'projectile' : 'hit');
 }
 
 function getCellTileKey(cell, hidden) {
@@ -2947,7 +3186,7 @@ function drawEnemyAuraTimer(cell, x, y, size) {
 
     ctx.save();
     ctx.lineWidth = 3;
-    ctx.strokeStyle = cell.object === 'honeyLeech' ? 'rgba(198, 151, 255, 0.92)' : 'rgba(249, 65, 68, 0.92)';
+    ctx.strokeStyle = getEnemyTimerColor(cell.object);
     ctx.beginPath();
     ctx.arc(x, y, size * (enemy.range > 1 ? 0.68 : 0.58), -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
     ctx.stroke();
@@ -3033,6 +3272,19 @@ function drawDangerBadge(x, y, size) {
     ctx.textBaseline = 'middle';
     ctx.fillText(symbols[state], 0, 1);
     ctx.restore();
+}
+
+function getEnemyTimerColor(object) {
+    const enemy = getEnemyDef(object);
+    const behaviorTypes = (enemy?.behaviors || []).map((behavior) => behavior.type);
+    if (behaviorTypes.includes('waterDrainAura')) return 'rgba(74, 185, 255, 0.95)';
+    if (behaviorTypes.includes('stealResourceAura')) return 'rgba(174, 124, 255, 0.95)';
+    if (behaviorTypes.includes('refogAura')) return 'rgba(146, 193, 211, 0.9)';
+    if (behaviorTypes.includes('buffEnemiesAura')) return 'rgba(245, 200, 75, 0.95)';
+    if (behaviorTypes.includes('spawnEnemyAura') || behaviorTypes.includes('spawnTerrainAura') || behaviorTypes.includes('markCellsAura') || behaviorTypes.includes('burrowAmbush') || behaviorTypes.includes('weakPointWindow')) {
+        return 'rgba(255, 166, 65, 0.95)';
+    }
+    return 'rgba(249, 65, 68, 0.92)';
 }
 
 function drawPlayerSelectionRing(x, y, size) {
@@ -3246,7 +3498,8 @@ function getCellInfo(cell) {
 
     if (isEnemyObject(cell.object)) {
         const enemy = getEnemyDef(cell.object);
-        const hp = Math.max(0, enemy.hp - (cell.hits || 0));
+        const maxHp = cell.bossHp || enemy.hp;
+        const hp = Math.max(0, maxHp - (cell.hits || 0));
         const status = cell.object === 'sleepingBat' && !cell.awake
             ? (currentLanguage === 'es-419' ? 'Dormido' : 'Sleeping')
             : (currentLanguage === 'es-419' ? 'Activo' : 'Active');
@@ -3254,7 +3507,7 @@ function getCellInfo(cell) {
             color: enemy.color,
             lines: [
                 enemy.name,
-                `${t('ui', 'hp')} ${hp}/${enemy.hp} | ${t('ui', 'attack')} ${enemy.attack} | ${t('ui', 'range')} ${enemy.range}`,
+                `${t('ui', 'hp')} ${hp}/${maxHp} | ${t('ui', 'attack')} ${enemy.attack} | ${t('ui', 'range')} ${enemy.range}`,
                 enemy.behavior,
                 enemy.lesson,
                 `${currentLanguage === 'es-419' ? 'Estado' : 'Status'}: ${status}`
@@ -3274,6 +3527,117 @@ function getCellInfo(cell) {
     };
 }
 
+function getPathPreview(cell) {
+    if (!cell || game.mode !== 'dungeon' || !cell.revealed) return null;
+    const riskTick = Math.floor(performance.now() / 300);
+    const key = `${game.player.q},${game.player.r}->${cell.q},${cell.r}:${game.player.steps}:${game.cells.length}:${game.player.health}:${game.player.upgrades}:${game.player.water}:${riskTick}`;
+    if (game.pathCache[key]) return game.pathCache[key];
+    const preview = annotatePathRisk(findPathToCell(cell));
+    game.pathCache[key] = preview;
+    return preview;
+}
+
+function findPathToCell(target) {
+    const startKey = cellKey(game.player.q, game.player.r);
+    const targetKey = cellKey(target.q, target.r);
+    const targetIsBlocked = isPathBlockedTarget(target);
+    const queue = [{ q: game.player.q, r: game.player.r, path: [] }];
+    const visited = new Set([startKey]);
+    let best = null;
+
+    while (queue.length) {
+        const current = queue.shift();
+        if (cellKey(current.q, current.r) === targetKey) {
+            return { path: current.path, complete: true };
+        }
+        if (targetIsBlocked && current.path.length && isAdjacent(current.q, current.r, target.q, target.r)) {
+            return {
+                path: current.path,
+                complete: false,
+                blockedTarget: { q: target.q, r: target.r, object: target.object }
+            };
+        }
+        HEX_DIRECTIONS.forEach((direction) => {
+            const next = getCell(current.q + direction.q, current.r + direction.r);
+            if (!next) return;
+            const key = cellKey(next.q, next.r);
+            if (visited.has(key)) return;
+            visited.add(key);
+            if (!isPathWalkable(next, target)) {
+                const blockedPath = [...current.path];
+                if (!best || blockedPath.length > best.path.length) {
+                    best = { path: blockedPath, complete: false };
+                }
+                return;
+            }
+            const nextPath = [...current.path, next];
+            if (!best || nextPath.length > best.path.length || hexDistance(next.q, next.r, target.q, target.r) < hexDistance(best.path.at(-1)?.q ?? game.player.q, best.path.at(-1)?.r ?? game.player.r, target.q, target.r)) {
+                best = { path: nextPath, complete: false };
+            }
+            queue.push({ q: next.q, r: next.r, path: nextPath });
+        });
+    }
+
+    return best || { path: [], complete: false };
+}
+
+function isPathWalkable(cell, target) {
+    if (!cell.revealed) return false;
+    if (cell.object === 'wall' || cell.object === 'waxDoor') return false;
+    if ((cell.object === 'vine' || cell.object === 'burningCell' || isEnemyObject(cell.object)) && cell !== target) return false;
+    if (isEnemyObject(cell.object) && cell === target && getAttackCooldownRemaining() > 0) return false;
+    return true;
+}
+
+function isPathBlockedTarget(cell) {
+    return cell?.object === 'wall' || cell?.object === 'waxDoor';
+}
+
+function annotatePathRisk(preview) {
+    if (!preview?.path) return preview;
+    let health = game.player.health;
+    let shield = game.player.upgrades;
+    let water = game.player.water;
+    let totalDamage = 0;
+    let totalBlocked = 0;
+    let waterSpent = 0;
+    let deathCell = null;
+
+    preview.path.forEach((cell) => {
+        if (deathCell) return;
+        let damage = 0;
+        if (cell.object === 'vine') {
+            damage += VINE_DAMAGE;
+        }
+        if (cell.object === 'burningCell') {
+            if (water > 0) {
+                water -= 1;
+                waterSpent += 1;
+            } else {
+                damage += 1;
+            }
+        }
+        const threat = getThreatAtCell(cell.q, cell.r);
+        if (threat?.imminent && threat.damage > 0) {
+            damage += threat.damage;
+        }
+        const blocked = Math.min(shield, damage);
+        shield -= blocked;
+        health -= Math.max(0, damage - blocked);
+        totalDamage += damage;
+        totalBlocked += blocked;
+        if (health <= 0) {
+            deathCell = { q: cell.q, r: cell.r };
+        }
+    });
+
+    return {
+        ...preview,
+        risk: { totalDamage, totalBlocked, waterSpent, lethal: Boolean(deathCell) },
+        deathCell
+    };
+}
+
 function getObjectRole(object) {
     const roles = I18N[currentLanguage].roles;
     if (object === 'empty') return roles.safe;
@@ -3288,6 +3652,17 @@ function getObjectRole(object) {
 
 function getActionPreview(cell) {
     if (!isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
+        const preview = getPathPreview(cell);
+        if (preview?.path?.length) {
+            const danger = preview.deathCell
+                ? t('messages', 'pathLethalShort')
+                : preview.risk?.totalDamage
+                ? formatText('messages', 'pathRisk', { damage: preview.risk.totalDamage })
+                : '';
+            return preview.blockedTarget
+                ? t('messages', 'blockedTarget')
+                : formatText('messages', 'pathSteps', { steps: preview.path.length, danger });
+        }
         return t('actions', 'moveNext');
     }
 
@@ -3379,22 +3754,31 @@ function moveTo(cell) {
         return;
     }
 
+    const sameCell = cell.q === game.player.q && cell.r === game.player.r;
+    if (!sameCell && !isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
+        followPathTo(cell);
+        return;
+    }
+
     const actionState = getCellActionState(cell);
     if (!actionState.available) {
+        game.autoPath = [];
         showBlockedAction(cell, actionState.reason);
         return;
     }
 
     const targetObject = cell.object;
     if (targetObject === 'waxDoor') {
+        game.autoPath = [];
         openWaxDoor(cell);
         return;
     }
 
     if (isEnemyObject(targetObject) && getAttackCooldownRemaining() > 0) {
+        game.autoPath = [];
         const seconds = (getAttackCooldownRemaining() / 1000).toFixed(1);
-        game.message = `Sting is cooling down. Wait ${seconds}s before attacking.`;
-        addLog('Sting Cooldown', game.message);
+        game.message = formatText('messages', 'stingCooldown', { seconds });
+        addLog(t('logs', 'stingCooldown'), game.message);
         return;
     }
 
@@ -3404,10 +3788,12 @@ function moveTo(cell) {
         r: cell.r - game.player.r
     };
     if (!ensureStaminaForAction()) {
+        game.autoPath = [];
         showBlockedAction(cell, t('ui', 'blockedStamina'));
         return;
     }
     spendStamina(1);
+    audioSystem.playEffect(isEnemyObject(targetObject) ? 'sting' : ['empty', 'entry', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject) ? 'move' : 'pick');
     game.player.q = cell.q;
     game.player.r = cell.r;
     startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
@@ -3415,6 +3801,7 @@ function moveTo(cell) {
     cell.visited = true;
 
     if (targetObject === 'exit') {
+        game.autoPath = [];
         game.objectiveProgress.exitReached = true;
         updateObjectiveProgress();
         awardXp(XP_REWARDS.room + game.roomDepth * 6, currentLanguage === 'es-419' ? 'Sala completada' : 'Room complete');
@@ -3430,11 +3817,13 @@ function moveTo(cell) {
     }
 
     if (targetObject === 'finalExit') {
-        endRun();
+        game.autoPath = [];
+        generateBossRoom();
         return;
     }
 
     if (targetObject === 'entry') {
+        game.autoPath = [];
         loadPreviousRoom();
         return;
     }
@@ -3459,6 +3848,7 @@ function moveTo(cell) {
     }
 
     if (targetObject === 'npc') {
+        game.autoPath = [];
         openTraderMarket(cell);
         revealAroundPlayer();
         recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
@@ -3483,6 +3873,12 @@ function moveTo(cell) {
             game.objectiveProgress.kills += 1;
             awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
             applyEnemyKillRelics(cell);
+            if (cell.isBoss) {
+                game.autoPath = [];
+                audioSystem.playEffect('win');
+                endRun('boss-defeated');
+                return;
+            }
         } else if (!['empty', 'entry', 'exit', 'finalExit', 'vine', 'stickyTrap'].includes(targetObject)) {
             if (['pollen', 'water', 'honeyDrop', 'nectarCache', 'cleanWater'].includes(targetObject)) {
                 game.objectiveProgress.supplies += 1;
@@ -3497,6 +3893,20 @@ function moveTo(cell) {
     moveMirrorWasps();
     recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
     draw();
+}
+
+function followPathTo(cell) {
+    const preview = getPathPreview(cell);
+    if (!preview?.path?.length) {
+        showBlockedAction(cell, t('ui', 'blockedNotAdjacent'));
+        return;
+    }
+    if (preview.deathCell) {
+        showBlockedAction(cell, t('messages', 'pathLethal'));
+        return;
+    }
+    game.autoPath = preview.path.slice(1).map((step) => ({ q: step.q, r: step.r }));
+    moveTo(preview.path[0]);
 }
 
 function spendStamina(amount) {
@@ -3545,6 +3955,7 @@ function ensureStaminaForAction() {
 
 function openWaxDoor(cell) {
     if (game.freeWaxDoorAvailable) {
+        audioSystem.playEffect('open');
         if (!ensureStaminaForAction()) {
             showBlockedAction(cell, t('ui', 'blockedStamina'));
             return;
@@ -3560,6 +3971,7 @@ function openWaxDoor(cell) {
     }
 
     if (game.player.pollen > 0) {
+        audioSystem.playEffect('open');
         if (!ensureStaminaForAction()) {
             showBlockedAction(cell, t('ui', 'blockedStamina'));
             return;
@@ -3576,6 +3988,7 @@ function openWaxDoor(cell) {
     }
 
     if (getAttackCooldownRemaining() <= 0) {
+        audioSystem.playEffect('sting');
         if (!ensureStaminaForAction()) {
             showBlockedAction(cell, t('ui', 'blockedStamina'));
             return;
@@ -3719,13 +4132,14 @@ function resolveInteraction(object, cell) {
         if (usesDoubleSting) {
             game.player.stingCharges -= 1;
         }
-        const killed = cell.hits >= enemy.hp;
+        const maxHp = cell.bossHp || enemy.hp;
+        const killed = cell.hits >= maxHp;
         if (killed) {
             game.runStats.kills += 1;
         }
         return {
             message: !killed
-                ? `${enemy.name} hit ${cell.hits}/${enemy.hp}. It still blocks the way.`
+                ? `${enemy.name} hit ${cell.hits}/${maxHp}. It still blocks the way.`
                 : usesDoubleSting
                 ? `Double sting defeated the ${enemy.name.toLowerCase()}.`
                 : `${enemy.name} defeated.`,
@@ -3871,6 +4285,77 @@ function moveMites() {
     }
 }
 
+function moveMirrorWasps() {
+    const direction = game.lastMoveDirection;
+    if (!direction || (!direction.q && !direction.r)) return;
+
+    const plannedMoves = [];
+    game.cells
+        .filter((cell) => enemySystem.hasBehavior(cell.object, 'mirrorMove'))
+        .forEach((wasp) => {
+            const target = getCell(wasp.q + direction.q, wasp.r + direction.r);
+            if (!target || target.object !== 'empty' || (target.q === game.player.q && target.r === game.player.r)) return;
+            if (plannedMoves.some((move) => move.to === target)) return;
+            plannedMoves.push({ from: wasp, to: target, object: wasp.object, hits: wasp.hits || 0 });
+        });
+
+    plannedMoves.forEach((move) => {
+        move.from.object = 'empty';
+        move.from.hits = 0;
+        move.from.nextAuraAt = 0;
+        move.to.object = move.object;
+        move.to.hits = move.hits;
+        move.to.nextAuraAt = 0;
+        move.to.revealed = move.from.revealed;
+    });
+
+    if (plannedMoves.length) {
+        addLog('Mirror Wasp', `${plannedMoves.length} mirror wasp${plannedMoves.length === 1 ? '' : 's'} copied the bee's move.`);
+        recordReplayEvent('enemyMove', { enemy: 'mirrorWasp', count: plannedMoves.length });
+    }
+}
+
+function updateTerrainEffects() {
+    const now = performance.now();
+    game.cells.forEach((cell) => {
+        if (cell.object === 'burrowWarningCell' && cell.emergeAt && now >= cell.emergeAt) {
+            const onPlayer = cell.q === game.player.q && cell.r === game.player.r;
+            if (onPlayer) {
+                applyDamage(1, cell.q, cell.r, 'Burrow Beetle Emerge');
+                cell.object = 'empty';
+            } else {
+                cell.object = cell.emergeObject || 'burrowBeetle';
+                cell.hits = 0;
+                cell.nextAuraAt = 0;
+            }
+            cell.emergeAt = 0;
+            cell.emergeObject = null;
+            recordReplayEvent('enemySpecial', { enemy: 'burrowBeetle', q: cell.q, r: cell.r, effect: 'emerge' });
+        }
+
+        if (cell.object === 'bomberMarkedCell' && cell.detonateAt && now >= cell.detonateAt) {
+            if (cell.q === game.player.q && cell.r === game.player.r) {
+                applyDamage(cell.detonateDamage || 1, cell.q, cell.r, 'Comb Bomber Blast');
+            }
+            cell.object = 'empty';
+            cell.detonateAt = 0;
+            cell.detonateDamage = 0;
+            recordReplayEvent('enemySpecial', { enemy: 'combBomber', q: cell.q, r: cell.r, effect: 'detonate' });
+        }
+    });
+}
+
+function updateAutoPath() {
+    if (!game.autoPath?.length || game.replay || game.ended || game.mode !== 'dungeon' || game.playerMotion) return;
+    const next = game.autoPath.shift();
+    const cell = getCell(next.q, next.r);
+    if (!cell || !isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
+        game.autoPath = [];
+        return;
+    }
+    moveTo(cell);
+}
+
 function updateBatAttacks() {
     if (game.ended || game.player.health <= 0) return;
 
@@ -3960,6 +4445,7 @@ function applyDamage(amount, q, r, source) {
     }
 
     addStatPopups(q, r, deltas);
+    addAttackEffect(q, r, game.player.q, game.player.r, getObjectAt(q, r));
 
     if (blocked > 0 && healthDamage === 0) {
         game.message = `${source} blocked by shield.`;
@@ -3996,6 +4482,10 @@ function hasTimedAura(object) {
     return enemySystem.hasTimedThreat(object);
 }
 
+function getObjectAt(q, r) {
+    return getCell(q, r)?.object || '';
+}
+
 function endRun(reason = 'final-exit') {
     if (game.ended) return;
     game.ended = true;
@@ -4011,11 +4501,13 @@ function endRun(reason = 'final-exit') {
         : 100;
 
     game.message = reason === 'death'
-        ? `Game over. ${game.lastDamageSource || 'The last hit'} ended the run.`
+        ? formatText('messages', 'gameOver', { source: game.lastDamageSource || 'The last hit' })
+        : reason === 'boss-defeated'
+        ? t('messages', 'bossDefeated')
         : reason === 'dance-failed'
-        ? `The path to food faded. ${danceComplete}% complete.`
-        : 'The dance revealed the path to food.';
-    addLog(reason === 'death' ? 'Game Over' : reason === 'dance-failed' ? 'Dance Failed' : 'Dance Complete', game.message);
+        ? formatText('messages', 'danceFailed', { percent: danceComplete })
+        : t('messages', 'runComplete');
+    addLog(reason === 'death' ? t('logs', 'gameOver') : reason === 'boss-defeated' ? t('logs', 'bossDefeated') : reason === 'dance-failed' ? t('logs', 'danceFailed') : t('logs', 'runComplete'), game.message);
 
     const stats = [
         [currentLanguage === 'es-419' ? 'Bajas' : 'Kills', game.runStats.kills],
@@ -4026,7 +4518,7 @@ function endRun(reason = 'final-exit') {
         [currentLanguage === 'es-419' ? 'XP ganada' : 'XP Gained', game.runStats.xp],
         [currentLanguage === 'es-419' ? 'Nivel de abeja' : 'Bee Level', progression.level],
         [currentLanguage === 'es-419' ? 'Tiempo sobrevivido' : 'Time Survived', `${minutes}:${String(remainingSeconds).padStart(2, '0')}`],
-        [currentLanguage === 'es-419' ? 'Camino a la comida' : 'Path to Food', reason === 'death' ? '0%' : `${danceComplete}%`],
+        [currentLanguage === 'es-419' ? 'Progreso final' : 'Final Progress', reason === 'death' ? '0%' : reason === 'boss-defeated' ? '100%' : `${danceComplete}%`],
         ...(reason === 'death' ? [
             [currentLanguage === 'es-419' ? 'Causa' : 'Cause', game.lastDamageSource || 'Unknown'],
             [currentLanguage === 'es-419' ? 'Consejo' : 'Tip', game.deathTip || getDeathTip()]
@@ -4455,6 +4947,23 @@ function getCellActionState(cell) {
         return { available: false, reason: t('ui', 'blockedHidden'), symbol: '?', color: '#b8c2aa' };
     }
     if (!isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
+        const preview = getPathPreview(cell);
+        if (preview?.path?.length) {
+            if (preview.deathCell) {
+                return {
+                    available: false,
+                    reason: t('messages', 'pathLethal'),
+                    symbol: 'X',
+                    color: '#ff4857'
+                };
+            }
+            return {
+                available: true,
+                reason: preview.complete ? '' : t('ui', 'blockedNotAdjacent'),
+                symbol: '>',
+                color: preview.complete ? '#f5c84b' : '#ffad42'
+            };
+        }
         return { available: false, reason: t('ui', 'blockedNotAdjacent'), symbol: 'i', color: '#b8c2aa' };
     }
     if (game.player.stamina <= 0 && !hasStaminaRecoveryResource()) {
@@ -4523,7 +5032,25 @@ window.HW_TEST_API = {
             y: rect.top + point.y,
             size: point.size
         };
-    }
+    },
+    getObjectCounts: () => game.cells.reduce((acc, cell) => {
+        acc[cell.object] = (acc[cell.object] || 0) + 1;
+        return acc;
+    }, {}),
+    getCellObject: (q, r) => getCell(q, r)?.object || null,
+    getPathPreview: () => game.pathPreview ? {
+        complete: game.pathPreview.complete,
+        length: game.pathPreview.path.length,
+        lethal: Boolean(game.pathPreview.deathCell),
+        risk: game.pathPreview.risk,
+        deathCell: game.pathPreview.deathCell,
+        blockedTarget: game.pathPreview.blockedTarget,
+        end: game.pathPreview.path.length ? {
+            q: game.pathPreview.path[game.pathPreview.path.length - 1].q,
+            r: game.pathPreview.path[game.pathPreview.path.length - 1].r
+        } : null
+    } : null,
+    generateBossRoom: () => generateBossRoom()
 };
 
 function makeCursor(symbol, color, available = true) {
@@ -4567,6 +5094,7 @@ canvas.addEventListener('mousemove', (event) => {
         cell,
         startedAt: previousKey === nextKey ? game.hover.startedAt : performance.now()
     };
+    game.pathPreview = cell && game.mode === 'dungeon' ? getPathPreview(cell) : null;
     updateCursor(game.hover.cell);
 });
 

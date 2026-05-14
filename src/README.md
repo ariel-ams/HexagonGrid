@@ -10,4 +10,6 @@ Recent refactors keep spawn weights, sprite hooks, object text, and enemy balanc
 
 New placeholder sprites should use an empty `src` plus a short `fallback` label in `SPRITE_DEFS`. The renderer will draw the text fallback until final art is available.
 
+Every new game object must also be reachable from the Test page. Add the object to `OBJECTS` and its behavior data first; the test list is generated from those definitions. If the object needs a special setup to demonstrate its mechanic clearly, add that support in `seedTestSupportCells()` and `getTestScenarioMessage()` in `../index.js`.
+
 Future passes can move rendering, replay, input, dance, combat, and room generation into their own folders once the gameplay shape settles.

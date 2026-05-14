@@ -112,6 +112,53 @@ function createAudioSystem(config = {}) {
         }
     }
 
+    function playEffect(id, options = {}) {
+        const audioContext = getEffectContext();
+        if (!audioContext) return;
+        const now = audioContext.currentTime;
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        const preset = getEffectPreset(id);
+        oscillator.type = preset.type;
+        oscillator.frequency.setValueAtTime(options.frequency || preset.frequency, now);
+        if (preset.endFrequency) {
+            oscillator.frequency.exponentialRampToValueAtTime(preset.endFrequency, now + preset.duration);
+        }
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(options.volume || preset.volume, now + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + preset.duration);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start(now);
+        oscillator.stop(now + preset.duration + 0.02);
+    }
+
+    let effectContext = null;
+    function getEffectContext() {
+        try {
+            effectContext = effectContext || new (window.AudioContext || window.webkitAudioContext)();
+            if (effectContext.state === 'suspended') {
+                effectContext.resume().catch(() => {});
+            }
+            return effectContext;
+        } catch {
+            return null;
+        }
+    }
+
+    function getEffectPreset(id) {
+        const presets = {
+            move: { type: 'sine', frequency: 360, endFrequency: 520, volume: 0.035, duration: 0.08 },
+            pick: { type: 'triangle', frequency: 620, endFrequency: 980, volume: 0.045, duration: 0.12 },
+            sting: { type: 'sawtooth', frequency: 520, endFrequency: 180, volume: 0.04, duration: 0.09 },
+            hit: { type: 'square', frequency: 160, endFrequency: 90, volume: 0.045, duration: 0.14 },
+            projectile: { type: 'sine', frequency: 300, endFrequency: 760, volume: 0.035, duration: 0.16 },
+            blocked: { type: 'square', frequency: 130, endFrequency: 80, volume: 0.04, duration: 0.11 },
+            open: { type: 'triangle', frequency: 260, endFrequency: 620, volume: 0.035, duration: 0.13 },
+            win: { type: 'sine', frequency: 520, endFrequency: 1040, volume: 0.05, duration: 0.28 }
+        };
+        return presets[id] || presets.pick;
+    }
+
     function getDebugState() {
         return {
             activeTrack,
@@ -134,6 +181,7 @@ function createAudioSystem(config = {}) {
         stop,
         stopAll,
         duck,
+        playEffect,
         pauseAll,
         resumeActive,
         getActiveTrack: () => activeTrack,
