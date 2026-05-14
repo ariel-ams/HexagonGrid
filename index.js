@@ -302,6 +302,7 @@ const game = {
     foragerPouchCollected: { pollen: false, water: false },
     royalJellyPollen: 0,
     currentRoomCells: [],
+    caveMetadata: null,
     roomProfile: ROOM_PROFILES[0],
     roomSpawnCounts: {
         enemies: 0,
@@ -907,6 +908,7 @@ function startRunState() {
     game.foragerPouchCollected = { pollen: false, water: false };
     game.royalJellyPollen = 0;
     game.currentRoomCells = [];
+    game.caveMetadata = null;
     game.roomProfile = ROOM_PROFILES[0];
     game.roomSpawnCounts = {
         enemies: 0,
@@ -1006,6 +1008,7 @@ function startObjectTestScenario(objectId) {
     game.roomProfile = getRoomProfile();
     game.roomObjective = null;
     game.currentRoomCells = getAllCoordinatesForRadius(2);
+    game.caveMetadata = null;
     game.entryCell = { q: -2, r: 0 };
     game.exitCell = { q: 2, r: 0 };
     game.player = createFreshPlayer();
@@ -1224,18 +1227,24 @@ function generateRoom(reason) {
         hazards: 0,
         specialItems: 0
     };
-    game.currentRoomCells = generateCaveBlob(game.roomProfile.targetCells);
-    const portals = choosePortalCells(game.currentRoomCells);
-    game.entryCell = portals.entry;
-    game.exitCell = portals.exit;
+    const cave = generateCaveDungeon({
+        targetCells: game.roomProfile.targetCells,
+        depth: game.roomDepth
+    });
+    game.currentRoomCells = cave.cells;
+    game.caveMetadata = cave.metadata;
+    game.entryCell = cave.entry;
+    game.exitCell = cave.exit;
     game.player.q = game.entryCell.q;
     game.player.r = game.entryCell.r;
-    game.message = 'A new chamber opens. Find the exit.';
+    game.message = 'A new cave opens. Find the furthest room.';
 
-    game.currentRoomCells.forEach(({ q, r }) => {
+    game.currentRoomCells.forEach(({ q, r, roomIndex, kind }) => {
         game.cells.push({
             q,
             r,
+            roomIndex,
+            kind,
             object: randomObjectFor(q, r, game.entryCell, game.exitCell),
             visited: false,
             revealed: false,
@@ -1282,17 +1291,20 @@ function generateBossRoom() {
     game.roomDepth = FINAL_ROOM;
     game.roomProfile = ROOM_PROFILES[ROOM_PROFILES.length - 1];
     game.roomObjective = null;
-    game.currentRoomCells = getAllCoordinatesForRadius(3);
-    game.entryCell = { q: -3, r: 0 };
+    const cave = generateCaveDungeon({
+        targetCells: Math.max(game.roomProfile.targetCells, 154),
+        depth: FINAL_ROOM,
+        bossRoom: true
+    });
+    game.currentRoomCells = cave.cells;
+    game.caveMetadata = cave.metadata;
+    game.entryCell = cave.entry;
     game.exitCell = null;
     game.player.q = game.entryCell.q;
     game.player.r = game.entryCell.r;
-    const bossPosition = { q: 1, r: -1 };
-    const spawnerPositions = [
-        { q: 0, r: -1 },
-        { q: 1, r: 0 }
-    ];
-    game.currentRoomCells.forEach(({ q, r }) => {
+    const bossPosition = cave.exit;
+    const spawnerPositions = chooseBossSpawnerPositions(bossPosition);
+    game.currentRoomCells.forEach(({ q, r, roomIndex, kind }) => {
         const isSpawner = spawnerPositions.some((position) => position.q === q && position.r === r);
         const object = q === game.entryCell.q && r === game.entryCell.r
             ? 'entry'
@@ -1318,6 +1330,8 @@ function generateBossRoom() {
         game.cells.push({
             q,
             r,
+            roomIndex,
+            kind,
             object,
             visited: false,
             revealed: true,
@@ -1336,6 +1350,27 @@ function generateBossRoom() {
     startBossMusic();
     revealAroundPlayer();
     draw();
+}
+
+function chooseBossSpawnerPositions(bossPosition) {
+    const adjacent = HEX_DIRECTIONS
+        .map((direction) => getCellCoordinate(bossPosition.q + direction.q, bossPosition.r + direction.r))
+        .filter((cell) => game.currentRoomCells.some((roomCell) => roomCell.q === cell.q && roomCell.r === cell.r))
+        .filter((cell) => hexDistance(cell.q, cell.r, game.entryCell.q, game.entryCell.r) > 2)
+        .slice(0, 2);
+    if (adjacent.length >= 2) return adjacent;
+    const fallback = [...game.currentRoomCells]
+        .filter((cell) => !(cell.q === bossPosition.q && cell.r === bossPosition.r))
+        .filter((cell) => !(cell.q === game.entryCell.q && cell.r === game.entryCell.r))
+        .sort((a, b) => (
+            hexDistance(a.q, a.r, bossPosition.q, bossPosition.r)
+            - hexDistance(b.q, b.r, bossPosition.q, bossPosition.r)
+        ));
+    return [...adjacent, ...fallback].slice(0, 2);
+}
+
+function getCellCoordinate(q, r) {
+    return { q, r };
 }
 
 function createObjectiveProgress() {
@@ -1377,6 +1412,10 @@ function updateObjectiveProgress() {
 
 function generateCaveBlob(targetCount) {
     return dungeonGenerator.generateCaveBlob(targetCount);
+}
+
+function generateCaveDungeon(options) {
+    return dungeonGenerator.generateCaveDungeon(options);
 }
 
 function cellKey(q, r) {
@@ -4170,6 +4209,8 @@ function createRoomSnapshot() {
     return {
         depth: game.roomDepth,
         cells: game.cells.map((cell) => ({ ...cell })),
+        currentRoomCells: game.currentRoomCells.map((cell) => ({ ...cell })),
+        caveMetadata: game.caveMetadata ? JSON.parse(JSON.stringify(game.caveMetadata)) : null,
         entryCell: { ...game.entryCell },
         exitCell: { ...game.exitCell },
         playerQ: game.exitCell.q,
@@ -4188,6 +4229,10 @@ function loadPreviousRoom() {
 
     game.roomDepth = previousRoom.depth;
     game.cells = previousRoom.cells.map((cell) => ({ ...cell }));
+    game.currentRoomCells = previousRoom.currentRoomCells
+        ? previousRoom.currentRoomCells.map((cell) => ({ ...cell }))
+        : game.cells.map(({ q, r, roomIndex, kind }) => ({ q, r, roomIndex, kind }));
+    game.caveMetadata = previousRoom.caveMetadata ? JSON.parse(JSON.stringify(previousRoom.caveMetadata)) : null;
     game.entryCell = { ...previousRoom.entryCell };
     game.exitCell = { ...previousRoom.exitCell };
     game.statPopups = [];
@@ -4573,6 +4618,8 @@ function createReplaySnapshot() {
         mode: game.mode,
         roomDepth: game.roomDepth,
         cells: game.cells.map((cell) => ({ ...cell })),
+        currentRoomCells: game.currentRoomCells.map((cell) => ({ ...cell })),
+        caveMetadata: game.caveMetadata ? JSON.parse(JSON.stringify(game.caveMetadata)) : null,
         player: { ...game.player },
         runStats: { ...game.runStats },
         statPopups: game.statPopups.map((popup) => ({ ...popup })),
@@ -4590,6 +4637,13 @@ function applyReplaySnapshot(snapshot) {
     game.mode = snapshot.mode;
     game.roomDepth = snapshot.roomDepth;
     game.cells = snapshot.cells.map((cell) => ({ ...cell }));
+    game.currentRoomCells = (snapshot.currentRoomCells || snapshot.cells || []).map((cell) => ({
+        q: cell.q,
+        r: cell.r,
+        roomIndex: cell.roomIndex,
+        kind: cell.kind
+    }));
+    game.caveMetadata = snapshot.caveMetadata ? JSON.parse(JSON.stringify(snapshot.caveMetadata)) : null;
     game.player = { ...snapshot.player };
     game.runStats = { ...snapshot.runStats };
     game.statPopups = (snapshot.statPopups || []).map((popup, index) => ({
@@ -5022,6 +5076,13 @@ window.HW_TEST_API = {
         testPaused: game.testPaused,
         activeTestObject: game.activeTestObject,
         cells: game.cells.length,
+        cave: game.caveMetadata ? {
+            roomCount: game.caveMetadata.roomCount,
+            farthestRoomIndex: game.caveMetadata.farthestRoomIndex,
+            bossRoom: game.caveMetadata.bossRoom
+        } : null,
+        entryCell: game.entryCell ? { ...game.entryCell } : null,
+        exitCell: game.exitCell ? { ...game.exitCell } : null,
         player: { ...game.player }
     }),
     getCellPoint: (q, r) => {
@@ -5038,6 +5099,10 @@ window.HW_TEST_API = {
         return acc;
     }, {}),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
+    getCellData: (q, r) => {
+        const cell = getCell(q, r);
+        return cell ? { ...cell } : null;
+    },
     getPathPreview: () => game.pathPreview ? {
         complete: game.pathPreview.complete,
         length: game.pathPreview.path.length,
