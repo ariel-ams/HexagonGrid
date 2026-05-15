@@ -34,14 +34,18 @@ function createItemSystem(context) {
             if (game.player.pollen >= effect.pollen && game.player.water >= effect.water) {
                 game.player.pollen -= effect.pollen;
                 game.player.water -= effect.water;
-                game.player.attackCooldownMs = Math.max(helpers.minAttackCooldownMs, game.player.attackCooldownMs - effect.cooldownMs);
-                if (helpers.getAttackCooldownRemaining() > 0) {
-                    game.player.attackReadyAt = Math.max(performance.now(), game.player.attackReadyAt - effect.cooldownMs);
+                if (effect.attackRange) {
+                    game.player.attackRange = (game.player.attackRange || 1) + effect.attackRange;
+                    result.deltas.push({ stat: 'pollen', amount: -effect.pollen }, { stat: 'water', amount: -effect.water }, { stat: 'range', amount: effect.attackRange });
+                    result.messages.push('Trade beetle tuned your sting. Attack range increased.');
+                } else {
+                    game.player.maxMovePoints = (game.player.maxMovePoints || game.player.maxStamina || 2) + 1;
+                    game.player.movePoints = game.player.maxMovePoints;
+                    result.deltas.push({ stat: 'pollen', amount: -effect.pollen }, { stat: 'water', amount: -effect.water }, { stat: 'stamina', amount: 1 });
+                    result.messages.push('Trade beetle packed honey fuel. Movement increased.');
                 }
-                result.deltas.push({ stat: 'pollen', amount: -effect.pollen }, { stat: 'water', amount: -effect.water }, { stat: 'cooldown', amount: -effect.cooldownMs / 1000 });
-                result.messages.push('Trade beetle tuned your sting. Cooldown reduced by 0.1s.');
             } else {
-                result.messages.push('Trade beetle needs 1 pollen and 1 water to reduce sting cooldown.');
+                result.messages.push('Trade beetle needs pollen and water to improve your tactical options.');
             }
             return;
         }

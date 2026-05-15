@@ -184,12 +184,11 @@
 
         .event-toast {
             position: absolute;
-            left: 32px;
-            bottom: 28px;
-            z-index: 4;
-            max-width: min(500px, calc(100% - 64px));
-            min-width: min(440px, calc(100% - 64px));
-            padding: 18px 20px 16px;
+            top: 22px;
+            left: 50%;
+            z-index: 8;
+            width: min(560px, calc(100% - 48px));
+            padding: 16px 20px 15px;
             border: 24px solid transparent;
             border-image-source: var(--art-objective-panel);
             border-image-slice: 72 82 fill;
@@ -200,14 +199,217 @@
             color: var(--parchment-ink);
             box-shadow: 0 16px 28px rgba(0, 0, 0, 0.38);
             opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 180ms ease, transform 180ms ease;
+            transform: translate(-50%, -18px) scale(0.98);
+            transition: opacity 160ms ease, transform 160ms ease;
             pointer-events: none;
         }
 
         .event-toast.visible {
             opacity: 1;
-            transform: translateY(0);
+            transform: translate(-50%, 0) scale(1);
+        }
+
+        .event-toast.toast-swap {
+            animation: toastSwap 240ms ease;
+        }
+
+        .event-toast.warning {
+            filter: drop-shadow(0 0 14px rgba(245, 200, 75, 0.48));
+        }
+
+        .event-toast.danger {
+            filter: drop-shadow(0 0 18px rgba(220, 56, 42, 0.5));
+        }
+
+        @keyframes toastSwap {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -18px) scale(0.96);
+            }
+
+            60% {
+                opacity: 1;
+                transform: translate(-50%, 4px) scale(1.015);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, 0) scale(1);
+            }
+        }
+
+        .inspect-panel {
+            position: absolute;
+            right: 30px;
+            bottom: 28px;
+            z-index: 4;
+            width: min(360px, calc(100% - 60px));
+            max-height: min(44vh, 390px);
+            display: grid;
+            gap: 10px;
+            padding: 18px 20px 16px;
+            border: 24px solid transparent;
+            border-image-source: var(--art-objective-panel);
+            border-image-slice: 72 82 fill;
+            border-image-width: 24px;
+            border-image-repeat: stretch;
+            border-radius: 18px;
+            background: transparent;
+            color: var(--parchment-ink);
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.34);
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+
+        .inspect-panel.hidden {
+            display: none;
+        }
+
+        .inspect-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .inspect-icon {
+            width: 46px;
+            height: 46px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(255, 238, 181, 0.82);
+            border: 2px solid rgba(111, 71, 31, 0.48);
+            color: #3b210f;
+            font-weight: 900;
+        }
+
+        .inspect-heading {
+            min-width: 0;
+        }
+
+        .inspect-heading strong {
+            display: block;
+            font-size: 18px;
+            color: #421f0d;
+        }
+
+        .inspect-heading span {
+            display: block;
+            color: #70401f;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .inspect-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .inspect-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 28px;
+            padding: 5px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(111, 71, 31, 0.22);
+            background: rgba(255, 244, 199, 0.64);
+            color: #3b210f;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .inspect-stat::before {
+            content: attr(data-icon);
+            display: inline-grid;
+            place-items: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.55);
+            color: inherit;
+            font-size: 13px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .inspect-stat.good {
+            border-color: rgba(44, 126, 71, 0.36);
+            background: rgba(139, 222, 144, 0.32);
+            color: #255823;
+        }
+
+        .inspect-stat.danger {
+            border-color: rgba(154, 39, 31, 0.36);
+            background: rgba(236, 90, 72, 0.24);
+            color: #7a2118;
+        }
+
+        .inspect-stat.cost {
+            border-color: rgba(121, 79, 35, 0.34);
+            background: rgba(211, 151, 70, 0.28);
+            color: #624019;
+        }
+
+        .inspect-stat.route {
+            border-color: rgba(51, 112, 156, 0.34);
+            background: rgba(83, 166, 216, 0.24);
+            color: #1d4f72;
+        }
+
+        .inspect-stat.stat-health::before {
+            background: #f36d61;
+            color: #fff9e5;
+        }
+
+        .inspect-stat.stat-shield::before {
+            background: #8f73d8;
+            color: #fff9e5;
+        }
+
+        .inspect-stat.stat-pollen::before {
+            background: #f3ca40;
+            color: #4a2b05;
+        }
+
+        .inspect-stat.stat-water::before {
+            background: #5bbff0;
+            color: #092f45;
+        }
+
+        .inspect-stat.stat-honey::before {
+            background: #d89128;
+            color: #fff7d1;
+        }
+
+        .inspect-stat.stat-attack::before,
+        .inspect-stat.stat-damage::before,
+        .inspect-stat.stat-lethal::before {
+            background: #9a271f;
+            color: #fff5e6;
+        }
+
+        .inspect-stat.stat-move::before,
+        .inspect-stat.stat-range::before,
+        .inspect-stat.stat-reveal::before {
+            background: #4289bd;
+            color: #f4fbff;
+        }
+
+        .inspect-lines {
+            display: grid;
+            gap: 6px;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .inspect-line {
+            padding-top: 6px;
+            border-top: 1px solid rgba(111, 71, 31, 0.18);
         }
 
         .event-toast strong,
@@ -839,7 +1041,7 @@
         .camp-actions {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+            gap: 14px;
         }
 
         .camp-preview {
@@ -870,25 +1072,52 @@
         }
 
         .camp-action {
-            min-height: 76px;
-            padding: 12px;
+            min-height: 104px;
+            padding: 14px;
             text-align: left;
             display: grid;
-            gap: 5px;
-            align-content: center;
-            background: rgba(243, 240, 223, 0.08);
-            color: var(--text);
-            border: 1px solid rgba(243, 240, 223, 0.16);
+            gap: 10px;
+            align-content: start;
+            background: rgba(255, 246, 206, 0.72);
+            color: #3a1e0e;
+            border: 2px solid rgba(100, 54, 24, 0.3);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32), 0 8px 16px rgba(62, 36, 12, 0.14);
         }
 
-        .camp-action strong {
-            color: var(--accent);
+        .camp-action:hover:not(:disabled),
+        .camp-action:focus-visible:not(:disabled) {
+            border-color: rgba(129, 70, 27, 0.78);
+            background: rgba(255, 239, 169, 0.88);
         }
 
-        .camp-action span {
-            color: var(--muted);
+        .camp-action-title {
+            color: #4f250f;
+            font-weight: 900;
+            font-size: 16px;
+            line-height: 1.1;
+        }
+
+        .camp-action-copy {
+            display: grid;
+            gap: 7px;
+        }
+
+        .camp-action-cost {
+            width: fit-content;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(91, 47, 18, 0.13);
+            border: 1px solid rgba(91, 47, 18, 0.22);
+            color: #5b2f12;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .camp-action-effect {
+            color: #4d341c;
             font-size: 12px;
             line-height: 1.35;
+            font-weight: 700;
         }
 
         .camp-action:disabled {
@@ -921,6 +1150,18 @@
         .start-panel h2 {
             font-size: 24px;
             text-transform: none;
+            line-height: 1.05;
+        }
+
+        #campScreen .relic-panel h2 {
+            width: fit-content;
+            max-width: 100%;
+            padding: 7px 16px 8px;
+            border-radius: 999px;
+            background: rgba(255, 239, 181, 0.86);
+            border: 1px solid rgba(92, 44, 22, 0.26);
+            color: #3b1a0b;
+            box-shadow: 0 5px 12px rgba(58, 30, 14, 0.16);
         }
 
         .end-stats {
@@ -1116,10 +1357,8 @@
             }
 
             .event-toast {
-                left: 14px;
-                bottom: 14px;
-                min-width: 0;
-                max-width: calc(100vw - 28px);
+                top: 12px;
+                width: calc(100vw - 28px);
                 padding: 10px 14px 12px;
                 border-width: 18px;
                 border-image-width: 18px;
@@ -1197,6 +1436,7 @@
             <div class="hud-cluster stats-hud" id="statsHud" aria-live="polite"></div>
             <div class="hud-cluster timer-hud" id="timerHud" aria-live="polite"></div>
             <div class="event-toast" id="eventToast" aria-live="polite"></div>
+            <aside class="inspect-panel hidden" id="inspectPanel" aria-live="polite"></aside>
             <canvas id="gameCanvas"></canvas>
         </section>
 
@@ -1298,6 +1538,8 @@
     <script src="src/systems/audio.js"></script>
     <script src="src/systems/hud.js"></script>
     <script src="src/systems/choice-ui.js"></script>
+    <script src="src/systems/inspect-ui.js"></script>
+    <script src="src/systems/tactical-flow.js"></script>
     <script src="src/systems/items.js"></script>
     <script src="src/systems/enemies.js"></script>
     <script src="src/systems/dungeon-generation.js"></script>

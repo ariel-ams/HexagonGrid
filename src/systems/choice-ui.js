@@ -6,10 +6,21 @@ function createChoiceUi(context) {
     function renderCampActions(node, actions, preview = '') {
         node.innerHTML = preview + actions.map((action) => (
             `<button class="camp-action" type="button" data-camp-action="${escapeAttr(action.id)}" ${action.available ? '' : 'disabled'}>
-                <strong>${escapeHtml(action.name)}</strong>
-                <span>${escapeHtml(action.description)}</span>
+                <span class="camp-action-title">${escapeHtml(action.name)}</span>
+                ${renderActionDescription(action.description)}
             </button>`
         )).join('');
+    }
+
+    function renderActionDescription(description) {
+        const [costPart, ...effectParts] = String(description || '').split('.');
+        const hasCost = costPart.trim().toLowerCase().startsWith('cost:');
+        const cost = hasCost ? costPart.replace(/^cost:\s*/i, '').trim() : '';
+        const effect = (hasCost ? effectParts.join('.') : description).trim();
+        return `<span class="camp-action-copy">
+            ${cost ? `<span class="camp-action-cost">${escapeHtml(cost)}</span>` : ''}
+            ${effect ? `<span class="camp-action-effect">${escapeHtml(effect)}</span>` : ''}
+        </span>`;
     }
 
     function renderRelicChoices(node, relics, labels) {

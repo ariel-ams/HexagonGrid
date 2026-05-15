@@ -38,7 +38,7 @@ const I18N = {
             ready: 'Sting ready',
             locked: 'Sting locked',
             avoidEnemies: 'Avoid enemy cells until it refills',
-            cooldown: 'Cooldown',
+            cooldown: 'Action',
             chooseNeighbor: 'Choose a highlighted neighboring cell.',
             relicChoiceMessage: 'Choose one relic to shape the next chamber.',
             danceMessage: 'Click when the pulse reaches the step border. Green is perfect, blue is good, and misses lower the music and multiplier.',
@@ -46,14 +46,14 @@ const I18N = {
             deadMessage: 'The run is over. Restart the draft.',
             blockedNotAdjacent: 'Move next to that cell first.',
             blockedHidden: 'That cell is still hidden by mist.',
-            blockedCooldown: 'Sting is cooling down.',
+            blockedCooldown: 'Action already used this turn.',
             blockedWaxDoor: 'Wax door needs 1 pollen or a ready sting.',
-            blockedStamina: 'The bee is tired. Wait a moment for stamina.',
+            blockedStamina: 'No movement points left this turn.',
             blockedGeneric: 'That action cannot be performed yet.',
-            stamina: 'Stamina',
-            staminaHint: 'Spent on actions, regenerates quickly',
+            stamina: 'Move',
+            staminaHint: 'Cells the bee can move this turn',
             honey: 'Honey',
-            honeyHint: 'Can recover stamina',
+            honeyHint: 'Can buy tactical boosts',
             replay: 'Replay'
         },
         logs: {
@@ -68,7 +68,7 @@ const I18N = {
             runComplete: 'Run Complete'
         },
         messages: {
-            startRun: 'Scout the dungeon, manage sting cooldown, and use exits to crawl deeper.',
+            startRun: 'Scout the dungeon, spend movement carefully, and use exits to crawl deeper.',
             enteredChamber: 'Entered chamber {room}.',
             bossStart: 'Final chamber: defeat the Queen Signaler while its hives keep calling wasps.',
             bossDefeated: 'The final boss fell. The run is complete.',
@@ -80,7 +80,7 @@ const I18N = {
             pathRisk: ' Risk: {damage} damage.',
             pathSteps: 'Path: {steps} steps.{danger}',
             blockedTarget: 'Path reaches the blocker. Move beside it, then interact.',
-            stingCooldown: 'Sting is cooling down. Wait {seconds}s before attacking.',
+            stingCooldown: 'Action already used this turn.',
             testingDefault: 'Testing {name}. Hover it, then click the adjacent cell to interact.',
             testWaspHive: '{name}: wait beside it to see the hive release a wasp quickly.',
             testLarvaBrood: '{name}: wait beside it to see larvae hatch into mite swarms.',
@@ -117,7 +117,7 @@ const I18N = {
         },
         actions: {
             moveNext: 'Move next to this cell to interact.',
-            waitSting: 'Action: wait for sting cooldown.',
+            waitSting: 'Action already used this turn.',
             sting: 'Action: sting.',
             openPollen: 'Action: spend 1 pollen to open.',
             openSting: 'Action: open with a ready sting.',
@@ -129,6 +129,15 @@ const I18N = {
             move: 'Action: move.',
             collect: 'Action: collect.'
         },
+        campActions: {
+            heal: ['Drink Water', 'Cost: 1 water. Heal +2 health.'],
+            shield: ['Pack Wax', 'Cost: 1 pollen. Repair +1 shield.'],
+            map: ['Study Map', 'Cost: 1 honey. Reveal exit route next room.'],
+            guard: ['Guard Comb', 'Cost: 1 pollen + 1 water. Start next room with +1 shield.'],
+            scout: ['Scout Smoke', 'Cost: 1 pollen + 1 water. Reveal nearby enemies next room.'],
+            rush: ['Sugar Rush', 'Cost: 1 honey. Start next room with +1 movement point.'],
+            reroll: ['Sweet Bargain', 'Cost: 1 honey. Reroll upcoming relic choices.']
+        },
         objects: {
             empty: ['Open Cell', 'Move here safely.'],
             npc: ['Trade Beetle', 'Opens a market with three supply trades.'],
@@ -139,7 +148,7 @@ const I18N = {
             vine: ['Vines', 'Persistent thorny hazard.'],
             glowPollen: ['Glow Pollen', 'Reveals a wide patch of mist around this cell.'],
             nectarCache: ['Nectar Cache', 'Grants pollen and water together.'],
-            honeyDrop: ['Honey Drop', 'Restores health and adds honey for stamina recovery.'],
+            honeyDrop: ['Honey Drop', 'Restores health and adds honey for tactical boosts.'],
             cleanWater: ['Clean Water', 'Cleanses nearby pressure and restores a little health.'],
             smokePuff: ['Smoke Puff', 'Pauses enemy timers for a short escape window.'],
             sunShard: ['Sun Shard', 'Reveals every enemy in the current room.'],
@@ -158,7 +167,7 @@ const I18N = {
             finalExit: ['Final Boss', 'Defeat the final enemy to end the run.']
         },
         enemies: {
-            enemy: ['Wasp', 'Stationary aura. Deals damage every 0.5s while adjacent.', 'Do not linger next to it while sting is cooling down.'],
+            enemy: ['Wasp', 'Stationary aura. Deals damage when turns end while adjacent.', 'Do not end your turn next to it unless you can block the damage.'],
             bat: ['Bat', 'Pursues the bee after each move. Attacks every 1s when adjacent.', 'Use Double Sting or plan two safe hits.'],
             miteSwarm: ['Mite Swarm', 'Slow pursuer. Moves every 2 bee steps and nips when adjacent.', 'Cheap to kill, dangerous if ignored in groups.'],
             thornBeetle: ['Thorn Beetle', 'Armored blocker. Deals thorn damage while you stand near it.', 'Clear it before crossing narrow routes or it will tax your shield.'],
@@ -177,7 +186,7 @@ const I18N = {
             queenSignaler: ['Queen Signaler', 'Commander enemy. Sends signal pulses that speed up nearby enemy timers.', 'Kill it before engaging grouped enemies or every timer becomes harder to read.'],
             fogShepherd: ['Fog Shepherd', 'Moth carrier. Rolls mist back over revealed cells outside the bee reveal radius.', 'If you scout too slowly near it, the map gets harder to plan.'],
             pollenThiefMoth: ['Pollen Thief Moth', 'Quick thief. Steals pollen when adjacent, then flees away from the bee.', 'Spend or protect pollen before crossing near it.'],
-            waxSentinel: ['Wax Sentinel', 'Living wax blocker. Opens a weak point on a timer and ignores stings while sealed.', 'Plan around it unless the route or reward behind it is worth the cooldown.'],
+            waxSentinel: ['Wax Sentinel', 'Living wax blocker. Opens a weak point on a timer and ignores stings while sealed.', 'Plan around it unless the route or reward behind it is worth your action.'],
             mirrorWasp: ['Mirror Wasp', 'Reflective wasp. Copies the bee last movement direction when that line is open.', 'Change direction and avoid letting it mirror you into a chokepoint.'],
             combBomber: ['Comb Bomber', 'Volatile bug. Marks nearby danger zones, then detonates those marked cells.', 'Leave marked cells before the countdown finishes.'],
             waterLeech: ['Water Leech', 'Wet drain. Suppresses water utility while the bee stays nearby.', 'Do not rely on water recovery inside its draining aura.'],
@@ -186,7 +195,7 @@ const I18N = {
         relics: {
             guardComb: ['Guard Comb', 'Gain +1 shield at the start of each room.'],
             pathCarver: ['Path Carver', 'The first wax door opened each room costs no pollen or sting.'],
-            battleRhythm: ['Battle Rhythm', 'Defeating an enemy reduces the current sting cooldown by 0.2s.'],
+            battleRhythm: ['Battle Rhythm', 'Defeating an enemy restores 1 movement point.'],
             foragerPouch: ['Forager Pouch', 'The first pollen and first water collected each room grant +1 extra.'],
             royalJelly: ['Royal Jelly', 'Every 3 pollen collected heals +2 health.'],
             scoutLantern: ['Scout Lantern', 'Reveal radius increases by 1 and exit gates start revealed.'],
@@ -230,7 +239,7 @@ const I18N = {
             ready: 'Aguijón listo',
             locked: 'Aguijón bloqueado',
             avoidEnemies: 'Evita enemigos hasta que se recargue',
-            cooldown: 'Recarga',
+            cooldown: 'Acción',
             chooseNeighbor: 'Elige una celda vecina resaltada.',
             relicChoiceMessage: 'Elige una reliquia para definir la siguiente cámara.',
             danceMessage: 'Haz clic cuando el pulso llegue al borde del paso. Verde es perfecto, azul es bueno, y fallar baja la música y el multiplicador.',
@@ -238,14 +247,14 @@ const I18N = {
             deadMessage: 'La partida terminó. Reinicia el borrador.',
             blockedNotAdjacent: 'Primero acércate a esa celda.',
             blockedHidden: 'Esa celda todavía está cubierta por niebla.',
-            blockedCooldown: 'El aguijón se está recargando.',
+            blockedCooldown: 'Acción ya usada este turno.',
             blockedWaxDoor: 'La puerta de cera necesita 1 polen o un aguijón listo.',
-            blockedStamina: 'La abeja está cansada. Espera un momento para recuperar stamina.',
+            blockedStamina: 'No quedan puntos de movimiento este turno.',
             blockedGeneric: 'Esa acción todavía no se puede realizar.',
-            stamina: 'Stamina',
-            staminaHint: 'Se gasta en acciones y se regenera rápido',
+            stamina: 'Movimiento',
+            staminaHint: 'Celdas que la abeja puede moverse este turno',
             honey: 'Miel',
-            honeyHint: 'Puede recuperar stamina',
+            honeyHint: 'Sirve para comprar mejoras tácticas',
             replay: 'Repetición'
         },
         logs: {
@@ -260,7 +269,7 @@ const I18N = {
             runComplete: 'Partida completa'
         },
         messages: {
-            startRun: 'Explora el dungeon, administra la recarga del aguijón y usa las salidas para avanzar.',
+            startRun: 'Explora el dungeon, administra tus movimientos y usa las salidas para avanzar.',
             enteredChamber: 'Entraste a la cámara {room}.',
             bossStart: 'Cámara final: derrota a la Señaladora Reina mientras sus colmenas siguen llamando avispas.',
             bossDefeated: 'El jefe final cayó. La ruta está completa.',
@@ -272,7 +281,7 @@ const I18N = {
             pathRisk: ' Riesgo: {damage} daño.',
             pathSteps: 'Ruta: {steps} pasos.{danger}',
             blockedTarget: 'La ruta llega al bloqueo. Muévete al lado y luego interactúa.',
-            stingCooldown: 'El aguijón se está recargando. Espera {seconds}s antes de atacar.',
+            stingCooldown: 'Acción ya usada este turno.',
             testingDefault: 'Probando {name}. Pasa el cursor y luego haz clic en una celda cercana para interactuar.',
             testWaspHive: '{name}: espera al lado para ver cómo la colmena libera una avispa rápido.',
             testLarvaBrood: '{name}: espera al lado para ver cómo las larvas eclosionan en ácaros.',
@@ -309,7 +318,7 @@ const I18N = {
         },
         actions: {
             moveNext: 'Muévete junto a esta celda para interactuar.',
-            waitSting: 'Acción: espera la recarga del aguijón.',
+            waitSting: 'Acción ya usada este turno.',
             sting: 'Acción: atacar con aguijón.',
             openPollen: 'Acción: gastar 1 polen para abrir.',
             openSting: 'Acción: abrir con un aguijón listo.',
@@ -321,6 +330,15 @@ const I18N = {
             move: 'Acción: moverse.',
             collect: 'Acción: recoger.'
         },
+        campActions: {
+            heal: ['Beber agua', 'Costo: 1 agua. Cura +2 salud.'],
+            shield: ['Empacar cera', 'Costo: 1 polen. Repara +1 escudo.'],
+            map: ['Estudiar mapa', 'Costo: 1 miel. Revela la ruta de salida en la próxima sala.'],
+            guard: ['Panal guardia', 'Costo: 1 polen + 1 agua. Empieza la próxima sala con +1 escudo.'],
+            scout: ['Humo explorador', 'Costo: 1 polen + 1 agua. Revela enemigos cercanos en la próxima sala.'],
+            rush: ['Impulso dulce', 'Costo: 1 miel. Empieza la próxima sala con +1 punto de movimiento.'],
+            reroll: ['Trato dulce', 'Costo: 1 miel. Cambia las próximas opciones de reliquia.']
+        },
         objects: {
             empty: ['Celda abierta', 'Puedes moverte aquí sin peligro.'],
             npc: ['Escarabajo comerciante', 'Abre un mercado con tres intercambios de suministros.'],
@@ -331,7 +349,7 @@ const I18N = {
             vine: ['Enredaderas', 'Peligro persistente con espinas.'],
             glowPollen: ['Polen brillante', 'Revela una zona amplia de niebla alrededor de esta celda.'],
             nectarCache: ['Reserva de néctar', 'Otorga polen y agua juntos.'],
-            honeyDrop: ['Gota de miel', 'Restaura salud y suma miel para recuperar stamina.'],
+            honeyDrop: ['Gota de miel', 'Restaura salud y suma miel para mejoras tácticas.'],
             cleanWater: ['Agua limpia', 'Limpia presión cercana y restaura un poco de salud.'],
             smokePuff: ['Nube de humo', 'Pausa los temporizadores enemigos por una ventana corta de escape.'],
             sunShard: ['Fragmento solar', 'Revela todos los enemigos de la sala actual.'],
@@ -350,7 +368,7 @@ const I18N = {
             finalExit: ['Jefe final', 'Derrota al enemigo final para terminar la partida.']
         },
         enemies: {
-            enemy: ['Avispa', 'Aura fija. Hace daño cada 0.5s mientras estás al lado.', 'No te quedes cerca mientras el aguijón se recarga.'],
+            enemy: ['Avispa', 'Aura fija. Hace daño al terminar turnos mientras estás al lado.', 'No termines el turno junto a ella salvo que puedas bloquear el daño.'],
             bat: ['Murciélago', 'Persigue a la abeja después de cada movimiento. Ataca cada 1s si está al lado.', 'Usa Aguijón doble o planea dos golpes seguros.'],
             miteSwarm: ['Enjambre de ácaros', 'Perseguidor lento. Se mueve cada 2 pasos y muerde si está al lado.', 'Es fácil de matar, pero peligroso en grupo.'],
             thornBeetle: ['Escarabajo espinoso', 'Bloqueador con armadura. Hace daño de espinas mientras estás cerca.', 'Límpialo antes de cruzar rutas estrechas o consumirá tu escudo.'],
@@ -369,7 +387,7 @@ const I18N = {
             queenSignaler: ['Señaladora Reina', 'Comandante. Envía pulsos que aceleran temporizadores enemigos cercanos.', 'Derrótala antes de pelear grupos o todos los temporizadores serán más difíciles.'],
             fogShepherd: ['Pastora de niebla', 'Polilla que carga niebla. Vuelve a ocultar celdas reveladas lejos de la abeja.', 'Si exploras lento cerca de ella, el mapa se vuelve más difícil de planear.'],
             pollenThiefMoth: ['Polilla ladrona de polen', 'Ladrona rápida. Roba polen al estar cerca y luego huye.', 'Gasta o protege tu polen antes de cruzar junto a ella.'],
-            waxSentinel: ['Centinela de cera', 'Bloqueador viviente. Abre un punto débil por tiempo e ignora aguijones cuando está sellado.', 'Rodéalo salvo que la ruta o recompensa detrás valga la recarga.'],
+            waxSentinel: ['Centinela de cera', 'Bloqueador viviente. Abre un punto débil por tiempo e ignora aguijones cuando está sellado.', 'Rodéalo salvo que la ruta o recompensa detrás valga tu acción.'],
             mirrorWasp: ['Avispa espejo', 'Avispa reflectante. Copia la última dirección de movimiento de la abeja si la línea está libre.', 'Cambia de dirección y evita que te copie hacia un cuello de botella.'],
             combBomber: ['Bombardero de panal', 'Bicho volátil. Marca zonas de peligro cercanas y luego las detona.', 'Sal de las celdas marcadas antes de que termine la cuenta.'],
             waterLeech: ['Sanguijuela de agua', 'Drenaje húmedo. Suprime la utilidad del agua mientras la abeja esté cerca.', 'No dependas de recuperación con agua dentro de su aura azul.'],
@@ -378,7 +396,7 @@ const I18N = {
         relics: {
             guardComb: ['Panal guardián', 'Gana +1 escudo al inicio de cada sala.'],
             pathCarver: ['Tallador de rutas', 'La primera puerta de cera de cada sala no cuesta polen ni aguijón.'],
-            battleRhythm: ['Ritmo de combate', 'Derrotar un enemigo reduce la recarga actual del aguijón en 0.2s.'],
+            battleRhythm: ['Ritmo de combate', 'Derrotar un enemigo restaura 1 punto de movimiento.'],
             foragerPouch: ['Bolsa recolectora', 'El primer polen y la primera agua de cada sala dan +1 extra.'],
             royalJelly: ['Jalea real', 'Cada 3 polen recogidos cura +2 salud.'],
             scoutLantern: ['Linterna exploradora', 'El radio de revelado sube 1 y las salidas bloqueadas empiezan reveladas.'],
@@ -409,7 +427,7 @@ const RELICS = [
     {
         id: 'battleRhythm',
         name: 'Battle Rhythm',
-        description: 'Defeating an enemy reduces the current sting cooldown by 0.2s.',
+        description: 'Defeating an enemy restores 1 movement point.',
         minDepth: 2,
         rarity: 'common'
     },
@@ -523,7 +541,7 @@ const ENEMY_DEFS = {
         intervalMs: 500,
         range: 1,
         behavior: 'Stationary aura. Deals damage every 0.5s while adjacent.',
-        lesson: 'Do not linger next to it while sting is cooling down.',
+        lesson: 'Do not end your turn next to it unless you can block the damage.',
         behaviors: [{ type: 'damageAura' }]
     },
     bat: {
@@ -759,7 +777,7 @@ const ENEMY_DEFS = {
         intervalMs: 950,
         range: 1,
         behavior: 'Living wax blocker. Opens a weak point on a timer and ignores stings while sealed.',
-        lesson: 'Plan around it unless the route or reward behind it is worth the cooldown.',
+        lesson: 'Plan around it unless the route or reward behind it is worth your action.',
         behaviors: [{ type: 'weakPointWindow', openMs: 1300 }]
     },
     mirrorWasp: {
@@ -936,7 +954,7 @@ const OBJECTS = {
     honeyDrop: {
         name: 'Honey Drop',
         color: '#f2b544',
-        description: 'Restores health and adds honey for stamina recovery.',
+        description: 'Restores health and adds honey for tactical boosts.',
         effects: [{ type: 'gainResource', resource: 'honey', amount: 1, runStat: true }, { type: 'heal', amount: 2 }]
     },
     cleanWater: {
