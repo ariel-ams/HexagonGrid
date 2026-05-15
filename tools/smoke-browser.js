@@ -47,11 +47,11 @@ async function main() {
         api.setCellObject(second.q, second.r, 'water', true);
         api.setTacticalState({ movePoints: 2, maxMovePoints: 2, actionAvailable: true });
         api.moveToCell(second.q, second.r);
-        await wait(180);
+        await wait(1000);
         const state = api.getState();
         return {
             player: { q: state.player.q, r: state.player.r },
-            expectedStop: first,
+            expectedStop: second,
             firstObject: api.getCellObject(first.q, first.r),
             secondObject: api.getCellObject(second.q, second.r),
             actionAvailable: state.player.actionAvailable,
@@ -60,20 +60,24 @@ async function main() {
         };
     });
 
-    assert(routeResult.player.q === routeResult.expectedStop.q && routeResult.player.r === routeResult.expectedStop.r, 'Auto-walk should stop on the first action object.');
+    assert(routeResult.player.q === routeResult.expectedStop.q && routeResult.player.r === routeResult.expectedStop.r, 'Auto-walk should collect multiple pickups along the reachable path.');
     assert(routeResult.firstObject === 'empty', 'First pickup should be consumed.');
-    assert(routeResult.secondObject === 'water', 'Second pickup should remain for the next turn.');
-    assert(routeResult.actionAvailable === true, 'Next tactical turn should be ready after the first pickup.');
+    assert(routeResult.secondObject === 'empty', 'Second pickup should also be consumed.');
+    assert(routeResult.actionAvailable === true, 'Next tactical turn should be ready after the path finishes.');
+    const roomState = await page.evaluate(() => window.HW_TEST_API.getState());
+    assert(roomState.roomTemplate, 'Room template should be exposed for playtest/debugging.');
 
     await page.evaluate(() => {
         const api = window.HW_TEST_API;
         const player = api.getState().player;
         const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
         const cell = dirs.map((direction) => window.getCell(player.q + direction.q, player.r + direction.r)).find(Boolean);
+        api.setCellObject(cell.q, cell.r, 'pollen', true);
         api.inspectCell(cell.q, cell.r);
     });
     const inspectStats = await page.locator('#inspectPanel .inspect-stat').count();
     assert(inspectStats > 0, 'Inspect panel should show stat chips.');
+    assert(await page.locator('#inspectPanel .has-sheet-icon').count() > 0, 'Inspect stat chips should use HUD sprite sheet icons.');
 
     await page.evaluate(() => {
         const api = window.HW_TEST_API;

@@ -7,6 +7,9 @@ Honeycomb Wayfinder source layout
 - `systems/choice-ui.js`: shared markup for camp, trader, relic, and object-test choices.
 - `systems/inspect-ui.js`: DOM rendering for the persistent inspect panel and its stat chips.
 - `systems/tactical-flow.js`: movement point/action availability helpers for the turn-based dungeon action economy.
+- `systems/tactical-combat.js`: turn-end orchestration and tactical action range helpers.
+- `systems/camp-market-controller.js`: localized camp/trader action definitions, availability checks, and market choice selection.
+- `systems/enemy-turns.js`: enemy turn-order dispatcher for sleep checks, movement, pressure, telegraphs, and boss anti-kite hooks.
 - `systems/dungeon-generation.js`: cave room generation, room graph layout, entry/exit placement, and cell creation.
 - `systems/renderer.js`: canvas rendering helpers for dungeon cells, tiles, path previews, sprites, fog, and effects.
 - `systems/replay.js`: local replay event recording and playback state helpers.
@@ -43,3 +46,9 @@ Smoke checks
 - `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, and content data.
 - `node tools/smoke-browser.js` launches the browser, starts a run, verifies auto-walk stops on stacked action objects, checks inspect stat chips, and checks market card structure.
 - The browser smoke script needs Playwright available through the local Node runtime, uses `CHROME_PATH` if Chrome is installed somewhere other than the default Windows path, and accepts `GAME_URL=http://localhost:8080/index.html` when testing through a local server.
+
+Room lesson templates
+
+- Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
+- Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.
+- Exit cells remain visible, but the route to them can be shaped by blockers, hazards, or enemies so the room asks for a specific plan.

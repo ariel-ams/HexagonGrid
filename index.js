@@ -7,6 +7,7 @@ const logToggle = document.getElementById('logToggle');
 const statsNode = document.getElementById('stats');
 const statsHudNode = document.getElementById('statsHud');
 const timerHudNode = document.getElementById('timerHud');
+const bottomCombatHudNode = document.getElementById('bottomCombatHud');
 const eventToastNode = document.getElementById('eventToast');
 const inspectPanelNode = document.getElementById('inspectPanel');
 const logListNode = document.getElementById('logList');
@@ -22,6 +23,7 @@ const optionsButton = document.getElementById('optionsButton');
 const optionsPanel = document.getElementById('optionsPanel');
 const languageSelect = document.getElementById('languageSelect');
 const menuLanguageSelect = document.getElementById('menuLanguageSelect');
+const themeSelect = document.getElementById('themeSelect');
 const objectEditorSelect = document.getElementById('objectEditorSelect');
 const objectEditorFields = document.getElementById('objectEditorFields');
 const saveObjectButton = document.getElementById('saveObjectButton');
@@ -38,6 +40,11 @@ const testBackButton = document.getElementById('testBackButton');
 const testControls = document.getElementById('testControls');
 const testPauseButton = document.getElementById('testPauseButton');
 const testListButton = document.getElementById('testListButton');
+const settingsToggle = document.getElementById('settingsToggle');
+const settingsScreen = document.getElementById('settingsScreen');
+const settingsCloseButton = document.getElementById('settingsCloseButton');
+const musicVolumeInput = document.getElementById('musicVolumeInput');
+const effectsVolumeInput = document.getElementById('effectsVolumeInput');
 const endScreen = document.getElementById('endScreen');
 const endStatsNode = document.getElementById('endStats');
 const endRestartButton = document.getElementById('endRestartButton');
@@ -64,6 +71,7 @@ const START_MOVE_POINTS = 2;
 const START_ATTACK_RANGE = 1;
 const MAX_SHIELD = 5;
 const DUNGEON_GRID_ZOOM = 1.12;
+const BOSS_HIVE_COUNT = 1;
 const STAMINA_REGEN_MS = 900;
 const REPLAY_STEP_MS = 520;
 const GAMEPLAY_MUSIC_SRC = 'assets/main_song.mp3';
@@ -87,13 +95,18 @@ const HEX_DIRECTIONS = [
 const LANGUAGE_STORAGE_KEY = 'honeycombLanguage';
 const OBJECT_EDITOR_STORAGE_KEY = 'honeycombObjectOverrides';
 const PROGRESSION_STORAGE_KEY = 'honeycombProgression';
+const AUDIO_SETTINGS_STORAGE_KEY = 'honeycombAudioSettings';
+const THEME_STORAGE_KEY = 'honeycombDungeonTheme';
 let currentLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en';
+let selectedThemeId = localStorage.getItem(THEME_STORAGE_KEY) || 'random';
 let objectOverrides = loadObjectOverrides();
 let progression = loadProgression();
 
 const {
     I18N,
     RELICS,
+    EQUIPMENT_SLOTS,
+    EQUIPMENT_DEFS,
     SPRITE_DEFS,
     ENEMY_DEFS,
     OBJECTS,
@@ -111,6 +124,7 @@ const {
 
 const {
     BASE_XP_TO_LEVEL,
+    DUNGEON_THEMES,
     OBJECT_UNLOCK_LEVELS,
     ROOM_PROFILES,
     XP_REWARDS
@@ -149,6 +163,9 @@ const tacticalFlow = window.HW_TACTICAL_FLOW.createTacticalFlow({
     startAttackRange: START_ATTACK_RANGE
 });
 
+let tacticalCombat = null;
+let campMarketController = null;
+let enemyTurns = null;
 let itemSystem = null;
 let enemySystem = null;
 let danceSystem = null;
@@ -202,6 +219,9 @@ if (BOSS_MUSIC_SRC) {
 const audioSystem = window.HW_AUDIO.createAudioSystem({
     tracks: audioTracks
 });
+const audioSettings = loadAudioSettings();
+audioSystem.setMusicVolume(audioSettings.music);
+audioSystem.setEffectsVolume(audioSettings.effects);
 
 const ROOM_OBJECTIVES = [
     {
@@ -313,11 +333,14 @@ const game = {
     marketCell: null,
     marketChoices: [],
     nextRoomPreview: null,
+    dungeonTheme: null,
+    equipment: {},
     inspectedCell: null,
     inspectPinned: false,
     toast: null,
     lastToastId: 0,
     roomObjective: null,
+    roomTemplate: null,
     objectiveProgress: {
         supplies: 0,
         kills: 0,
@@ -331,6 +354,8 @@ const game = {
     isTestScenario: false,
     testPaused: false,
     activeTestObject: null,
+    settingsPaused: false,
+    bossEngaged: false,
     pathPreview: null,
     pathCache: {},
     autoPath: [],
@@ -433,6 +458,32 @@ replaySystem = window.HW_REPLAY.createReplaySystem({
     }
 });
 
+tacticalCombat = window.HW_TACTICAL_COMBAT.createTacticalCombat({
+    finalRoom: FINAL_ROOM,
+    revealAroundPlayer,
+    updateObjectiveProgress,
+    resolveEnemyTurn,
+    startPlayerTurn
+});
+
+campMarketController = window.HW_CAMP_MARKET.createCampMarketController({
+    getText: (id) => {
+        const localized = I18N[currentLanguage]?.campActions?.[id] || I18N.en.campActions[id] || [id, ''];
+        return { name: localized[0], description: localized[1] };
+    },
+    getPlayerLevel
+});
+
+enemyTurns = window.HW_ENEMY_TURNS.createEnemyTurns({
+    updateSleepingEnemies,
+    moveBats,
+    moveMites,
+    moveMirrorWasps,
+    resolveTurnEnemyPressure,
+    tickSpecialEnemyTelegraphs,
+    resolveBossAntiKite
+});
+
 danceSystem = window.HW_DANCE.createDanceSystem({
     game,
     helpers: {
@@ -474,6 +525,29 @@ function loadObjectOverrides() {
     } catch {
         return {};
     }
+}
+
+function loadAudioSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(AUDIO_SETTINGS_STORAGE_KEY) || '{}');
+        return {
+            music: Number.isFinite(saved.music) ? saved.music : 1,
+            effects: Number.isFinite(saved.effects) ? saved.effects : 1
+        };
+    } catch {
+        return { music: 1, effects: 1 };
+    }
+}
+
+function saveAudioSettings() {
+    localStorage.setItem(AUDIO_SETTINGS_STORAGE_KEY, JSON.stringify(audioSettings));
+}
+
+function applyAudioSettings() {
+    audioSystem.setMusicVolume(audioSettings.music);
+    audioSystem.setEffectsVolume(audioSettings.effects);
+    if (musicVolumeInput) musicVolumeInput.value = String(Math.round(audioSettings.music * 100));
+    if (effectsVolumeInput) effectsVolumeInput.value = String(Math.round(audioSettings.effects * 100));
 }
 
 function saveObjectOverrides() {
@@ -682,15 +756,15 @@ function randomObjectFor(q, r, entryCell, exitCell) {
         if (game.roomDepth === 1) {
             return 'empty';
         }
-        return chooseWeightedObject([
+        return registerRoomSpawn(chooseThemeWeightedObject([
             { object: 'empty', weight: 48 },
             { object: 'pollen', weight: 25 },
             { object: 'water', weight: 22 },
             { object: 'upgrade', weight: profile.allowedUtility.includes('upgrade') ? 5 : 0 }
-        ], 'empty');
+        ], 'empty'));
     }
 
-    let object = chooseWeightedObject(profile.itemWeights, 'empty');
+    let object = chooseThemeWeightedObject(profile.itemWeights, 'empty');
     if (object === 'enemy') {
         object = chooseEnemyObject();
     } else if (object === 'discovery') {
@@ -706,9 +780,20 @@ function chooseDiscoveryObject() {
         .filter((option) => (
             profile.allowedDiscovery.includes(option.object)
             && getObjectUnlockLevel(option.object) <= getPlayerLevel()
+            && isObjectAllowedByTheme(option.object)
         ))
         .map((option) => ({ object: option.object, weight: option.weight }));
     return chooseWeightedObject(options, 'pollen');
+}
+
+function chooseThemeWeightedObject(options, fallback = 'empty') {
+    const themeOptions = options.filter((option) => (
+        option.object === 'enemy'
+        || option.object === 'discovery'
+        || option.object === 'empty'
+        || isObjectAllowedByTheme(option.object)
+    ));
+    return chooseWeightedObject(themeOptions, fallback);
 }
 
 function loadProgression() {
@@ -769,10 +854,46 @@ function chooseEnemyObject() {
             depth >= option.minDepth
             && profile.allowedEnemies.includes(option.object)
             && getObjectUnlockLevel(option.object) <= getPlayerLevel()
+            && isObjectAllowedByTheme(option.object)
         ))
         .map((option) => ({ object: option.object, weight: option.weight }));
 
+    if (!options.length) {
+        return getCurrentTheme()?.enemies?.find((object) => profile.allowedEnemies.includes(object)) || 'enemy';
+    }
     return chooseWeightedObject(options, 'enemy');
+}
+
+function chooseDungeonTheme() {
+    if (selectedThemeId !== 'random' && DUNGEON_THEMES?.[selectedThemeId]) {
+        return DUNGEON_THEMES[selectedThemeId];
+    }
+    const themes = Object.values(DUNGEON_THEMES || {});
+    if (!themes.length) return null;
+    return themes[Math.floor(seededRandom() * themes.length)] || themes[0];
+}
+
+function getCurrentTheme() {
+    return game.dungeonTheme || DUNGEON_THEMES?.forest || Object.values(DUNGEON_THEMES || {})[0] || null;
+}
+
+function isObjectAllowedByTheme(object) {
+    const theme = getCurrentTheme();
+    if (!theme || ['empty', 'entry', 'exit', 'finalExit', 'wall'].includes(object)) return true;
+    if (isEnemyObject(object)) return theme.enemies.includes(object);
+    if (['vine', 'burningCell', 'stickyTrap', 'waxDoor', 'burrowWarningCell', 'bomberMarkedCell'].includes(object)) {
+        return theme.hazards.includes(object);
+    }
+    return theme.items.includes(object);
+}
+
+function applyDungeonTheme() {
+    const theme = getCurrentTheme();
+    if (!theme) return;
+    document.documentElement.style.setProperty('--art-board-bg', `url("${theme.boardBackground}")`);
+    document.documentElement.style.setProperty('--theme-board-overlay', theme.boardOverlay || 'rgba(0, 0, 0, 0)');
+    document.documentElement.style.setProperty('--theme-cell-tint', theme.cellTint || '#4d6f4f');
+    document.documentElement.style.setProperty('--theme-border-tint', theme.borderTint || '#d8bd68');
 }
 
 function getObjectUnlockLevel(object) {
@@ -915,6 +1036,9 @@ function startRunState() {
     game.mode = 'dungeon';
     game.runSeed = Date.now() >>> 0;
     game.rngState = game.runSeed;
+    game.dungeonTheme = chooseDungeonTheme();
+    applyDungeonTheme();
+    game.equipment = createStartingEquipment();
     game.replayEvents = [];
     game.replay = null;
     game.cameraPan = { x: 0, y: 0 };
@@ -940,6 +1064,7 @@ function startRunState() {
     game.toast = null;
     game.lastToastId = 0;
     game.roomObjective = null;
+    game.roomTemplate = null;
     game.objectiveProgress = createObjectiveProgress();
     game.lastDamageSource = null;
     game.deathTip = '';
@@ -947,6 +1072,8 @@ function startRunState() {
     game.isTestScenario = false;
     game.testPaused = false;
     game.activeTestObject = null;
+    game.settingsPaused = false;
+    game.bossEngaged = false;
     game.pathPreview = null;
     game.pathCache = {};
     game.autoPath = [];
@@ -974,6 +1101,7 @@ function startRunState() {
         xp: 0
     };
     game.player = createFreshPlayer();
+    applyEquipmentLoadout(game.player);
     relicScreen.classList.remove('visible');
     campScreen.classList.remove('visible');
     testScreen.classList.remove('visible');
@@ -1063,6 +1191,7 @@ function startObjectTestScenario(objectId) {
     game.entryCell = { q: -2, r: 0 };
     game.exitCell = { q: 2, r: 0 };
     game.player = createFreshPlayer();
+    applyEquipmentLoadout(game.player);
     game.player.q = 0;
     game.player.r = 0;
     game.player.health = Math.min(5, game.player.maxHealth);
@@ -1101,6 +1230,16 @@ function startObjectTestScenario(objectId) {
     testPauseButton.textContent = currentLanguage === 'es-419' ? 'Pausar' : 'Pause';
     revealAroundPlayer();
     draw();
+}
+
+function setDungeonThemePreference(themeId) {
+    selectedThemeId = DUNGEON_THEMES?.[themeId] ? themeId : 'random';
+    localStorage.setItem(THEME_STORAGE_KEY, selectedThemeId);
+    if (themeSelect) themeSelect.value = selectedThemeId;
+    if (game.mode === 'menu' || game.ended) {
+        game.dungeonTheme = selectedThemeId === 'random' ? null : DUNGEON_THEMES[selectedThemeId];
+        applyDungeonTheme();
+    }
 }
 
 function getTestInitialTimer(objectId) {
@@ -1277,6 +1416,7 @@ function generateRoom(reason) {
     game.inspectPinned = false;
     game.roomProfile = getRoomProfile();
     game.roomObjective = chooseRoomObjective();
+    game.roomTemplate = chooseRoomTemplate();
     game.objectiveProgress = createObjectiveProgress();
     game.freeWaxDoorAvailable = false;
     game.foragerPouchCollected = { pollen: false, water: false };
@@ -1314,7 +1454,8 @@ function generateRoom(reason) {
     });
 
     placeFirstRoomTeachingPickups();
-    placeRoomLessonGate();
+    placeRoomLessonGate(game.roomTemplate);
+    placeEnemySynergy(game.roomTemplate);
     revealExitCell();
     placeTeachingEnemy();
     placeBats();
@@ -1352,6 +1493,7 @@ function generateBossRoom() {
     game.roomDepth = FINAL_ROOM;
     game.roomProfile = ROOM_PROFILES[ROOM_PROFILES.length - 1];
     game.roomObjective = null;
+    game.bossEngaged = false;
     const cave = generateCaveDungeon({
         targetCells: Math.max(game.roomProfile.targetCells, 154),
         depth: FINAL_ROOM,
@@ -1374,12 +1516,11 @@ function generateBossRoom() {
             ? 'queenSignaler'
             : isSpawner
             ? 'waspHive'
-            : hexDistance(q, r, bossPosition.q, bossPosition.r) === 1 && seededRandom() < 0.35
+            : hexDistance(q, r, bossPosition.q, bossPosition.r) === 1 && seededRandom() < 0.12
             ? chooseWeightedObject([
-                { object: 'enemy', weight: 3 },
-                { object: 'guardWasp', weight: 2 },
-                { object: 'miteSwarm', weight: 2 },
-                { object: 'empty', weight: 3 }
+                { object: 'enemy', weight: 2 },
+                { object: 'miteSwarm', weight: 1 },
+                { object: 'empty', weight: 5 }
             ], 'empty')
             : chooseWeightedObject([
                 { object: 'empty', weight: 55 },
@@ -1398,14 +1539,14 @@ function generateBossRoom() {
             visited: false,
             revealed: true,
             nextAttackAt: 0,
-            nextAuraAt: object === 'queenSignaler' || object === 'waspHive' ? performance.now() + 900 : 0,
+            nextAuraAt: object === 'queenSignaler' || object === 'waspHive' ? performance.now() + 1600 : 0,
             hits: 0,
             isBoss: object === 'queenSignaler'
         });
     });
     const boss = game.cells.find((cell) => cell.isBoss);
     if (boss) {
-        boss.bossHp = 6;
+        boss.bossHp = 4;
     }
     game.message = t('messages', 'bossStart');
     addLog(t('logs', 'finalBoss'), game.message);
@@ -1419,8 +1560,8 @@ function chooseBossSpawnerPositions(bossPosition) {
         .map((direction) => getCellCoordinate(bossPosition.q + direction.q, bossPosition.r + direction.r))
         .filter((cell) => game.currentRoomCells.some((roomCell) => roomCell.q === cell.q && roomCell.r === cell.r))
         .filter((cell) => hexDistance(cell.q, cell.r, game.entryCell.q, game.entryCell.r) > 2)
-        .slice(0, 2);
-    if (adjacent.length >= 2) return adjacent;
+        .slice(0, BOSS_HIVE_COUNT);
+    if (adjacent.length >= BOSS_HIVE_COUNT) return adjacent;
     const fallback = [...game.currentRoomCells]
         .filter((cell) => !(cell.q === bossPosition.q && cell.r === bossPosition.r))
         .filter((cell) => !(cell.q === game.entryCell.q && cell.r === game.entryCell.r))
@@ -1428,11 +1569,17 @@ function chooseBossSpawnerPositions(bossPosition) {
             hexDistance(a.q, a.r, bossPosition.q, bossPosition.r)
             - hexDistance(b.q, b.r, bossPosition.q, bossPosition.r)
         ));
-    return [...adjacent, ...fallback].slice(0, 2);
+    return [...adjacent, ...fallback].slice(0, BOSS_HIVE_COUNT);
 }
 
 function getCellCoordinate(q, r) {
     return { q, r };
+}
+
+function isCollectOnMoveObject(object) {
+    return Boolean(OBJECTS[object]?.effects?.length)
+        && !isEnemyObject(object)
+        && !['waxDoor', 'npc', 'entry', 'exit', 'finalExit', 'vine', 'burningCell', 'wall', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(object);
 }
 
 function createObjectiveProgress() {
@@ -1446,12 +1593,87 @@ function createObjectiveProgress() {
     };
 }
 
+function createStartingEquipment() {
+    return Object.fromEntries(EQUIPMENT_SLOTS.map((slot) => [slot.id, null]));
+}
+
+function getEquippedItems() {
+    return Object.values(game.equipment || {})
+        .filter(Boolean)
+        .map((id) => EQUIPMENT_DEFS[id])
+        .filter(Boolean);
+}
+
+function equipItem(equipmentId) {
+    const equipment = EQUIPMENT_DEFS[equipmentId];
+    if (!equipment) return false;
+    game.equipment[equipment.slot] = equipmentId;
+    applyEquipmentLoadout(game.player);
+    renderMessage();
+    draw();
+    return true;
+}
+
+function applyEquipmentLoadout(player) {
+    if (!player) return;
+    player.equipment = { ...game.equipment };
+    getEquippedItems().forEach((equipment) => {
+        equipment.effects?.forEach((effect) => {
+            if (effect.type === 'maxHealth') {
+                player.maxHealth += effect.amount;
+                player.health = Math.min(player.maxHealth, player.health + effect.amount);
+            }
+            if (effect.type === 'maxShield') {
+                player.maxShield += effect.amount;
+            }
+            if (effect.type === 'attackRange') {
+                player.attackRange += effect.amount;
+            }
+            if (effect.type === 'maxMovePoints') {
+                player.maxMovePoints += effect.amount;
+                player.movePoints = player.maxMovePoints;
+                syncLegacyStamina();
+            }
+        });
+    });
+}
+
 function chooseRoomObjective() {
     const options = ROOM_OBJECTIVES.filter((objective) => game.roomDepth >= objective.minDepth);
     if (game.roomDepth === 1) {
         return ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit');
     }
     return randomFrom(options);
+}
+
+function chooseRoomTemplate() {
+    if (game.roomDepth === 1) return 'introSupplies';
+    if (game.roomDepth === 2) return 'waxDoorPollen';
+    if (game.roomDepth === 3) return seededRandom() < 0.55 ? 'enemyGate' : 'fireWater';
+    const candidates = [
+        'mixedGate',
+        'fireWater',
+        'revealRoute',
+        'hiveQueen',
+        'fireLeech',
+        'sentinelThief',
+        'fogBurrow'
+    ].filter((template) => isRoomTemplateUnlocked(template));
+    return randomFrom(candidates.length ? candidates : ['mixedGate']);
+}
+
+function isRoomTemplateUnlocked(template) {
+    const level = getPlayerLevel();
+    const minLevel = {
+        mixedGate: 3,
+        fireWater: 3,
+        revealRoute: 3,
+        hiveQueen: 5,
+        fireLeech: 4,
+        sentinelThief: 5,
+        fogBurrow: 5
+    }[template] || 1;
+    return level >= minLevel;
 }
 
 function getRoomObjectiveText() {
@@ -1541,16 +1763,25 @@ function placeFirstRoomTeachingPickups() {
     });
 }
 
-function placeRoomLessonGate() {
+function placeRoomLessonGate(template = 'mixedGate') {
     if (!game.exitCell || game.roomDepth <= 1) return;
-    if (game.roomDepth === 2) {
+    if (template === 'waxDoorPollen') {
         placeWaxDoorExitGate();
         placeResourceNearPlayer('pollen');
         return;
     }
-    if (game.roomDepth === 3) {
+    if (template === 'enemyGate') {
         placeEnemyExitGate('enemy');
         placeResourceNearPlayer('pollen');
+        return;
+    }
+    if (template === 'fireWater') {
+        placeFireWaterExitGate();
+        placeResourceNearPlayer('water');
+        return;
+    }
+    if (template === 'revealRoute') {
+        placeRevealRouteLesson();
         return;
     }
     placeMixedExitGate();
@@ -1617,6 +1848,62 @@ function placeMixedExitGate() {
     neighbors.slice(2, 4).forEach((cell) => {
         if (isGateCandidateCell(cell)) cell.object = 'wall';
     });
+}
+
+function placeFireWaterExitGate() {
+    const neighbors = getExitNeighborCells()
+        .filter(isGateCandidateCell)
+        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
+    neighbors.slice(0, 2).forEach((cell) => {
+        cell.object = 'burningCell';
+        game.roomSpawnCounts.hazards += 1;
+    });
+    neighbors.slice(2, 4).forEach((cell) => {
+        if (isGateCandidateCell(cell)) cell.object = 'wall';
+    });
+}
+
+function placeRevealRouteLesson() {
+    placeResourceNearPlayer('compassPollen');
+    const routeCells = game.cells
+        .filter((cell) => cell.object === 'empty'
+            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 3
+            && hexDistance(cell.q, cell.r, game.exitCell.q, game.exitCell.r) > 2)
+        .sort((a, b) => hexDistance(a.q, a.r, game.exitCell.q, game.exitCell.r) - hexDistance(b.q, b.r, game.exitCell.q, game.exitCell.r));
+    routeCells.slice(0, 2).forEach((cell) => {
+        cell.object = 'wall';
+    });
+}
+
+function placeEnemySynergy(template) {
+    const pairs = {
+        hiveQueen: ['waspHive', 'queenSignaler'],
+        fireLeech: ['crawlingFire', 'waterLeech'],
+        sentinelThief: ['waxSentinel', 'pollenThiefMoth'],
+        fogBurrow: ['fogShepherd', 'burrowBeetle']
+    };
+    const pair = pairs[template];
+    if (!pair) return;
+    if (pair.some((object) => getObjectUnlockLevel(object) > getPlayerLevel())) return;
+    const anchor = game.cells
+        .filter((cell) => cell.object === 'empty'
+            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 4
+            && hexDistance(cell.q, cell.r, game.exitCell.q, game.exitCell.r) > 1)
+        .sort((a, b) => hexDistance(a.q, a.r, game.exitCell.q, game.exitCell.r) - hexDistance(b.q, b.r, game.exitCell.q, game.exitCell.r))[0];
+    if (!anchor) return;
+    anchor.object = pair[0];
+    anchor.nextAuraAt = performance.now() + 900;
+    anchor.hits = 0;
+    game.roomSpawnCounts.enemies += 1;
+
+    const partner = HEX_DIRECTIONS
+        .map((direction) => getCell(anchor.q + direction.q, anchor.r + direction.r))
+        .filter((cell) => cell && cell.object === 'empty' && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 3)[0];
+    if (!partner) return;
+    partner.object = pair[1];
+    partner.nextAuraAt = performance.now() + 900;
+    partner.hits = 0;
+    game.roomSpawnCounts.enemies += 1;
 }
 
 function isGateCandidateCell(cell) {
@@ -1854,10 +2141,7 @@ function openTraderMarket(cell) {
 }
 
 function chooseTraderMarketActions() {
-    const actions = getCampActions().filter((action) => action.market && getPlayerLevel() >= action.minLevel);
-    const available = actions.filter((action) => action.available);
-    const pool = available.length >= 3 ? available : actions;
-    return [...pool].sort(() => seededRandom() - 0.5).slice(0, 3);
+    return campMarketController.getMarketChoices(getCampActions(), seededRandom);
 }
 
 function buildNextRoomPreview() {
@@ -1883,61 +2167,16 @@ function buildNextRoomPreview() {
 }
 
 function getCampActions() {
-    const missingHealth = Math.max(0, getPlayerMaxHealth() - game.player.health);
-    const missingShield = Math.max(0, game.player.maxShield - game.player.upgrades);
-    return [
-        {
-            id: 'heal',
-            available: game.player.water > 0 && missingHealth > 0,
-            market: true,
-            minLevel: 1
-        },
-        {
-            id: 'shield',
-            available: game.player.pollen > 0 && missingShield > 0,
-            market: true,
-            minLevel: 1
-        },
-        {
-            id: 'map',
-            available: game.player.honey > 0,
-            market: true,
-            minLevel: 2
-        },
-        {
-            id: 'guard',
-            available: game.player.pollen > 0 && game.player.water > 0,
-            market: true,
-            minLevel: 2
-        },
-        {
-            id: 'scout',
-            available: game.roomDepth >= 2 && game.player.pollen > 0 && game.player.water > 0,
-            market: true,
-            minLevel: 3
-        },
-        {
-            id: 'rush',
-            available: game.roomDepth >= 2 && game.player.honey > 0,
-            market: true,
-            minLevel: 3
-        },
-        {
-            id: 'reroll',
-            available: game.player.honey > 0,
-            market: false,
-            minLevel: 99
-        }
-    ].map(localizeCampAction);
-}
-
-function localizeCampAction(action) {
-    const localized = I18N[currentLanguage]?.campActions?.[action.id] || I18N.en.campActions[action.id] || [action.id, ''];
-    return {
-        ...action,
-        name: localized[0],
-        description: localized[1]
-    };
+    return campMarketController.getActions({
+        health: game.player.health,
+        maxHealth: getPlayerMaxHealth(),
+        shield: game.player.upgrades,
+        maxShield: game.player.maxShield,
+        pollen: game.player.pollen,
+        water: game.player.water,
+        honey: game.player.honey,
+        roomDepth: game.roomDepth
+    });
 }
 
 function applyCampAction(id) {
@@ -2608,28 +2847,11 @@ function consumeAction(reason = 'action') {
 }
 
 function endPlayerTurn(reason = 'action') {
-    if (game.replay || game.ended || game.mode !== 'dungeon' || game.resolvingTurn) return;
-    game.resolvingTurn = true;
-    game.metrics.turns += 1;
-    if (game.roomDepth >= FINAL_ROOM) game.metrics.bossTurns += 1;
-    if (reason === 'wait') game.metrics.turnsWithoutAction += 1;
-    revealAroundPlayer();
-    updateObjectiveProgress();
-    resolveEnemyTurn(reason);
-    if (!game.ended && game.mode === 'dungeon') {
-        startPlayerTurn();
-    }
-    game.resolvingTurn = false;
+    tacticalCombat.endPlayerTurn(game, reason);
 }
 
 function resolveEnemyTurn(reason = 'action') {
-    updateSleepingEnemies();
-    moveBats();
-    moveMites();
-    moveMirrorWasps();
-    resolveTurnEnemyPressure();
-    tickSpecialEnemyTelegraphs();
-    resolveBossAntiKite(reason);
+    enemyTurns.resolve(reason);
 }
 
 function resolveTurnEnemyPressure() {
@@ -2651,6 +2873,7 @@ function tickSpecialEnemyTelegraphs() {
     game.cells
         .filter((cell) => hasSpecialTurnThreat(cell.object))
         .forEach((enemyCell) => {
+            if (shouldDelayBossThreat(enemyCell)) return;
             const enemy = getEnemyDef(enemyCell.object);
             if (!enemyCell.nextAuraAt) {
                 enemyCell.nextAuraAt = now + Math.max(450, enemy.intervalMs || 900);
@@ -2662,6 +2885,21 @@ function tickSpecialEnemyTelegraphs() {
                 enemyCell.nextAuraAt = now + Math.max(450, enemy.intervalMs || 900);
             }
         });
+}
+
+function shouldDelayBossThreat(enemyCell) {
+    if (game.roomDepth < FINAL_ROOM || game.bossEngaged) return false;
+    if (enemyCell.object !== 'queenSignaler' && enemyCell.object !== 'waspHive') return false;
+    const boss = game.cells.find((cell) => cell.isBoss);
+    if (!boss) return false;
+    const distanceToBoss = hexDistance(game.player.q, game.player.r, boss.q, boss.r);
+    if (distanceToBoss <= 5) {
+        game.bossEngaged = true;
+        return false;
+    }
+    const now = performance.now();
+    enemyCell.nextAuraAt = Math.max(enemyCell.nextAuraAt || 0, now + 900);
+    return true;
 }
 
 function hasSpecialTurnThreat(object) {
@@ -2706,10 +2944,10 @@ function drawCellBackground(cell, x, y, size, hidden) {
             baseGradient.addColorStop(0, '#101a15');
             baseGradient.addColorStop(1, '#1f2c24');
         } else if (cell.visited) {
-            baseGradient.addColorStop(0, '#2d3d34');
+            baseGradient.addColorStop(0, getCurrentTheme()?.cellTint || '#2d3d34');
             baseGradient.addColorStop(1, '#1d2b24');
         } else {
-            baseGradient.addColorStop(0, '#3c4d43');
+            baseGradient.addColorStop(0, getCurrentTheme()?.cellTint || '#3c4d43');
             baseGradient.addColorStop(1, '#26372f');
         }
         ctx.fillStyle = baseGradient;
@@ -2721,7 +2959,7 @@ function drawCellBackground(cell, x, y, size, hidden) {
 
     drawHexPath(x, y, size - 6);
     ctx.globalAlpha = hasTileArt ? 0.04 : hidden ? 0.06 : 0.12;
-    ctx.strokeStyle = '#e8c76b';
+    ctx.strokeStyle = getCurrentTheme()?.borderTint || '#e8c76b';
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
@@ -3674,6 +3912,10 @@ function renderInspectPanel() {
         return;
     }
     const object = liveCell.revealed ? liveCell.object : 'empty';
+    if (object === 'empty') {
+        inspectUi.render(inspectPanelNode, { hidden: true });
+        return;
+    }
     const name = info.lines[0] || '';
     const role = info.lines[1] || '';
     const lines = info.lines.slice(2);
@@ -3692,7 +3934,7 @@ function renderInspectPanel() {
 function getInspectStats(cell, object) {
     const stats = [];
     if (!cell.revealed && game.mode !== 'dance') {
-        stats.push({ icon: '?', label: currentLanguage === 'es-419' ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden' });
+        stats.push({ icon: '?', label: currentLanguage === 'es-419' ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden', hudRow: HUD_ICON_ROWS.objective });
         return stats;
     }
 
@@ -3700,11 +3942,11 @@ function getInspectStats(cell, object) {
         const enemy = getEnemyDef(object);
         const maxHp = cell.bossHp || enemy.hp;
         const hp = Math.max(0, maxHp - (cell.hits || 0));
-        stats.push({ icon: '♥', label: `${hp}/${maxHp}`, tone: 'danger', kind: 'health' });
-        stats.push({ icon: '✦', label: `${enemy.attack}`, tone: 'danger', kind: 'attack' });
-        stats.push({ icon: '⌁', label: `${enemy.range}`, tone: 'route', kind: 'range' });
+        stats.push({ icon: '♥', label: `${hp}/${maxHp}`, tone: 'danger', kind: 'health', hudRow: HUD_ICON_ROWS.health });
+        stats.push({ icon: '✦', label: `${enemy.attack}`, tone: 'danger', kind: 'attack', hudRow: HUD_ICON_ROWS.danger });
+        stats.push({ icon: '⌁', label: `${enemy.range}`, tone: 'route', kind: 'range', hudRow: HUD_ICON_ROWS.sting });
         if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemy')) {
-            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn' });
+            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: HUD_ICON_ROWS.danger });
         }
     } else {
         getObjectEffectStats(object).forEach((stat) => stats.push(stat));
@@ -3717,18 +3959,19 @@ function getInspectStats(cell, object) {
             icon: '›',
             label: `${reachable}/${preview.path.length}`,
             tone: preview.complete ? 'route' : 'cost',
-            kind: 'move'
+            kind: 'move',
+            hudRow: HUD_ICON_ROWS.stamina
         });
         if (preview.totalDamage > 0) {
-            stats.push({ icon: '−', label: `${preview.totalDamage}`, tone: 'danger', kind: 'damage' });
+            stats.push({ icon: '−', label: `${preview.totalDamage}`, tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
         }
         if (preview.waterSpent > 0) {
-            stats.push({ icon: '◇', label: `${preview.waterSpent}`, tone: 'cost', kind: 'water' });
+            stats.push({ icon: '◇', label: `${preview.waterSpent}`, tone: 'cost', kind: 'water', hudRow: HUD_ICON_ROWS.water });
         }
         if (preview.deathCell) {
-            stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Letal' : 'Lethal', tone: 'danger', kind: 'lethal' });
+            stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Letal' : 'Lethal', tone: 'danger', kind: 'lethal', hudRow: HUD_ICON_ROWS.danger });
         } else if (!preview.complete || preview.blockedTarget) {
-            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Bloqueado' : 'Blocked', tone: 'cost', kind: 'blocked' });
+            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Bloqueado' : 'Blocked', tone: 'cost', kind: 'blocked', hudRow: HUD_ICON_ROWS.danger });
         }
     }
 
@@ -3743,31 +3986,32 @@ function getObjectEffectStats(object) {
         if (effect.type === 'gainResource') {
             const icons = { pollen: '✿', water: '◇', honey: '⬢', stingCharges: '✦' };
             const kinds = { pollen: 'pollen', water: 'water', honey: 'honey', stingCharges: 'sting' };
-            stats.push({ icon: icons[effect.resource] || '+', label: `+${effect.amount}`, tone: 'good', kind: kinds[effect.resource] || 'gain' });
+            const rows = { pollen: HUD_ICON_ROWS.pollen, water: HUD_ICON_ROWS.water, honey: HUD_ICON_ROWS.honey, stingCharges: HUD_ICON_ROWS.sting };
+            stats.push({ icon: icons[effect.resource] || '+', label: `+${effect.amount}`, tone: 'good', kind: kinds[effect.resource] || 'gain', hudRow: rows[effect.resource] });
         } else if (effect.type === 'heal') {
-            stats.push({ icon: '♥', label: `+${effect.amount}`, tone: 'good', kind: 'health' });
+            stats.push({ icon: '♥', label: `+${effect.amount}`, tone: 'good', kind: 'health', hudRow: HUD_ICON_ROWS.health });
         } else if (effect.type === 'gainShield') {
-            stats.push({ icon: '⬟', label: `+${effect.amount}`, tone: 'good', kind: 'shield' });
+            stats.push({ icon: '⬟', label: `+${effect.amount}`, tone: 'good', kind: 'shield', hudRow: HUD_ICON_ROWS.shield });
         } else if (effect.type === 'revealAround') {
-            stats.push({ icon: '◎', label: `${currentLanguage === 'es-419' ? 'Radio' : 'Radius'} ${effect.radius}`, tone: 'route', kind: 'reveal' });
+            stats.push({ icon: '◎', label: `${currentLanguage === 'es-419' ? 'Radio' : 'Radius'} ${effect.radius}`, tone: 'route', kind: 'reveal', hudRow: HUD_ICON_ROWS.objective });
         } else if (effect.type === 'pauseEnemyTimers') {
-            stats.push({ icon: 'Ⅱ', label: `${Math.round(effect.durationMs / 1000)}s`, tone: 'route', kind: 'pause' });
+            stats.push({ icon: 'Ⅱ', label: `${Math.round(effect.durationMs / 1000)}s`, tone: 'route', kind: 'pause', hudRow: HUD_ICON_ROWS.pause });
         } else if (effect.type === 'revealEnemies' || effect.type === 'revealExitHint' || effect.type === 'revealExitRoute') {
-            stats.push({ icon: '◎', label: currentLanguage === 'es-419' ? 'Revela' : 'Reveal', tone: 'route', kind: 'reveal' });
+            stats.push({ icon: '◎', label: currentLanguage === 'es-419' ? 'Revela' : 'Reveal', tone: 'route', kind: 'reveal', hudRow: HUD_ICON_ROWS.objective });
         }
     });
 
     if (object === 'vine') {
-        stats.push({ icon: '−', label: `${VINE_DAMAGE}`, tone: 'danger', kind: 'damage' });
+        stats.push({ icon: '−', label: `${VINE_DAMAGE}`, tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
     } else if (object === 'burningCell') {
-        stats.push({ icon: '−', label: '1', tone: 'danger', kind: 'damage' });
-        stats.push({ icon: '◇', label: '1', tone: 'cost', kind: 'water' });
+        stats.push({ icon: '−', label: '1', tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
+        stats.push({ icon: '◇', label: '1', tone: 'cost', kind: 'water', hudRow: HUD_ICON_ROWS.water });
     } else if (object === 'waxDoor') {
-        stats.push({ icon: '✿', label: '1', tone: 'cost', kind: 'pollen' });
+        stats.push({ icon: '✿', label: '1', tone: 'cost', kind: 'pollen', hudRow: HUD_ICON_ROWS.pollen });
     } else if (object === 'wall') {
-        stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Paso' : 'Path', tone: 'cost', kind: 'blocked' });
+        stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Paso' : 'Path', tone: 'cost', kind: 'blocked', hudRow: HUD_ICON_ROWS.danger });
     } else if (object === 'exit' || object === 'finalExit' || object === 'entry') {
-        stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Accion' : 'Action', tone: 'route', kind: 'action' });
+        stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Accion' : 'Action', tone: 'route', kind: 'action', hudRow: HUD_ICON_ROWS.objective });
     }
 
     return stats;
@@ -4060,7 +4304,7 @@ function drawStar(x, y, outerRadius, innerRadius, points) {
 }
 
 function moveTo(cell) {
-    if (game.replay || game.ended || !cell || game.player.health <= 0) {
+    if (game.replay || game.ended || game.settingsPaused || !cell || game.player.health <= 0) {
         return;
     }
 
@@ -4098,7 +4342,8 @@ function moveTo(cell) {
         return;
     }
 
-    const targetRequiresAction = !['empty', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject);
+    const collectOnMove = isCollectOnMoveObject(targetObject);
+    const targetRequiresAction = !collectOnMove && !['empty', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject);
     if (targetRequiresAction && !game.player.actionAvailable) {
         game.autoPath = [];
         showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu acción este turno.' : 'You already used your action this turn.');
@@ -4204,7 +4449,7 @@ function moveTo(cell) {
     }
 
     const interaction = resolveInteraction(targetObject, cell);
-    const actionObject = !['empty', 'entry', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject);
+    const actionObject = !collectOnMove && !['empty', 'entry', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject);
     if (actionObject && !consumeAction(`interact:${targetObject}`)) {
         showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu acción este turno.' : 'You already used your action this turn.');
         return;
@@ -4258,6 +4503,9 @@ function attackEnemyCell(cell) {
         return;
     }
     consumeAction('attack');
+    if (cell.isBoss || game.roomDepth >= FINAL_ROOM) {
+        game.bossEngaged = true;
+    }
     game.autoPath = [];
     game.metrics.attacksMade += 1;
     game.metrics.lastAttack = { turn: game.metrics.turns, q: cell.q, r: cell.r, object: cell.object };
@@ -4287,7 +4535,7 @@ function attackEnemyCell(cell) {
 }
 
 function getActionRange(cell) {
-    return isEnemyObject(cell?.object) ? (game.player.attackRange || START_ATTACK_RANGE) : 1;
+    return tacticalCombat.getActionRange(game, cell, isEnemyObject, START_ATTACK_RANGE);
 }
 
 function followPathTo(cell) {
@@ -4930,6 +5178,7 @@ function endRun(reason = 'final-exit') {
         [currentLanguage === 'es-419' ? 'Celdas movidas' : 'Cells Moved', game.metrics.cellsMoved],
         [currentLanguage === 'es-419' ? 'Bucles ataque-retirada' : 'Attack-Retreat Loops', game.metrics.repeatedAttackRetreatPatterns],
         [currentLanguage === 'es-419' ? 'Daño por fuente' : 'Damage Sources', formatDamageMetrics()],
+        [currentLanguage === 'es-419' ? 'Recomendación' : 'Recommendation', getRunRecommendation(reason)],
         [currentLanguage === 'es-419' ? 'Desbloqueos' : 'Unlocks', getProgressionUnlockText()],
         [currentLanguage === 'es-419' ? 'Semilla' : 'Seed', game.runSeed]
     ];
@@ -4963,6 +5212,45 @@ function formatDamageMetrics() {
         .slice(0, 3)
         .map(([source, amount]) => `${source}: ${amount}`)
         .join(', ');
+}
+
+function getRunRecommendation(reason) {
+    const damageEntries = Object.entries(game.metrics.damageBySource || {}).sort((a, b) => b[1] - a[1]);
+    const topSource = damageEntries[0]?.[0]?.toLowerCase() || '';
+    const unspent = game.player.pollen + game.player.water + game.player.honey;
+    if (reason === 'death' && topSource.includes('wasp')) {
+        return currentLanguage === 'es-419'
+            ? 'Evita terminar turnos dentro de anillos de avispa; usa movimiento para salir antes de atacar otra vez.'
+            : 'Avoid ending turns inside wasp rings; spend movement to leave before attacking again.';
+    }
+    if (reason === 'death' && topSource.includes('bat')) {
+        return currentLanguage === 'es-419'
+            ? 'Guarda Aguijón doble para murciélagos o planea dos golpes con una salida segura.'
+            : 'Save Double Sting for bats or plan two hits with a safe escape cell.';
+    }
+    if (reason === 'death' && topSource.includes('burn')) {
+        return currentLanguage === 'es-419'
+            ? 'Reserva agua para apagar fuego o cambia la ruta cuando el fuego bloquee la salida.'
+            : 'Reserve water for fire cells or reroute when fire blocks the exit.';
+    }
+    if (unspent >= 5) {
+        return currentLanguage === 'es-419'
+            ? 'Terminaste con muchos recursos; compra curación, escudo o mapa en el próximo mercado.'
+            : 'You carried many resources; spend them on healing, shield, or map help at the next market.';
+    }
+    if (game.metrics.attacksMade < game.metrics.turns / 4 && game.runStats.kills < 2) {
+        return currentLanguage === 'es-419'
+            ? 'Estás evitando muchas amenazas; a veces matar el guardia abre una ruta más segura.'
+            : 'You avoided many threats; sometimes killing the guard creates the safer route.';
+    }
+    if (game.metrics.repeatedAttackRetreatPatterns > 1) {
+        return currentLanguage === 'es-419'
+            ? 'Los bucles de golpear y huir activan presión; busca mejorar rango/movimiento antes del jefe.'
+            : 'Hit-and-run loops build pressure; look for range or movement upgrades before the boss.';
+    }
+    return currentLanguage === 'es-419'
+        ? 'Buen ritmo. Sigue inspeccionando celdas para ver costos, daño y rutas letales antes de moverte.'
+        : 'Good pace. Keep inspecting cells to read costs, damage, and lethal routes before moving.';
 }
 
 function getProgressionUnlockText() {
@@ -5219,6 +5507,19 @@ function showTopToast(title, message, tone = 'info') {
     }, tone === 'danger' ? 4200 : 3400);
 }
 
+function openSettingsOverlay() {
+    game.settingsPaused = true;
+    applyAudioSettings();
+    settingsScreen?.classList.add('visible');
+    audioSystem.pauseAll();
+}
+
+function closeSettingsOverlay() {
+    game.settingsPaused = false;
+    settingsScreen?.classList.remove('visible');
+    audioSystem.resumeActive();
+}
+
 function getToastTone(title = '', message = '') {
     const text = `${title} ${message}`.toLowerCase();
     if (text.includes('damage') || text.includes('daño') || text.includes('game over') || text.includes('fin de partida') || text.includes('blocked') || text.includes('bloqueada')) {
@@ -5265,6 +5566,7 @@ function renderStats() {
     )).join('');
     renderStatsHud(statsText);
     renderTimerHud();
+    renderBottomCombatHud();
 }
 
 function renderStatsHud(statsText) {
@@ -5274,9 +5576,6 @@ function renderStatsHud(statsText) {
     }
     const firstRoom = game.roomDepth === 1;
     const items = [
-        { id: 'health', value: game.player.health, title: `${statsText.health[0]}: ${statsText.health[1]}`, hudIcon: HUD_ICON_ROWS.health, icon: 'heart', color: '#e76f51', tone: game.player.health <= 2 ? 'danger' : '' },
-        { id: 'shield', value: game.player.upgrades, title: `${statsText.shield[0]}: ${statsText.shield[1]}`, hudIcon: HUD_ICON_ROWS.shield, sprite: 'upgrade', fallback: 'S', color: '#b787f4' },
-        { id: 'stamina', value: `${game.player.stamina}/${game.player.maxStamina}`, title: `${t('ui', 'stamina')}: ${t('ui', 'staminaHint')}`, hudIcon: HUD_ICON_ROWS.stamina, icon: 'bolt', color: '#f5c84b' },
         { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), hudIcon: HUD_ICON_ROWS.objective, fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
     ];
     if (!firstRoom || game.player.pollen > 0) {
@@ -5298,6 +5597,54 @@ function renderStatsHud(statsText) {
         items.push({ id: 'room', value: game.roomDepth, title: `${statsText.room[0]}: ${statsText.room[1]}`, hudIcon: HUD_ICON_ROWS.room, icon: 'room', color: '#43aa8b' });
     }
     hudRenderer.renderStats(items);
+}
+
+function renderBottomCombatHud() {
+    if (!bottomCombatHudNode) return;
+    if (game.mode === 'dance' || game.mode === 'menu' || game.ended) {
+        bottomCombatHudNode.innerHTML = '';
+        bottomCombatHudNode.classList.add('hidden');
+        return;
+    }
+
+    bottomCombatHudNode.classList.remove('hidden');
+    const healthPercent = Math.max(0, Math.min(1, game.player.health / Math.max(1, game.player.maxHealth)));
+    const shieldPercent = Math.max(0, Math.min(1, game.player.upgrades / Math.max(1, game.player.maxShield || MAX_SHIELD)));
+    const movePercent = Math.max(0, Math.min(1, game.player.movePoints / Math.max(1, game.player.maxMovePoints)));
+    const xpNeeded = getXpForNextLevel();
+    const xpPercent = Math.max(0, Math.min(1, progression.xp / Math.max(1, xpNeeded)));
+    const moveLoss = getPreviewMoveLoss();
+    const dangerClass = game.player.health <= Math.max(2, Math.ceil(game.player.maxHealth * 0.3)) ? ' danger' : '';
+
+    bottomCombatHudNode.innerHTML = `
+        <div class="combat-orb life-orb${dangerClass}" style="--orb-percent:${healthPercent}; --orb-fill:#d84636" aria-label="${escapeAttr(`${t('stats', 'health')[0]} ${game.player.health}/${game.player.maxHealth}, ${t('stats', 'shield')[0]} ${game.player.upgrades}/${game.player.maxShield}`)}">
+            <div class="orb-stack">
+                <span class="orb-value">${escapeHtml(game.player.health)}</span>
+                <span class="orb-subvalue">+${escapeHtml(game.player.upgrades)} ${currentLanguage === 'es-419' ? 'esc' : 'shd'}</span>
+            </div>
+            <span class="orb-loss" style="display:${shieldPercent > 0 ? 'grid' : 'none'}">${escapeHtml(game.player.upgrades)}</span>
+        </div>
+        <div class="xp-hud" style="--xp-percent:${xpPercent}" aria-label="${escapeAttr(`Level ${getPlayerLevel()} XP ${progression.xp}/${xpNeeded}`)}">
+            <div class="xp-label">
+                <span>${currentLanguage === 'es-419' ? 'Nivel' : 'Level'} ${escapeHtml(getPlayerLevel())}</span>
+                <span>${escapeHtml(progression.xp)}/${escapeHtml(xpNeeded)} XP</span>
+            </div>
+            <div class="xp-track"><div class="xp-fill"></div></div>
+        </div>
+        <div class="combat-orb move-orb" style="--orb-percent:${movePercent}; --orb-fill:#f5c84b" aria-label="${escapeAttr(`${t('ui', 'stamina')} ${game.player.movePoints}/${game.player.maxMovePoints}`)}">
+            <div class="orb-stack">
+                <span class="orb-value">${escapeHtml(game.player.movePoints)}</span>
+                <span class="orb-subvalue">/${escapeHtml(game.player.maxMovePoints)} ${currentLanguage === 'es-419' ? 'mov' : 'move'}</span>
+            </div>
+            <span class="orb-loss" style="display:${moveLoss > 0 ? 'grid' : 'none'}">-${escapeHtml(moveLoss)}</span>
+        </div>
+    `;
+}
+
+function getPreviewMoveLoss() {
+    const preview = game.pathPreview;
+    if (!preview || !preview.path?.length) return 0;
+    return Math.max(0, Math.min(game.player.movePoints, preview.reachableLength || 0));
 }
 
 function renderTimerHud() {
@@ -5490,6 +5837,12 @@ window.HW_TEST_API = {
             farthestRoomIndex: game.caveMetadata.farthestRoomIndex,
             bossRoom: game.caveMetadata.bossRoom
         } : null,
+        roomTemplate: game.roomTemplate,
+        dungeonTheme: getCurrentTheme() ? {
+            id: getCurrentTheme().id,
+            name: getCurrentTheme().name
+        } : null,
+        equipment: { ...game.equipment },
         entryCell: game.entryCell ? { ...game.entryCell } : null,
         exitCell: game.exitCell ? { ...game.exitCell } : null,
         metrics: JSON.parse(JSON.stringify(game.metrics)),
@@ -5508,6 +5861,15 @@ window.HW_TEST_API = {
         acc[cell.object] = (acc[cell.object] || 0) + 1;
         return acc;
     }, {}),
+    getCells: () => game.cells.map((cell) => ({ ...cell })),
+    setDungeonTheme: (themeId) => {
+        if (!DUNGEON_THEMES?.[themeId]) return false;
+        game.dungeonTheme = DUNGEON_THEMES[themeId];
+        applyDungeonTheme();
+        draw();
+        return true;
+    },
+    equipItem: (equipmentId) => equipItem(equipmentId),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
     getCellData: (q, r) => {
         const cell = getCell(q, r);
@@ -5613,11 +5975,40 @@ canvas.addEventListener('mousemove', (event) => {
         startedAt: previousKey === nextKey ? game.hover.startedAt : performance.now()
     };
     game.pathPreview = cell && game.mode === 'dungeon' ? getPathPreview(cell) : null;
-    if (!game.inspectPinned) {
-        game.inspectedCell = cell ? { q: cell.q, r: cell.r } : null;
-    }
+    game.inspectPinned = false;
+    game.inspectedCell = cell ? { q: cell.q, r: cell.r } : null;
     updateCursor(game.hover.cell);
+    renderBottomCombatHud();
 });
+
+function updateBoardHoverFromClientPoint(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+    const cell = pixelToClosestHex(x, y);
+    const previousKey = game.hover?.cell ? cellKey(game.hover.cell.q, game.hover.cell.r) : '';
+    const nextKey = cell ? cellKey(cell.q, cell.r) : '';
+    game.hover = {
+        x,
+        y,
+        cell,
+        startedAt: previousKey === nextKey ? game.hover.startedAt : performance.now()
+    };
+    game.pathPreview = cell && game.mode === 'dungeon' ? getPathPreview(cell) : null;
+    game.inspectPinned = false;
+    game.inspectedCell = cell ? { q: cell.q, r: cell.r } : null;
+    updateCursor(game.hover.cell);
+    renderBottomCombatHud();
+    return cell;
+}
+
+function forwardHudPointerToBoard(event, shouldClick = false) {
+    const cell = updateBoardHoverFromClientPoint(event.clientX, event.clientY);
+    if (shouldClick && cell) {
+        moveTo(cell);
+    }
+}
 
 canvas.addEventListener('pointerdown', (event) => {
     const rect = canvas.getBoundingClientRect();
@@ -5734,11 +6125,28 @@ logToggle.addEventListener('click', () => {
     logPanel.classList.toggle('open');
     statsPanel.classList.remove('open');
 });
+[statsHudNode, timerHudNode].forEach((node) => {
+    node?.addEventListener('mousemove', (event) => forwardHudPointerToBoard(event, false));
+    node?.addEventListener('click', (event) => forwardHudPointerToBoard(event, true));
+});
 optionsButton.addEventListener('click', () => {
     optionsPanel.classList.toggle('visible');
 });
+settingsToggle?.addEventListener('click', openSettingsOverlay);
+settingsCloseButton?.addEventListener('click', closeSettingsOverlay);
+musicVolumeInput?.addEventListener('input', () => {
+    audioSettings.music = Number(musicVolumeInput.value) / 100;
+    applyAudioSettings();
+    saveAudioSettings();
+});
+effectsVolumeInput?.addEventListener('input', () => {
+    audioSettings.effects = Number(effectsVolumeInput.value) / 100;
+    applyAudioSettings();
+    saveAudioSettings();
+});
 languageSelect.addEventListener('change', () => setLanguage(languageSelect.value));
 menuLanguageSelect.addEventListener('change', () => setLanguage(menuLanguageSelect.value));
+themeSelect?.addEventListener('change', () => setDungeonThemePreference(themeSelect.value));
 objectEditorSelect.addEventListener('change', renderObjectEditor);
 saveObjectButton.addEventListener('click', saveObjectEditor);
 resetObjectButton.addEventListener('click', resetObjectEditor);
@@ -5766,6 +6174,8 @@ testObjectListNode.addEventListener('click', (event) => {
 window.addEventListener('resize', resizeCanvas);
 
 setLanguage(currentLanguage);
+setDungeonThemePreference(selectedThemeId);
+applyAudioSettings();
 renderStats();
 renderRelics();
 resizeCanvas();

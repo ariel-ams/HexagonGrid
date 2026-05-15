@@ -55,6 +55,11 @@ const I18N = {
             honey: 'Honey',
             honeyHint: 'Can buy tactical boosts',
             replay: 'Replay'
+            ,settings: 'Settings'
+            ,settingsCopy: 'Pause the run and adjust audio.'
+            ,musicVolume: 'Music Volume'
+            ,effectsVolume: 'Effects Volume'
+            ,resume: 'Resume'
         },
         logs: {
             start: 'Start',
@@ -256,6 +261,11 @@ const I18N = {
             honey: 'Miel',
             honeyHint: 'Sirve para comprar mejoras tácticas',
             replay: 'Repetición'
+            ,settings: 'Ajustes'
+            ,settingsCopy: 'Pausa la partida y ajusta el audio.'
+            ,musicVolume: 'Volumen de música'
+            ,effectsVolume: 'Volumen de efectos'
+            ,resume: 'Continuar'
         },
         logs: {
             start: 'Inicio',
@@ -736,10 +746,10 @@ const ENEMY_DEFS = {
         hp: 2,
         attack: 0,
         intervalMs: 950,
-        range: 3,
+        range: 2,
         behavior: 'Commander enemy. Sends signal pulses that speed up nearby enemy timers.',
         lesson: 'Kill it before engaging grouped enemies or every timer becomes harder to read.',
-        behaviors: [{ type: 'buffEnemiesAura', range: 3, accelerateMs: 520 }]
+        behaviors: [{ type: 'buffEnemiesAura', range: 2, accelerateMs: 420 }]
     },
     fogShepherd: {
         name: 'Fog Shepherd',
@@ -1104,9 +1114,82 @@ const ENEMY_SPAWN_WEIGHTS = [
     { object: 'larvaBrood', minDepth: 5, weight: 2 }
 ];
 
+const EQUIPMENT_SLOTS = [
+    {
+        id: 'helmet',
+        name: 'Helmet',
+        description: 'Head gear for scouting, protection, and room-reading effects.'
+    },
+    {
+        id: 'jacket',
+        name: 'Jacket',
+        description: 'Body gear for defense, warmth, and resource conversion.'
+    },
+    {
+        id: 'abdomen',
+        name: 'Abdomen Guard',
+        description: 'Tail/abdomen gear for carrying nectar, honey, or emergency stores.'
+    },
+    {
+        id: 'sting',
+        name: 'Sting',
+        description: 'Weapon gear that changes attack range, damage, or special sting rules.'
+    },
+    {
+        id: 'wings',
+        name: 'Wings',
+        description: 'Movement gear for route planning, reveal, and positioning effects.'
+    }
+];
+
+const EQUIPMENT_DEFS = {
+    waxScoutHelmet: {
+        id: 'waxScoutHelmet',
+        slot: 'helmet',
+        name: 'Wax Scout Helmet',
+        rarity: 'starter',
+        description: 'Future loot: reveals one extra cell near the exit at room start.',
+        effects: [{ type: 'futureRevealHint', amount: 1 }]
+    },
+    leafJacket: {
+        id: 'leafJacket',
+        slot: 'jacket',
+        name: 'Leaf Jacket',
+        rarity: 'starter',
+        description: 'Future loot: softens the first hazard damage in each room.',
+        effects: [{ type: 'futureHazardBlock', amount: 1 }]
+    },
+    nectarPouch: {
+        id: 'nectarPouch',
+        slot: 'abdomen',
+        name: 'Nectar Pouch',
+        rarity: 'starter',
+        description: 'Future loot: carries bonus honey between rooms.',
+        effects: [{ type: 'futureRoomHoney', amount: 1 }]
+    },
+    barbedSting: {
+        id: 'barbedSting',
+        slot: 'sting',
+        name: 'Barbed Sting',
+        rarity: 'starter',
+        description: 'Future loot: improves tactical attack reach or first-hit damage.',
+        effects: [{ type: 'futureAttackRange', amount: 1 }]
+    },
+    scoutWings: {
+        id: 'scoutWings',
+        slot: 'wings',
+        name: 'Scout Wings',
+        rarity: 'starter',
+        description: 'Future loot: improves movement route control.',
+        effects: [{ type: 'futureMovePoint', amount: 1 }]
+    }
+};
+
 window.HW_CONTENT = {
     I18N,
     RELICS,
+    EQUIPMENT_SLOTS,
+    EQUIPMENT_DEFS,
     SPRITE_DEFS,
     ENEMY_DEFS,
     OBJECTS,

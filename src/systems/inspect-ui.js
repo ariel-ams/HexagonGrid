@@ -36,7 +36,11 @@ function createInspectUi(context) {
                 const tone = stat.tone || '';
                 const kind = stat.kind || 'info';
                 const classes = ['inspect-stat', tone, `stat-${kind}`].filter(Boolean).join(' ');
-                return `<span class="${escapeAttr(classes)}" data-icon="${escapeAttr(stat.icon || '')}">${escapeHtml(stat.label || '')}</span>`;
+                const style = Number.isInteger(stat.hudRow)
+                    ? ` style="--inspect-icon-y:-${stat.hudRow * 20}px"`
+                    : '';
+                const iconClass = Number.isInteger(stat.hudRow) ? ' has-sheet-icon' : '';
+                return `<span class="${escapeAttr(`${classes}${iconClass}`)}" data-icon="${escapeAttr(stat.icon || '')}"${style}>${escapeHtml(stat.label || '')}</span>`;
             }).join('')}
         </div>`;
     }

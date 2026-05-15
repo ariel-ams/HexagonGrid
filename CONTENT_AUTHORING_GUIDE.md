@@ -273,6 +273,39 @@ When adding a new mechanic, ask:
 - Is the threat visible before it punishes the player?
 - Does the tooltip explain the mechanic?
 
+## Adding Dungeon Themes
+
+Theme data lives in `src/data/progression.js` under `DUNGEON_THEMES`.
+
+Each theme defines:
+
+- `id`, `name`, and `description`.
+- `boardBackground`, `boardOverlay`, `cellTint`, and `borderTint`.
+- `enemies`: enemy ids allowed to appear in that theme.
+- `items`: pickup, utility, and trader ids allowed to appear in that theme.
+- `hazards`: terrain/blocker ids allowed to appear in that theme.
+
+The main menu Options panel can force a theme or leave it on `Random`. Room generation still respects player level and `ROOM_PROFILES`; the theme is an additional filter, so a late enemy will not appear early just because the theme allows it.
+
+When adding a new theme, make sure it has at least one valid enemy for mid/late profiles and enough basic supplies (`pollen`, `water`, `upgrade`, and `stingUpgrade`) unless the theme deliberately changes the economy.
+
+## Adding Wearable Gear
+
+Wearable metadata lives in `src/data/content.js`:
+
+- `EQUIPMENT_SLOTS` defines the fixed slots.
+- `EQUIPMENT_DEFS` defines individual gear pieces and their future effects.
+
+Current slots are:
+
+- `helmet`
+- `jacket`
+- `abdomen` (`Abdomen Guard`, replacing the less readable "butt" name)
+- `sting`
+- `wings`
+
+The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
+
 ## Testing Checklist
 
 After content changes:

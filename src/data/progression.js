@@ -171,8 +171,153 @@ const XP_REWARDS = {
     danceMove: 5
 };
 
+const DUNGEON_THEMES = {
+    forest: {
+        id: 'forest',
+        name: 'Forest',
+        description: 'Balanced learning rooms with wasps, beetles, flowers, vines, and common supplies.',
+        boardBackground: 'assets/ui/forest-board-bg.webp',
+        boardOverlay: 'rgba(25, 70, 34, 0.08)',
+        cellTint: '#4d6f4f',
+        borderTint: '#d8bd68',
+        enemies: [
+            'enemy',
+            'thornBeetle',
+            'miteSwarm',
+            'bat',
+            'waxMoth',
+            'fogMoth',
+            'honeyLeech',
+            'honeySnareSpider',
+            'pollenThiefMoth',
+            'guardWasp',
+            'broodWasp',
+            'falseFlower'
+        ],
+        items: [
+            'pollen',
+            'water',
+            'upgrade',
+            'stingUpgrade',
+            'npc',
+            'honeyDrop',
+            'glowPollen',
+            'cleanWater',
+            'nectarCache',
+            'compassPollen',
+            'stickyHoney',
+            'flowerMap',
+            'royalNectar'
+        ],
+        hazards: ['vine', 'waxDoor', 'stickyTrap']
+    },
+    cave: {
+        id: 'cave',
+        name: 'Cave',
+        description: 'Darker navigation rooms with bats, burrow threats, leeches, fire, and reveal tools.',
+        boardBackground: 'assets/ui/forest-board-bg.webp',
+        boardOverlay: 'rgba(34, 39, 56, 0.16)',
+        cellTint: '#48524a',
+        borderTint: '#b5aa7c',
+        enemies: [
+            'bat',
+            'sleepingBat',
+            'miteSwarm',
+            'honeyLeech',
+            'burrowBeetle',
+            'fogShepherd',
+            'waterLeech',
+            'crawlingFire',
+            'larvaBrood'
+        ],
+        items: [
+            'pollen',
+            'water',
+            'upgrade',
+            'stingUpgrade',
+            'honeyDrop',
+            'glowPollen',
+            'cleanWater',
+            'smokePuff',
+            'sunShard',
+            'flowerMap',
+            'compassPollen',
+            'nectarCache'
+        ],
+        hazards: ['vine', 'burningCell', 'burrowWarningCell']
+    },
+    waspHive: {
+        id: 'waspHive',
+        name: 'Wasp Hive',
+        description: 'Aggressive combat rooms with aura enemies, hives, sentinels, and boss-style pressure.',
+        boardBackground: 'assets/ui/forest-board-bg.webp',
+        boardOverlay: 'rgba(99, 62, 12, 0.18)',
+        cellTint: '#695635',
+        borderTint: '#f0bf3e',
+        enemies: [
+            'enemy',
+            'guardWasp',
+            'broodWasp',
+            'waspHive',
+            'queenSignaler',
+            'waxSentinel',
+            'mirrorWasp',
+            'combBomber',
+            'falseFlower'
+        ],
+        items: [
+            'pollen',
+            'water',
+            'upgrade',
+            'stingUpgrade',
+            'npc',
+            'honeyDrop',
+            'waxDoor',
+            'royalNectar',
+            'smokePuff',
+            'sunShard',
+            'flowerMap'
+        ],
+        hazards: ['vine', 'waxDoor', 'bomberMarkedCell']
+    },
+    underground: {
+        id: 'underground',
+        name: 'Underground',
+        description: 'Preparation-heavy rooms with blockers, ambushers, sticky traps, and fog pressure.',
+        boardBackground: 'assets/ui/forest-board-bg.webp',
+        boardOverlay: 'rgba(45, 31, 22, 0.2)',
+        cellTint: '#514437',
+        borderTint: '#c09255',
+        enemies: [
+            'thornBeetle',
+            'miteSwarm',
+            'burrowBeetle',
+            'honeySnareSpider',
+            'fogShepherd',
+            'pollenThiefMoth',
+            'waxSentinel',
+            'larvaBrood'
+        ],
+        items: [
+            'pollen',
+            'water',
+            'upgrade',
+            'stingUpgrade',
+            'honeyDrop',
+            'glowPollen',
+            'cleanWater',
+            'stickyHoney',
+            'compassPollen',
+            'nectarCache',
+            'waxDoor'
+        ],
+        hazards: ['vine', 'stickyTrap', 'waxDoor', 'burrowWarningCell']
+    }
+};
+
 window.HW_PROGRESSION = {
     BASE_XP_TO_LEVEL,
+    DUNGEON_THEMES,
     OBJECT_UNLOCK_LEVELS,
     ROOM_PROFILES,
     XP_REWARDS

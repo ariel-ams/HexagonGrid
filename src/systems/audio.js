@@ -3,12 +3,14 @@
 function createAudioSystem(config = {}) {
     const tracks = {};
     let activeTrack = null;
+    let musicVolumeScale = 1;
+    let effectsVolumeScale = 1;
     const defaultFadeBackMs = config.defaultFadeBackMs || 900;
 
     function register(id, options) {
         const audio = new Audio(options.src);
         audio.loop = Boolean(options.loop);
-        audio.volume = options.volume ?? 0.5;
+        audio.volume = (options.volume ?? 0.5) * musicVolumeScale;
         const track = {
             id,
             audio,
@@ -40,7 +42,7 @@ function createAudioSystem(config = {}) {
         const shouldStartFromCue = activeTrack !== id || track.audio.currentTime === 0;
         activeTrack = id;
         window.clearTimeout(track.timer);
-        track.audio.volume = track.volume;
+        track.audio.volume = track.volume * musicVolumeScale;
         if (track.audio.paused) {
             if (shouldStartFromCue) {
                 cueTrack(track);
@@ -81,7 +83,7 @@ function createAudioSystem(config = {}) {
         window.clearTimeout(track.timer);
         track.audio.pause();
         track.audio.currentTime = 0;
-        track.audio.volume = track.volume;
+        track.audio.volume = track.volume * musicVolumeScale;
         if (activeTrack === id) {
             activeTrack = null;
         }
@@ -98,8 +100,19 @@ function createAudioSystem(config = {}) {
         window.clearTimeout(track.timer);
         track.audio.volume = volume;
         track.timer = window.setTimeout(() => {
-            track.audio.volume = track.volume;
+            track.audio.volume = track.volume * musicVolumeScale;
         }, durationMs);
+    }
+
+    function setMusicVolume(value) {
+        musicVolumeScale = Math.max(0, Math.min(1, Number(value)));
+        Object.values(tracks).forEach((track) => {
+            track.audio.volume = track.volume * musicVolumeScale;
+        });
+    }
+
+    function setEffectsVolume(value) {
+        effectsVolumeScale = Math.max(0, Math.min(1, Number(value)));
     }
 
     function pauseAll() {
@@ -125,7 +138,7 @@ function createAudioSystem(config = {}) {
             oscillator.frequency.exponentialRampToValueAtTime(preset.endFrequency, now + preset.duration);
         }
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(options.volume || preset.volume, now + 0.012);
+        gain.gain.exponentialRampToValueAtTime((options.volume || preset.volume) * effectsVolumeScale, now + 0.012);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + preset.duration);
         oscillator.connect(gain).connect(audioContext.destination);
         oscillator.start(now);
@@ -169,6 +182,7 @@ function createAudioSystem(config = {}) {
                     currentTime: Number(track.audio.currentTime.toFixed(2)),
                     duration: Number.isFinite(track.audio.duration) ? Number(track.audio.duration.toFixed(2)) : null,
                     volume: Number(track.audio.volume.toFixed(2)),
+                    musicVolumeScale,
                     startAt: track.startAt,
                     loopFrom: track.loopFrom
                 }
@@ -181,6 +195,8 @@ function createAudioSystem(config = {}) {
         stop,
         stopAll,
         duck,
+        setMusicVolume,
+        setEffectsVolume,
         playEffect,
         pauseAll,
         resumeActive,

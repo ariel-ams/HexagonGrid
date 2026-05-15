@@ -38,6 +38,9 @@
             --art-hud-icons: url("assets/ui/alpha/hud-icons.png");
             --hud-frame-size: 58px;
             --hud-sheet-width: 232px;
+            --theme-board-overlay: rgba(0, 0, 0, 0);
+            --theme-cell-tint: #4d6f4f;
+            --theme-border-tint: #d8bd68;
         }
 
         * {
@@ -111,10 +114,11 @@
             border: 8px solid var(--wood-dark);
             border-radius: 22px;
             background:
+                linear-gradient(var(--theme-board-overlay), var(--theme-board-overlay)),
                 var(--art-board-bg),
                 radial-gradient(circle at 20% 20%, rgba(244, 198, 86, 0.08), transparent 22rem),
                 linear-gradient(135deg, var(--forest-deep), var(--forest));
-            background-size: cover, auto, auto;
+            background-size: auto, cover, auto, auto;
             overflow: hidden;
             box-shadow:
                 inset 0 0 0 3px rgba(201, 130, 48, 0.32),
@@ -164,7 +168,7 @@
             flex-wrap: wrap;
             gap: 10px;
             max-width: min(52%, 560px);
-            pointer-events: auto;
+            pointer-events: none;
         }
 
         .hud-cluster.stats-hud {
@@ -184,15 +188,15 @@
 
         .event-toast {
             position: absolute;
-            top: 22px;
+            top: 78px;
             left: 50%;
             z-index: 8;
-            width: min(560px, calc(100% - 48px));
-            padding: 16px 20px 15px;
-            border: 24px solid transparent;
+            width: min(430px, calc(100% - 56px));
+            padding: 10px 15px 9px;
+            border: 18px solid transparent;
             border-image-source: var(--art-objective-panel);
             border-image-slice: 72 82 fill;
-            border-image-width: 24px;
+            border-image-width: 18px;
             border-image-repeat: stretch;
             border-radius: 18px;
             background: transparent;
@@ -400,6 +404,17 @@
             color: #f4fbff;
         }
 
+        .inspect-stat.has-sheet-icon::before {
+            content: "";
+            background-image: url("assets/ui/alpha/hud-icons.png");
+            background-size: 80px 260px;
+            background-position: 0 var(--inspect-icon-y, 0);
+            background-repeat: no-repeat;
+            background-color: transparent;
+            border-radius: 0;
+            filter: drop-shadow(0 1px 1px rgba(70, 37, 12, 0.28));
+        }
+
         .inspect-lines {
             display: grid;
             gap: 6px;
@@ -419,20 +434,20 @@
 
         .event-toast strong {
             position: absolute;
-            top: -19px;
-            left: 22px;
+            top: -17px;
+            left: 18px;
             display: inline-block;
-            padding: 0 14px;
-            min-height: 34px;
-            border: 12px solid transparent;
+            padding: 0 11px;
+            min-height: 27px;
+            border: 9px solid transparent;
             border-image-source: var(--art-objective-ribbon);
             border-image-slice: 130 360 fill;
-            border-image-width: 12px 28px;
+            border-image-width: 9px 22px;
             border-image-repeat: stretch;
             border-radius: 0;
             background: transparent;
             color: #fff2c7;
-            font-size: 18px;
+            font-size: 14px;
             line-height: 1.2;
             text-transform: uppercase;
             text-shadow: 0 2px 0 rgba(70, 35, 18, 0.58);
@@ -441,7 +456,7 @@
 
         .event-toast span {
             margin-top: 0;
-            font-size: 20px;
+            font-size: 15px;
             line-height: 1.42;
             font-weight: 800;
         }
@@ -460,6 +475,7 @@
             color: var(--parchment-ink);
             box-shadow: none;
             position: relative;
+            pointer-events: auto;
         }
 
         .hud-pill.danger {
@@ -493,6 +509,148 @@
         .timer-hud .hud-pill:hover::after {
             right: 0;
             left: auto;
+        }
+
+        .bottom-combat-hud {
+            position: absolute;
+            left: 50%;
+            bottom: 18px;
+            z-index: 5;
+            width: min(720px, calc(100% - 52px));
+            display: grid;
+            grid-template-columns: 116px minmax(220px, 1fr) 116px;
+            align-items: end;
+            gap: 18px;
+            pointer-events: none;
+        }
+
+        .bottom-combat-hud.hidden {
+            display: none;
+        }
+
+        .combat-orb {
+            position: relative;
+            width: 116px;
+            height: 116px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.45), transparent 0 18%),
+                conic-gradient(var(--orb-fill, #d84636) calc(var(--orb-percent, 0.5) * 1turn), rgba(20, 13, 8, 0.84) 0),
+                radial-gradient(circle, rgba(56, 33, 19, 0.96), rgba(14, 10, 7, 0.98));
+            border: 5px solid #3a2414;
+            box-shadow:
+                inset 0 0 18px rgba(255, 245, 180, 0.22),
+                inset 0 -12px 24px rgba(0, 0, 0, 0.34),
+                0 8px 18px rgba(0, 0, 0, 0.44);
+            color: #fff8dc;
+            text-shadow: 0 2px 3px rgba(0, 0, 0, 0.68);
+        }
+
+        .combat-orb::before {
+            content: "";
+            position: absolute;
+            inset: 9px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 220, 116, 0.54);
+            box-shadow: inset 0 0 24px rgba(255, 242, 167, 0.14);
+        }
+
+        .combat-orb.danger {
+            animation: lowHealthOrb 780ms ease-in-out infinite;
+            filter: drop-shadow(0 0 18px rgba(231, 62, 50, 0.72));
+        }
+
+        .orb-stack {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 1px;
+            text-align: center;
+        }
+
+        .orb-value {
+            font-size: 30px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .orb-subvalue {
+            font-size: 13px;
+            font-weight: 900;
+            color: #e8d6ff;
+        }
+
+        .orb-loss {
+            position: absolute;
+            top: 12px;
+            right: 6px;
+            min-width: 34px;
+            min-height: 24px;
+            display: grid;
+            place-items: center;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #4d1d15;
+            color: #ffd0c8;
+            border: 2px solid rgba(255, 210, 170, 0.72);
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .xp-hud {
+            align-self: center;
+            min-height: 58px;
+            display: grid;
+            align-content: center;
+            gap: 5px;
+            padding: 12px 18px;
+            border: 20px solid transparent;
+            border-image-source: var(--art-market-branch);
+            border-image-slice: 90 220 fill;
+            border-image-width: 18px 32px;
+            border-image-repeat: stretch;
+            color: #fff3bf;
+            text-shadow: 0 2px 3px rgba(0, 0, 0, 0.72);
+            filter: drop-shadow(0 9px 12px rgba(0, 0, 0, 0.34));
+        }
+
+        .xp-label {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .xp-track {
+            height: 15px;
+            border: 2px solid rgba(62, 34, 14, 0.9);
+            border-radius: 999px;
+            background: rgba(24, 17, 9, 0.76);
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.72);
+        }
+
+        .xp-fill {
+            width: calc(var(--xp-percent, 0) * 100%);
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #64c8ff, #b7e08a, #fff2a7);
+            box-shadow: 0 0 14px rgba(158, 231, 255, 0.6);
+            transition: width 180ms ease;
+        }
+
+        @keyframes lowHealthOrb {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.045);
+            }
         }
 
         .hud-icon {
@@ -633,10 +791,27 @@
         }
 
         .replay-controls button,
-        .mobile-toggle {
+        .mobile-toggle,
+        .settings-toggle {
             min-width: 44px;
             min-height: 44px;
             border: 1px solid rgba(243, 240, 223, 0.18);
+        }
+
+        .settings-toggle {
+            position: fixed;
+            top: 12px;
+            right: 176px;
+            z-index: 12;
+            min-width: 96px;
+            padding: 0 12px;
+            border: 16px solid transparent;
+            border-image-source: var(--art-hud-icon-backing);
+            border-image-slice: 58 fill;
+            border-image-width: 16px;
+            background: transparent;
+            color: #23130a;
+            font-weight: 900;
         }
 
         @keyframes hudBadgePulse {
@@ -1023,19 +1198,35 @@
             display: grid;
             align-content: start;
             gap: 8px;
-            border: 1px solid rgba(243, 240, 223, 0.16);
-            background: rgba(243, 240, 223, 0.06);
-            color: var(--text);
+            border: 2px solid rgba(92, 44, 22, 0.28);
+            background: rgba(255, 246, 215, 0.78);
+            color: #3a1e0e;
             text-align: left;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34), 0 10px 20px rgba(77, 43, 17, 0.14);
         }
 
         .relic-card strong {
-            color: var(--accent);
+            color: #57250d;
+            font-size: 17px;
+            line-height: 1.15;
+            text-shadow: none;
         }
 
         .relic-card span {
-            color: var(--muted);
+            color: #3f2a18;
             line-height: 1.4;
+            font-weight: 800;
+            text-shadow: none;
+        }
+
+        .relic-card:hover,
+        .relic-card:focus-visible {
+            border-color: rgba(109, 51, 19, 0.72);
+            background: rgba(255, 238, 181, 0.92);
+        }
+
+        .settings-panel {
+            width: min(560px, 100%);
         }
 
         .camp-actions {
@@ -1310,6 +1501,48 @@
                 padding: 2px 5px;
             }
 
+            .bottom-combat-hud {
+                bottom: 10px;
+                width: calc(100vw - 20px);
+                grid-template-columns: 82px minmax(120px, 1fr) 82px;
+                gap: 8px;
+            }
+
+            .combat-orb {
+                width: 82px;
+                height: 82px;
+                border-width: 4px;
+            }
+
+            .combat-orb::before {
+                inset: 7px;
+                border-width: 2px;
+            }
+
+            .orb-value {
+                font-size: 22px;
+            }
+
+            .orb-subvalue,
+            .orb-loss {
+                font-size: 11px;
+            }
+
+            .xp-hud {
+                min-height: 48px;
+                padding: 8px 12px;
+                border-width: 14px;
+                border-image-width: 14px 22px;
+            }
+
+            .xp-label {
+                font-size: 11px;
+            }
+
+            .xp-track {
+                height: 12px;
+            }
+
             .side-panel {
                 position: fixed;
                 top: 58px;
@@ -1393,6 +1626,7 @@
 <body>
     <button class="mobile-toggle" id="statsToggle" type="button" data-i18n="beeStats">Stats</button>
     <button class="mobile-toggle" id="logToggle" type="button" data-i18n="gameLog">Log</button>
+    <button class="settings-toggle" id="settingsToggle" type="button" data-i18n="settings">Settings</button>
     <div class="replay-controls" id="replayControls" aria-live="polite">
         <button id="replayPauseButton" type="button">II</button>
         <button class="replay-speed active" type="button" data-speed="1">1x</button>
@@ -1437,6 +1671,7 @@
             <div class="hud-cluster timer-hud" id="timerHud" aria-live="polite"></div>
             <div class="event-toast" id="eventToast" aria-live="polite"></div>
             <aside class="inspect-panel hidden" id="inspectPanel" aria-live="polite"></aside>
+            <div class="bottom-combat-hud" id="bottomCombatHud" aria-live="polite"></div>
             <canvas id="gameCanvas"></canvas>
         </section>
 
@@ -1471,6 +1706,16 @@
                             <select id="menuLanguageSelect">
                                 <option value="en">English</option>
                                 <option value="es-419">Español Latinoamérica</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Dungeon Theme</span>
+                            <select id="themeSelect">
+                                <option value="random">Random</option>
+                                <option value="forest">Forest</option>
+                                <option value="cave">Cave</option>
+                                <option value="waspHive">Wasp Hive</option>
+                                <option value="underground">Underground</option>
                             </select>
                         </label>
                     </div>
@@ -1518,6 +1763,24 @@
         </div>
     </section>
 
+    <section class="relic-screen" id="settingsScreen" aria-live="polite">
+        <div class="relic-panel settings-panel">
+            <h2 data-i18n="settings">Settings</h2>
+            <p data-i18n="settingsCopy">Pause the run and adjust audio.</p>
+            <div class="settings-grid">
+                <label>
+                    <span data-i18n="musicVolume">Music Volume</span>
+                    <input id="musicVolumeInput" type="range" min="0" max="100" value="60">
+                </label>
+                <label>
+                    <span data-i18n="effectsVolume">Effects Volume</span>
+                    <input id="effectsVolumeInput" type="range" min="0" max="100" value="100">
+                </label>
+            </div>
+            <button id="settingsCloseButton" type="button" data-i18n="resume">Resume</button>
+        </div>
+    </section>
+
     <section class="end-screen" id="endScreen" aria-live="polite">
         <div class="end-panel">
             <h2 data-i18n="runComplete">Run Complete</h2>
@@ -1540,8 +1803,11 @@
     <script src="src/systems/choice-ui.js"></script>
     <script src="src/systems/inspect-ui.js"></script>
     <script src="src/systems/tactical-flow.js"></script>
+    <script src="src/systems/tactical-combat.js"></script>
+    <script src="src/systems/camp-market-controller.js"></script>
     <script src="src/systems/items.js"></script>
     <script src="src/systems/enemies.js"></script>
+    <script src="src/systems/enemy-turns.js"></script>
     <script src="src/systems/dungeon-generation.js"></script>
     <script src="src/systems/replay.js"></script>
     <script src="src/systems/dance.js"></script>

@@ -38,6 +38,9 @@ assert(HW_ART?.TILE_ART_DEFS, 'HW_ART.TILE_ART_DEFS was not registered');
 assert(HW_ART?.HUD_ICON_ROWS, 'HW_ART.HUD_ICON_ROWS was not registered');
 assert(HW_PROGRESSION?.ROOM_PROFILES?.length >= 5, 'Expected at least 5 room profiles');
 assert(HW_PROGRESSION?.XP_REWARDS?.room > 0, 'Room XP reward must be positive');
+assert(HW_PROGRESSION?.DUNGEON_THEMES?.forest, 'Expected dungeon theme definitions');
+assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment slots');
+assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
@@ -55,6 +58,20 @@ HW_PROGRESSION.ROOM_PROFILES.forEach((profile, index) => {
     profile.itemWeights.forEach((entry) => {
         assert(entry.weight > 0, `Room ${profile.depth} has non-positive weight for ${entry.object}`);
     });
+});
+
+Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {
+    ['enemies', 'items', 'hazards'].forEach((listName) => {
+        assert(Array.isArray(theme[listName]), `Theme ${themeId} is missing ${listName}`);
+        theme[listName].forEach((objectId) => {
+            assert(HW_CONTENT.OBJECTS[objectId] || HW_CONTENT.ENEMY_DEFS[objectId], `Theme ${themeId} references missing object ${objectId}`);
+        });
+    });
+});
+
+const slotIds = new Set(HW_CONTENT.EQUIPMENT_SLOTS.map((slot) => slot.id));
+Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
+    assert(slotIds.has(equipment.slot), `Equipment ${equipment.id} uses unknown slot ${equipment.slot}`);
 });
 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
