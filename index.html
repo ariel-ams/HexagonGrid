@@ -188,29 +188,29 @@
 
         .event-toast {
             position: absolute;
-            top: 78px;
-            left: 50%;
+            top: 112px;
+            left: 46px;
             z-index: 8;
-            width: min(430px, calc(100% - 56px));
-            padding: 10px 15px 9px;
-            border: 18px solid transparent;
+            width: min(360px, calc(48% - 56px));
+            padding: 8px 13px 8px;
+            border: 15px solid transparent;
             border-image-source: var(--art-objective-panel);
             border-image-slice: 72 82 fill;
-            border-image-width: 18px;
+            border-image-width: 15px;
             border-image-repeat: stretch;
-            border-radius: 18px;
+            border-radius: 16px;
             background: transparent;
             color: var(--parchment-ink);
-            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.38);
+            box-shadow: 0 12px 22px rgba(0, 0, 0, 0.32);
             opacity: 0;
-            transform: translate(-50%, -18px) scale(0.98);
+            transform: translate(-18px, 0) scale(0.98);
             transition: opacity 160ms ease, transform 160ms ease;
             pointer-events: none;
         }
 
         .event-toast.visible {
             opacity: 1;
-            transform: translate(-50%, 0) scale(1);
+            transform: translate(0, 0) scale(1);
         }
 
         .event-toast.toast-swap {
@@ -228,27 +228,27 @@
         @keyframes toastSwap {
             0% {
                 opacity: 0;
-                transform: translate(-50%, -18px) scale(0.96);
+                transform: translate(-18px, 0) scale(0.96);
             }
 
             60% {
                 opacity: 1;
-                transform: translate(-50%, 4px) scale(1.015);
+                transform: translate(4px, 0) scale(1.015);
             }
 
             100% {
                 opacity: 1;
-                transform: translate(-50%, 0) scale(1);
+                transform: translate(0, 0) scale(1);
             }
         }
 
         .inspect-panel {
             position: absolute;
-            right: 30px;
-            bottom: 28px;
+            right: 34px;
+            bottom: 154px;
             z-index: 4;
             width: min(360px, calc(100% - 60px));
-            max-height: min(44vh, 390px);
+            max-height: min(38vh, 340px);
             display: grid;
             gap: 10px;
             padding: 18px 20px 16px;
@@ -513,14 +513,14 @@
 
         .bottom-combat-hud {
             position: absolute;
-            left: 50%;
+            left: max(28px, env(safe-area-inset-left));
+            right: max(28px, env(safe-area-inset-right));
             bottom: 18px;
             z-index: 5;
-            width: min(720px, calc(100% - 52px));
             display: grid;
-            grid-template-columns: 116px minmax(220px, 1fr) 116px;
+            grid-template-columns: minmax(116px, 160px) minmax(220px, 1fr) minmax(116px, 160px);
             align-items: end;
-            gap: 18px;
+            gap: clamp(12px, 3vw, 42px);
             pointer-events: none;
         }
 
@@ -601,6 +601,8 @@
 
         .xp-hud {
             align-self: center;
+            justify-self: center;
+            width: min(460px, 100%);
             min-height: 58px;
             display: grid;
             align-content: center;
@@ -614,6 +616,14 @@
             color: #fff3bf;
             text-shadow: 0 2px 3px rgba(0, 0, 0, 0.72);
             filter: drop-shadow(0 9px 12px rgba(0, 0, 0, 0.34));
+        }
+
+        .life-orb {
+            justify-self: start;
+        }
+
+        .move-orb {
+            justify-self: end;
         }
 
         .xp-label {
@@ -800,11 +810,13 @@
 
         .settings-toggle {
             position: fixed;
-            top: 12px;
-            right: 176px;
+            top: 90px;
+            right: 34px;
             z-index: 12;
-            min-width: 96px;
-            padding: 0 12px;
+            min-width: 56px;
+            width: 56px;
+            height: 56px;
+            padding: 0;
             border: 16px solid transparent;
             border-image-source: var(--art-hud-icon-backing);
             border-image-slice: 58 fill;
@@ -812,6 +824,21 @@
             background: transparent;
             color: #23130a;
             font-weight: 900;
+            font-size: 0;
+            line-height: 1;
+            overflow: hidden;
+        }
+
+        .settings-toggle::before {
+            content: "⚙";
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 100%;
+            color: #23130a;
+            font-size: 24px;
+            line-height: 1;
+            text-shadow: 0 1px 0 rgba(255, 244, 188, 0.72);
         }
 
         @keyframes hudBadgePulse {
@@ -1164,6 +1191,10 @@
             display: grid;
         }
 
+        .end-screen {
+            overflow: hidden;
+        }
+
         .relic-panel,
         .end-panel,
         .start-panel {
@@ -1184,6 +1215,12 @@
 
         .relic-panel {
             width: min(860px, 100%);
+        }
+
+        .end-panel {
+            max-height: calc(100dvh - 32px);
+            overflow: hidden;
+            align-content: start;
         }
 
         .relic-choices {
@@ -1227,6 +1264,32 @@
 
         .settings-panel {
             width: min(560px, 100%);
+            color: #2c170a;
+        }
+
+        .settings-panel h2 {
+            color: #57250d;
+            text-shadow: none;
+        }
+
+        .settings-panel p,
+        .settings-panel label,
+        .settings-panel label span {
+            color: #3f2a18;
+            text-shadow: none;
+            font-weight: 800;
+        }
+
+        .settings-panel input {
+            color: #241207;
+            border-color: rgba(92, 44, 22, 0.38);
+            background: rgba(255, 246, 215, 0.74);
+            accent-color: #9d531e;
+        }
+
+        .settings-panel button {
+            color: #fff4c8;
+            text-shadow: 0 2px 0 rgba(0, 0, 0, 0.78);
         }
 
         .camp-actions {
@@ -1358,17 +1421,40 @@
         .end-stats {
             display: grid;
             gap: 10px;
+            max-height: min(46vh, 420px);
+            overflow-y: auto;
+            padding-right: 6px;
         }
 
-        .end-stats div {
+        .end-stat-group {
+            display: grid;
+            gap: 6px;
+            padding: 10px 12px;
+            border: 1px solid rgba(92, 44, 22, 0.16);
+            border-radius: 12px;
+            background: rgba(255, 246, 218, 0.48);
+        }
+
+        .end-stat-group h3 {
+            margin: 0 0 2px;
+            color: #6d3318;
+            font-size: 12px;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0;
+        }
+
+        .end-stat-group > div {
             display: flex;
             justify-content: space-between;
             gap: 12px;
-            color: var(--muted);
+            color: #40230f;
+            font-size: 14px;
+            line-height: 1.25;
         }
 
         .end-stats strong {
-            color: var(--text);
+            color: #2a1308;
         }
 
         .menu-actions {
@@ -1503,9 +1589,10 @@
 
             .bottom-combat-hud {
                 bottom: 10px;
-                width: calc(100vw - 20px);
-                grid-template-columns: 82px minmax(120px, 1fr) 82px;
-                gap: 8px;
+                left: 10px;
+                right: 10px;
+                grid-template-columns: 82px minmax(104px, 1fr) 82px;
+                gap: 6px;
             }
 
             .combat-orb {
@@ -1589,10 +1676,41 @@
                 border-width: 2px;
             }
 
+            .settings-toggle {
+                top: 64px;
+                right: 10px;
+                width: 48px;
+                height: 48px;
+                min-width: 48px;
+                border-width: 12px;
+                border-image-width: 12px;
+            }
+
+            .settings-toggle::before {
+                font-size: 20px;
+            }
+
             .event-toast {
-                top: 12px;
-                width: calc(100vw - 28px);
+                top: 66px;
+                left: 12px;
+                width: min(380px, calc(100vw - 24px));
                 padding: 10px 14px 12px;
+                border-width: 18px;
+                border-image-width: 18px;
+            }
+
+            .event-toast.visible,
+            .event-toast {
+                transform-origin: left top;
+            }
+
+            .inspect-panel {
+                left: 12px;
+                right: 12px;
+                bottom: 106px;
+                width: auto;
+                max-height: min(34vh, 260px);
+                padding: 14px 16px 12px;
                 border-width: 18px;
                 border-image-width: 18px;
             }
@@ -1720,7 +1838,12 @@
                         </label>
                     </div>
                 </section>
-                <section class="editor-panel">
+                <section>
+                    <h2 data-i18n="testingSettings">Testing</h2>
+                    <p data-i18n="testingSettingsCopy">Reset saved bee progression to replay the first-run experience from level 1.</p>
+                    <button id="resetProgressionButton" type="button" data-i18n="resetProgression">Reset Bee Level</button>
+                </section>
+                <section class="editor-panel" hidden>
                     <h2 data-i18n="objectEditor">Object Editor</h2>
                     <p data-i18n="objectEditorCopy">Tune objects and enemies locally. Changes are saved on this device.</p>
                     <label>
@@ -1797,6 +1920,7 @@
     <script src="src/data/content.js"></script>
     <script src="src/data/art.js"></script>
     <script src="src/data/progression.js"></script>
+    <script src="src/systems/progression-system.js"></script>
     <script src="src/systems/renderer.js"></script>
     <script src="src/systems/audio.js"></script>
     <script src="src/systems/hud.js"></script>
@@ -1804,7 +1928,11 @@
     <script src="src/systems/inspect-ui.js"></script>
     <script src="src/systems/tactical-flow.js"></script>
     <script src="src/systems/tactical-combat.js"></script>
+    <script src="src/systems/pathfinding.js"></script>
+    <script src="src/systems/room-templates.js"></script>
+    <script src="src/systems/menu-controller.js"></script>
     <script src="src/systems/camp-market-controller.js"></script>
+    <script src="src/systems/cell-interactions.js"></script>
     <script src="src/systems/items.js"></script>
     <script src="src/systems/enemies.js"></script>
     <script src="src/systems/enemy-turns.js"></script>

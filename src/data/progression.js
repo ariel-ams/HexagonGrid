@@ -15,9 +15,10 @@ const ROOM_PROFILES = [
         allowedDiscovery: [],
         allowedUtility: [],
         itemWeights: [
-            { object: 'empty', weight: 55 },
+            { object: 'empty', weight: 51 },
             { object: 'pollen', weight: 22 },
             { object: 'water', weight: 18 },
+            { object: 'lampCell', weight: 4 },
             { object: 'upgrade', weight: 5 }
         ]
     },
@@ -117,6 +118,7 @@ const OBJECT_UNLOCK_LEVELS = {
     wall: 1,
     pollen: 1,
     water: 1,
+    lampCell: 1,
     upgrade: 1,
     enemy: 1,
     npc: 2,
@@ -197,6 +199,7 @@ const DUNGEON_THEMES = {
         items: [
             'pollen',
             'water',
+            'lampCell',
             'upgrade',
             'stingUpgrade',
             'npc',
@@ -233,6 +236,7 @@ const DUNGEON_THEMES = {
         items: [
             'pollen',
             'water',
+            'lampCell',
             'upgrade',
             'stingUpgrade',
             'honeyDrop',
@@ -268,6 +272,7 @@ const DUNGEON_THEMES = {
         items: [
             'pollen',
             'water',
+            'lampCell',
             'upgrade',
             'stingUpgrade',
             'npc',
@@ -301,6 +306,7 @@ const DUNGEON_THEMES = {
         items: [
             'pollen',
             'water',
+            'lampCell',
             'upgrade',
             'stingUpgrade',
             'honeyDrop',

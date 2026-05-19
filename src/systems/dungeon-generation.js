@@ -230,15 +230,12 @@ function createDungeonGenerator(context) {
 
     function carveCorridor(from, to, depth) {
         const path = findAxialPath(from, to);
-        const width = depth >= 4 && helpers.seededRandom() < 0.28 ? 2 : 1;
         const cells = new Map();
-        path.forEach((step) => {
+        path.forEach((step, index) => {
             addCell(cells, step.q, step.r, { kind: 'corridor' });
-            if (width > 1 || helpers.seededRandom() < 0.32) {
-                randomCorridorShoulder(step).forEach((shoulder) => {
-                    addCell(cells, shoulder.q, shoulder.r, { kind: 'corridor' });
-                });
-            }
+            getCorridorShoulders(path, index, depth).forEach((shoulder) => {
+                addCell(cells, shoulder.q, shoulder.r, { kind: 'corridor' });
+            });
         });
         return [...cells.values()];
     }
@@ -283,9 +280,30 @@ function createDungeonGenerator(context) {
         return path.reverse();
     }
 
-    function randomCorridorShoulder(cell) {
-        const direction = randomFrom(directions);
-        return direction ? [{ q: cell.q + direction.q, r: cell.r + direction.r }] : [];
+    function getCorridorShoulders(path, index, depth) {
+        const direction = getPathDirection(path, index) || randomFrom(directions);
+        if (!direction) return [];
+        const directionIndex = directions.findIndex((candidate) => candidate.q === direction.q && candidate.r === direction.r);
+        const shoulderDirections = [directions[(directionIndex + 2) % directions.length]];
+        if (depth >= 4 || helpers.seededRandom() < 0.18) {
+            shoulderDirections.push(directions[(directionIndex + 4) % directions.length]);
+        }
+        const step = path[index];
+        return shoulderDirections
+            .filter(Boolean)
+            .map((shoulder) => ({ q: step.q + shoulder.q, r: step.r + shoulder.r }));
+    }
+
+    function getPathDirection(path, index) {
+        const current = path[index];
+        const next = path[index + 1];
+        const previous = path[index - 1];
+        const neighbor = next || previous;
+        if (!current || !neighbor) return null;
+        const delta = next
+            ? { q: next.q - current.q, r: next.r - current.r }
+            : { q: current.q - previous.q, r: current.r - previous.r };
+        return directions.find((direction) => direction.q === delta.q && direction.r === delta.r) || null;
     }
 
     function smoothCave(cellMap, depth) {

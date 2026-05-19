@@ -45,6 +45,8 @@ Smoke checks
 
 - `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, and content data.
 - `node tools/smoke-browser.js` launches the browser, starts a run, verifies auto-walk stops on stacked action objects, checks inspect stat chips, and checks market card structure.
+- `node tools/smoke-ui-layout.js` verifies the combat HUD stays inside the viewport, life/movement orbs stay on opposite sides, the inspect panel does not overlap them, and end-run stats render in grouped sections on desktop and mobile viewports.
+- `npm test` runs all smoke checks in sequence.
 - The browser smoke script needs Playwright available through the local Node runtime, uses `CHROME_PATH` if Chrome is installed somewhere other than the default Windows path, and accepts `GAME_URL=http://localhost:8080/index.html` when testing through a local server.
 
 Room lesson templates

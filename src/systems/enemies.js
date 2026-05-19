@@ -51,18 +51,23 @@ function createEnemySystem(context) {
             }
 
             if (behavior.type === 'spawnEnemyAura') {
-                const spawned = spawnEnemyNear(enemyCell, behavior.object);
+                if (enemyCell.spawnLimit && (enemyCell.spawnCount || 0) >= enemyCell.spawnLimit) {
+                    return true;
+                }
+                const spawned = spawnEnemyNear(enemyCell, behavior);
                 if (spawned) {
+                    enemyCell.spawnCount = (enemyCell.spawnCount || 0) + 1;
                     helpers.addLog(enemy.name, `${enemy.name} spawned ${behavior.object}.`);
                     helpers.recordReplayEvent('enemySpecial', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'spawnEnemy' });
                     return true;
                 }
                 const fallback = behaviors.find((candidate) => candidate.type === 'damageAura' && candidate.fallbackOnly);
-                if (fallback && enemy.attack > 0) {
+                if (fallback && enemy.attack > 0 && !enemyCell.suppressFallbackDamage) {
                     helpers.applyDamage(enemy.attack, enemyCell.q, enemyCell.r, `${enemy.name} Attack`);
                     helpers.recordReplayEvent('enemyDamage', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, amount: enemy.attack });
                     return true;
                 }
+                if (enemyCell.suppressFallbackDamage) return true;
             }
 
             if (behavior.type === 'spawnTerrainAura') {
@@ -156,15 +161,23 @@ function createEnemySystem(context) {
         return true;
     }
 
-    function spawnEnemyNear(enemyCell, object) {
+    function spawnEnemyNear(enemyCell, behavior) {
+        const object = behavior.object;
         const target = directions
             .map((direction) => helpers.getCell(enemyCell.q + direction.q, enemyCell.r + direction.r))
             .filter((cell) => cell && cell.object === 'empty' && !(cell.q === game.player.q && cell.r === game.player.r))
-            .sort(() => helpers.seededRandom() - 0.5)[0];
+            .sort((a, b) => {
+                if (behavior.preferAwayFromPlayer) {
+                    return helpers.hexDistance(b.q, b.r, game.player.q, game.player.r)
+                        - helpers.hexDistance(a.q, a.r, game.player.q, game.player.r);
+                }
+                return helpers.seededRandom() - 0.5;
+            })[0];
         if (!target) return false;
         target.object = object;
         target.revealed = enemyCell.revealed;
-        target.nextAuraAt = 0;
+        target.nextAuraAt = behavior.spawnDelayMs ? performance.now() + behavior.spawnDelayMs : 0;
+        target.nextAttackAt = behavior.spawnDelayMs ? performance.now() + behavior.spawnDelayMs : 0;
         target.hits = 0;
         return true;
     }

@@ -1,0 +1,15 @@
+{
+  "name": "bee-grid",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tools/smoke-data.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}

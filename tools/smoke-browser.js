@@ -79,6 +79,26 @@ async function main() {
     assert(inspectStats > 0, 'Inspect panel should show stat chips.');
     assert(await page.locator('#inspectPanel .has-sheet-icon').count() > 0, 'Inspect stat chips should use HUD sprite sheet icons.');
 
+    const lampResult = await page.evaluate(() => {
+        const api = window.HW_TEST_API;
+        const player = api.getState().player;
+        const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
+        for (const direction of dirs) {
+            const lamp = window.getCell(player.q + direction.q, player.r + direction.r);
+            const target = window.getCell(player.q + direction.q * 2, player.r + direction.r * 2);
+            if (lamp && target) {
+                api.setCellObject(lamp.q, lamp.r, 'lampCell', true);
+                api.setCellObject(target.q, target.r, 'pollen', false);
+                api.inspectCell(target.q, target.r);
+                return api.getCellData(target.q, target.r);
+            }
+        }
+        throw new Error('No lamp lighting route available for smoke test.');
+    });
+    assert(lampResult.litByLamp === true, 'Lamp cells should softly light adjacent hidden cells.');
+    assert(lampResult.revealed === false, 'Lamp light should not fully reveal adjacent cells until explored.');
+    assert(await page.locator('#inspectPanel:not(.hidden)').count() === 1, 'Lamp-lit objects should be inspectable.');
+
     await page.evaluate(() => {
         const api = window.HW_TEST_API;
         const player = api.getState().player;

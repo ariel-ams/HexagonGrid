@@ -24,6 +24,7 @@ const optionsPanel = document.getElementById('optionsPanel');
 const languageSelect = document.getElementById('languageSelect');
 const menuLanguageSelect = document.getElementById('menuLanguageSelect');
 const themeSelect = document.getElementById('themeSelect');
+const resetProgressionButton = document.getElementById('resetProgressionButton');
 const objectEditorSelect = document.getElementById('objectEditorSelect');
 const objectEditorFields = document.getElementById('objectEditorFields');
 const saveObjectButton = document.getElementById('saveObjectButton');
@@ -97,10 +98,11 @@ const OBJECT_EDITOR_STORAGE_KEY = 'honeycombObjectOverrides';
 const PROGRESSION_STORAGE_KEY = 'honeycombProgression';
 const AUDIO_SETTINGS_STORAGE_KEY = 'honeycombAudioSettings';
 const THEME_STORAGE_KEY = 'honeycombDungeonTheme';
+const LAST_RANDOM_THEME_STORAGE_KEY = 'honeycombLastRandomTheme';
 let currentLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en';
 let selectedThemeId = localStorage.getItem(THEME_STORAGE_KEY) || 'random';
 let objectOverrides = loadObjectOverrides();
-let progression = loadProgression();
+let progression = null;
 
 const {
     I18N,
@@ -129,6 +131,12 @@ const {
     ROOM_PROFILES,
     XP_REWARDS
 } = window.HW_PROGRESSION;
+
+const progressionSystem = window.HW_PROGRESSION_SYSTEM.createProgressionSystem({
+    storageKey: PROGRESSION_STORAGE_KEY,
+    baseXpToLevel: BASE_XP_TO_LEVEL
+});
+progression = progressionSystem.load();
 
 const uiArtAssets = {};
 const tileArtAssets = {};
@@ -163,6 +171,10 @@ const tacticalFlow = window.HW_TACTICAL_FLOW.createTacticalFlow({
     startAttackRange: START_ATTACK_RANGE
 });
 
+const cellInteractions = window.HW_CELL_INTERACTIONS.createCellInteractionSystem({
+    objects: OBJECTS
+});
+
 let tacticalCombat = null;
 let campMarketController = null;
 let enemyTurns = null;
@@ -171,6 +183,9 @@ let enemySystem = null;
 let danceSystem = null;
 let dungeonGenerator = null;
 let replaySystem = null;
+let pathfindingSystem = null;
+let roomTemplateSystem = null;
+let menuController = null;
 let replaySpeed = 1;
 let toastHideTimer = null;
 
@@ -450,6 +465,36 @@ dungeonGenerator = window.HW_DUNGEON_GENERATION.createDungeonGenerator({
     }
 });
 
+pathfindingSystem = window.HW_PATHFINDING.createPathfindingSystem({
+    directions: HEX_DIRECTIONS,
+    getCell,
+    cellKey,
+    hexDistance,
+    getGame: () => game,
+    isEnemyObject,
+    getThreatAtCell,
+    getMoveBudget: () => getRouteMoveBudget(),
+    vineDamage: VINE_DAMAGE
+});
+
+roomTemplateSystem = window.HW_ROOM_TEMPLATES.createRoomTemplateSystem({
+    game,
+    directions: HEX_DIRECTIONS,
+    seededRandom,
+    randomFrom,
+    getCell,
+    hexDistance,
+    isEnemyObject,
+    getPlayerLevel,
+    getObjectUnlockLevel,
+    getRoomProfile,
+    chooseWeightedObject,
+    cellKey,
+    awardObjectiveXp: () => awardXp(XP_REWARDS.objective + game.roomDepth * 2, currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'),
+    addObjectivePopup: () => addWarningPopup(game.player.q, game.player.r, currentLanguage === 'es-419' ? 'Objetivo completo' : 'Objective complete'),
+    getLanguage: () => currentLanguage
+});
+
 replaySystem = window.HW_REPLAY.createReplaySystem({
     game,
     helpers: {
@@ -508,6 +553,33 @@ danceSystem = window.HW_DANCE.createDanceSystem({
         draw
     }
 });
+
+menuController = window.HW_MENU_CONTROLLER.createMenuController({
+    nodes: {
+        optionsPanel,
+        startScreen,
+        testScreen,
+        testControls,
+        relicScreen,
+        campScreen,
+        endScreen,
+        settingsScreen
+    },
+    game,
+    getLanguage: () => currentLanguage,
+    stopAllMusic,
+    startGameplayMusic,
+    applyAudioSettings,
+    audioSystem,
+    renderTestObjectList,
+    renderMessage,
+    onTestPauseLabel: (paused) => {
+        testPauseButton.textContent = paused
+            ? (currentLanguage === 'es-419' ? 'Continuar' : 'Resume')
+            : (currentLanguage === 'es-419' ? 'Pausar' : 'Pause');
+    }
+});
+registerMoveInteractionHandlers();
 
 function t(section, key) {
     return I18N[currentLanguage]?.[section]?.[key] ?? I18N.en[section]?.[key] ?? key;
@@ -796,33 +868,14 @@ function chooseThemeWeightedObject(options, fallback = 'empty') {
     return chooseWeightedObject(themeOptions, fallback);
 }
 
-function loadProgression() {
-    try {
-        return {
-            lifetimePollen: 0,
-            lifetimeHoney: 0,
-            xp: 0,
-            level: 1,
-            bestRoom: 1,
-            encyclopedia: [],
-            tutorialsSeen: [],
-            ...JSON.parse(localStorage.getItem(PROGRESSION_STORAGE_KEY) || '{}')
-        };
-    } catch {
-        return {
-            lifetimePollen: 0,
-            lifetimeHoney: 0,
-            xp: 0,
-            level: 1,
-            bestRoom: 1,
-            encyclopedia: [],
-            tutorialsSeen: []
-        };
-    }
+function saveProgression() {
+    progressionSystem.save(progression);
 }
 
-function saveProgression() {
-    localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(progression));
+function resetBeeProgression() {
+    progression = progressionSystem.reset();
+    renderStats();
+    showTopToast(t('ui', 'testingSettings'), t('ui', 'progressionReset'), 'warning');
 }
 
 function startGameplayMusic() {
@@ -865,12 +918,21 @@ function chooseEnemyObject() {
 }
 
 function chooseDungeonTheme() {
+    if (getPlayerLevel() <= 1 && DUNGEON_THEMES?.forest) {
+        return DUNGEON_THEMES.forest;
+    }
     if (selectedThemeId !== 'random' && DUNGEON_THEMES?.[selectedThemeId]) {
         return DUNGEON_THEMES[selectedThemeId];
     }
     const themes = Object.values(DUNGEON_THEMES || {});
-    if (!themes.length) return null;
-    return themes[Math.floor(seededRandom() * themes.length)] || themes[0];
+    const fallback = DUNGEON_THEMES?.forest || themes[0] || null;
+    if (!themes.length) return fallback;
+    const lastThemeId = localStorage.getItem(LAST_RANDOM_THEME_STORAGE_KEY);
+    const candidates = themes.filter((theme) => theme.id !== lastThemeId);
+    const pool = candidates.length ? candidates : themes;
+    const chosen = pool[Math.floor(seededRandom() * pool.length)] || fallback;
+    localStorage.setItem(LAST_RANDOM_THEME_STORAGE_KEY, chosen.id);
+    return chosen || fallback;
 }
 
 function getCurrentTheme() {
@@ -901,11 +963,11 @@ function getObjectUnlockLevel(object) {
 }
 
 function getPlayerLevel() {
-    return Math.max(1, Number(progression.level) || 1);
+    return progressionSystem.getPlayerLevel(progression);
 }
 
 function getXpForNextLevel(level = getPlayerLevel()) {
-    return Math.round(BASE_XP_TO_LEVEL + Math.pow(level, 1.7) * 18);
+    return progressionSystem.getXpForNextLevel(level);
 }
 
 function getRoomProfile() {
@@ -962,21 +1024,15 @@ function awardXp(amount, source, options = {}) {
     const value = Math.max(0, Math.round(amount));
     if (!value) return;
 
-    progression.xp = Math.max(0, Number(progression.xp) || 0) + value;
     game.runStats.xp += value;
-    let leveled = false;
     const unlocked = [];
 
-    while (progression.xp >= getXpForNextLevel()) {
-        progression.xp -= getXpForNextLevel();
-        const previousLevel = getPlayerLevel();
-        progression.level = getPlayerLevel() + 1;
-        unlocked.push(...getUnlocksForLevel(previousLevel, progression.level));
-        leveled = true;
-    }
-
-    saveProgression();
-    if (leveled) {
+    const result = progressionSystem.awardXp(progression, value, {
+        onLevelUp: (newLevel) => {
+            unlocked.push(...getUnlocksForLevel(newLevel - 1, newLevel));
+        }
+    });
+    if (result.leveled) {
         const message = currentLanguage === 'es-419'
             ? `La abeja subiÃ³ al nivel ${progression.level}. Nuevos peligros pueden aparecer.`
             : `Bee reached level ${progression.level}. New threats can start appearing.`;
@@ -1233,7 +1289,7 @@ function startObjectTestScenario(objectId) {
 }
 
 function setDungeonThemePreference(themeId) {
-    selectedThemeId = DUNGEON_THEMES?.[themeId] ? themeId : 'random';
+    selectedThemeId = themeId === 'random' || DUNGEON_THEMES?.[themeId] ? themeId : 'forest';
     localStorage.setItem(THEME_STORAGE_KEY, selectedThemeId);
     if (themeSelect) themeSelect.value = selectedThemeId;
     if (game.mode === 'menu' || game.ended) {
@@ -1317,61 +1373,23 @@ function seedTestSupportCells(objectId) {
 }
 
 function openTestMenu() {
-    stopAllMusic();
-    renderTestObjectList();
-    optionsPanel.classList.remove('visible');
-    startScreen.classList.add('hidden');
-    testScreen.querySelector('h2').textContent = currentLanguage === 'es-419' ? 'Escenario de prueba' : 'Test Scenario';
-    testScreen.querySelector('p').textContent = currentLanguage === 'es-419'
-        ? 'Elige un objeto para crear una sala enfocada en esa interaccion.'
-        : 'Choose an object to build a focused interaction room.';
-    testScreen.classList.add('visible');
+    menuController.openTestMenu();
 }
 
 function closeTestMenu() {
-    testScreen.classList.remove('visible');
-    startScreen.classList.remove('hidden');
+    menuController.closeTestMenu();
 }
 
 function returnToTestList() {
-    stopAllMusic();
-    game.ended = true;
-    game.mode = 'menu';
-    game.isTestScenario = false;
-    game.testPaused = false;
-    game.activeTestObject = null;
-    testControls.classList.remove('visible');
-    renderTestObjectList();
-    startScreen.classList.add('hidden');
-    testScreen.classList.add('visible');
+    menuController.returnToTestList();
 }
 
 function toggleTestPause() {
-    if (!game.isTestScenario) return;
-    game.testPaused = !game.testPaused;
-    testPauseButton.textContent = game.testPaused
-        ? (currentLanguage === 'es-419' ? 'Continuar' : 'Resume')
-        : (currentLanguage === 'es-419' ? 'Pausar' : 'Pause');
-    if (game.testPaused) {
-        audioSystem.pauseAll();
-    } else {
-        startGameplayMusic();
-    }
+    menuController.toggleTestPause();
 }
 
 function showMainMenu() {
-    stopAllMusic();
-    game.ended = true;
-    game.mode = 'menu';
-    game.dance = null;
-    game.playerMotion = null;
-    relicScreen.classList.remove('visible');
-    campScreen.classList.remove('visible');
-    testScreen.classList.remove('visible');
-    testControls.classList.remove('visible');
-    endScreen.classList.remove('visible');
-    startScreen.classList.remove('hidden');
-    renderMessage();
+    menuController.showMainMenu();
 }
 
 function createFreshPlayer() {
@@ -1447,18 +1465,21 @@ function generateRoom(reason) {
             object: randomObjectFor(q, r, game.entryCell, game.exitCell),
             visited: false,
             revealed: false,
+            litByLamp: false,
             nextAttackAt: 0,
             nextAuraAt: 0,
             hits: 0
         });
     });
 
+    applyFirstRunOnboardingTemplate();
     placeFirstRoomTeachingPickups();
     placeRoomLessonGate(game.roomTemplate);
     placeEnemySynergy(game.roomTemplate);
     revealExitCell();
     placeTeachingEnemy();
     placeBats();
+    updateLampLightFields();
     const startCell = getCell(game.player.q, game.player.r);
     if (startCell) startCell.visited = true;
     runRelicHook('onRoomStart');
@@ -1510,18 +1531,17 @@ function generateBossRoom() {
     const spawnerPositions = chooseBossSpawnerPositions(bossPosition);
     game.currentRoomCells.forEach(({ q, r, roomIndex, kind }) => {
         const isSpawner = spawnerPositions.some((position) => position.q === q && position.r === r);
+        const bossDistance = hexDistance(q, r, bossPosition.q, bossPosition.r);
         const object = q === game.entryCell.q && r === game.entryCell.r
             ? 'entry'
             : q === bossPosition.q && r === bossPosition.r
             ? 'queenSignaler'
             : isSpawner
             ? 'waspHive'
-            : hexDistance(q, r, bossPosition.q, bossPosition.r) === 1 && seededRandom() < 0.12
-            ? chooseWeightedObject([
-                { object: 'enemy', weight: 2 },
-                { object: 'miteSwarm', weight: 1 },
-                { object: 'empty', weight: 5 }
-            ], 'empty')
+            : bossDistance <= 2
+            ? 'empty'
+            : bossDistance <= 3
+            ? 'empty'
             : chooseWeightedObject([
                 { object: 'empty', weight: 55 },
                 { object: 'pollen', weight: 9 },
@@ -1538,16 +1558,24 @@ function generateBossRoom() {
             object,
             visited: false,
             revealed: true,
+            litByLamp: false,
             nextAttackAt: 0,
-            nextAuraAt: object === 'queenSignaler' || object === 'waspHive' ? performance.now() + 1600 : 0,
+            nextAuraAt: object === 'queenSignaler'
+                ? performance.now() + 2200
+                : object === 'waspHive'
+                ? performance.now() + 3600
+                : 0,
             hits: 0,
-            isBoss: object === 'queenSignaler'
+            isBoss: object === 'queenSignaler',
+            spawnLimit: object === 'waspHive' ? 1 : 0,
+            suppressFallbackDamage: object === 'waspHive'
         });
     });
     const boss = game.cells.find((cell) => cell.isBoss);
     if (boss) {
-        boss.bossHp = 4;
+        boss.bossHp = 1;
     }
+    clearBossApproachRoute(bossPosition, spawnerPositions[0]);
     game.message = t('messages', 'bossStart');
     addLog(t('logs', 'finalBoss'), game.message);
     startBossMusic();
@@ -1556,20 +1584,58 @@ function generateBossRoom() {
 }
 
 function chooseBossSpawnerPositions(bossPosition) {
-    const adjacent = HEX_DIRECTIONS
-        .map((direction) => getCellCoordinate(bossPosition.q + direction.q, bossPosition.r + direction.r))
+    const ringTwo = getCellsAtDistance(bossPosition, 2)
         .filter((cell) => game.currentRoomCells.some((roomCell) => roomCell.q === cell.q && roomCell.r === cell.r))
-        .filter((cell) => hexDistance(cell.q, cell.r, game.entryCell.q, game.entryCell.r) > 2)
+        .filter((cell) => hexDistance(cell.q, cell.r, game.entryCell.q, game.entryCell.r) > 3)
+        .sort((a, b) => (
+            hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r)
+            - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r)
+        ))
         .slice(0, BOSS_HIVE_COUNT);
-    if (adjacent.length >= BOSS_HIVE_COUNT) return adjacent;
+    if (ringTwo.length >= BOSS_HIVE_COUNT) return ringTwo;
     const fallback = [...game.currentRoomCells]
         .filter((cell) => !(cell.q === bossPosition.q && cell.r === bossPosition.r))
         .filter((cell) => !(cell.q === game.entryCell.q && cell.r === game.entryCell.r))
+        .filter((cell) => hexDistance(cell.q, cell.r, bossPosition.q, bossPosition.r) > 1)
         .sort((a, b) => (
             hexDistance(a.q, a.r, bossPosition.q, bossPosition.r)
             - hexDistance(b.q, b.r, bossPosition.q, bossPosition.r)
         ));
-    return [...adjacent, ...fallback].slice(0, BOSS_HIVE_COUNT);
+    return [...ringTwo, ...fallback].slice(0, BOSS_HIVE_COUNT);
+}
+
+function getCellsAtDistance(center, distance) {
+    const cells = [];
+    for (let q = center.q - distance; q <= center.q + distance; q += 1) {
+        for (let r = center.r - distance; r <= center.r + distance; r += 1) {
+            if (hexDistance(center.q, center.r, q, r) === distance) {
+                cells.push({ q, r });
+            }
+        }
+    }
+    return cells;
+}
+
+function clearBossApproachRoute(bossPosition, hivePosition) {
+    const anchorPoints = [game.entryCell, hivePosition, bossPosition].filter(Boolean);
+    for (let index = 0; index < anchorPoints.length - 1; index += 1) {
+        const path = findRoomPathBetween(anchorPoints[index], anchorPoints[index + 1]);
+        path.forEach((step) => {
+            const cell = getCell(step.q, step.r);
+            if (!cell || cell.isBoss || cell.object === 'entry' || cell.object === 'queenSignaler' || cell.object === 'waspHive') return;
+            cell.object = 'empty';
+        });
+    }
+    getCellsAtDistance(bossPosition, 1).forEach((position) => {
+        const cell = getCell(position.q, position.r);
+        if (cell && cell.object !== 'queenSignaler' && cell.object !== 'waspHive') {
+            cell.object = 'empty';
+        }
+    });
+}
+
+function findRoomPathBetween(start, target) {
+    return roomTemplateSystem.findRoomPathBetween(start, target);
 }
 
 function getCellCoordinate(q, r) {
@@ -1577,9 +1643,126 @@ function getCellCoordinate(q, r) {
 }
 
 function isCollectOnMoveObject(object) {
-    return Boolean(OBJECTS[object]?.effects?.length)
-        && !isEnemyObject(object)
-        && !['waxDoor', 'npc', 'entry', 'exit', 'finalExit', 'vine', 'burningCell', 'wall', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(object);
+    return cellInteractions.isCollectOnMoveObject(object, isEnemyObject);
+}
+
+function isFreeWalkoverObject(object) {
+    return cellInteractions.isFreeWalkoverObject(object);
+}
+
+function registerMoveInteractionHandlers() {
+    cellInteractions.registerMoveHandler('waxDoor', {
+        timing: 'beforeMove',
+        run: ({ cell }) => {
+            game.autoPath = [];
+            openWaxDoor(cell);
+        }
+    });
+    cellInteractions.registerMoveHandler('exit', {
+        timing: 'afterMove',
+        consumesAction: true,
+        run: () => {
+            game.autoPath = [];
+            consumeAction('exit');
+            captureRoomEndMetrics();
+            game.objectiveProgress.exitReached = true;
+            updateObjectiveProgress();
+            awardXp(XP_REWARDS.room + game.roomDepth * 6, currentLanguage === 'es-419' ? 'Sala completada' : 'Room complete');
+            if (game.claimedRelicRooms.includes(game.roomDepth)) {
+                game.roomDepth += 1;
+                generateRoom('exit');
+            } else {
+                game.claimedRelicRooms.push(game.roomDepth);
+                openRelicChoice();
+            }
+        }
+    });
+    cellInteractions.registerMoveHandler('finalExit', {
+        timing: 'afterMove',
+        consumesAction: true,
+        run: () => {
+            game.autoPath = [];
+            consumeAction('finalExit');
+            generateBossRoom();
+        }
+    });
+    cellInteractions.registerMoveHandler('entry', {
+        timing: 'afterMove',
+        run: ({ cell, targetObject }) => {
+            game.message = currentLanguage === 'es-419'
+                ? 'La entrada se cierra detras de la abeja.'
+                : 'The entry closes behind the bee.';
+            addLog(OBJECTS[targetObject].name, game.message);
+            recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
+            if (!game.autoPath.length) endPlayerTurn('move');
+            draw();
+        }
+    });
+    cellInteractions.registerMoveHandler('vine', {
+        timing: 'afterMove',
+        consumesAction: true,
+        run: ({ cell, targetObject }) => {
+            consumeAction('hazard');
+            applyDamage(VINE_DAMAGE, cell.q, cell.r, 'Vines');
+            addLog('Vines', 'Thorny vines scraped the bee.');
+            if (game.ended) return;
+            revealAroundPlayer();
+            recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
+            endPlayerTurn('hazard');
+            draw();
+        }
+    });
+    cellInteractions.registerMoveHandler('burningCell', {
+        timing: 'afterMove',
+        consumesAction: true,
+        run: ({ cell, targetObject }) => {
+            consumeAction('hazard');
+            if (game.player.water > 0) {
+                game.player.water -= 1;
+                addStatPopups(cell.q, cell.r, [{ stat: 'water', amount: -1 }]);
+                addLog('Burning Cell', 'Spent 1 water to put out the fire.');
+                cell.object = 'empty';
+            } else {
+                applyDamage(1, cell.q, cell.r, 'Burning Cell');
+                addLog('Burning Cell', 'The crawling fire burned the bee.');
+                if (game.ended) return;
+            }
+            revealAroundPlayer();
+            recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
+            endPlayerTurn('hazard');
+            draw();
+        }
+    });
+    cellInteractions.registerMoveHandler('lampCell', {
+        timing: 'afterMove',
+        run: ({ cell, targetObject }) => cellInteractions.handleWalkoverObject(targetObject, {
+            cell,
+            game,
+            currentLanguage,
+            revealAround,
+            updateLampLightFields,
+            addLog,
+            recordReplayEvent,
+            updateObjectiveProgress,
+            endPlayerTurn,
+            draw
+        })
+    });
+    cellInteractions.registerMoveHandler('npc', {
+        timing: 'afterMove',
+        consumesAction: true,
+        run: ({ cell, targetObject }) => {
+            game.autoPath = [];
+            if (!consumeAction('trade')) {
+                showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu accion este turno.' : 'You already used your action this turn.');
+                return;
+            }
+            openTraderMarket(cell);
+            revealAroundPlayer();
+            recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
+            draw();
+        }
+    });
 }
 
 function createObjectiveProgress() {
@@ -1639,32 +1822,15 @@ function applyEquipmentLoadout(player) {
 }
 
 function chooseRoomObjective() {
-    const options = ROOM_OBJECTIVES.filter((objective) => game.roomDepth >= objective.minDepth);
-    if (game.roomDepth === 1) {
-        return ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit');
-    }
-    return randomFrom(options);
+    return roomTemplateSystem.chooseRoomObjective();
 }
 
 function chooseRoomTemplate() {
-    if (game.roomDepth === 1) return 'introSupplies';
-    if (game.roomDepth === 2) return 'waxDoorPollen';
-    if (game.roomDepth === 3) return seededRandom() < 0.55 ? 'enemyGate' : 'fireWater';
-    const candidates = [
-        'mixedGate',
-        'fireWater',
-        'revealRoute',
-        'hiveQueen',
-        'fireLeech',
-        'sentinelThief',
-        'fogBurrow'
-    ].filter((template) => isRoomTemplateUnlocked(template));
-    return randomFrom(candidates.length ? candidates : ['mixedGate']);
+    return roomTemplateSystem.chooseRoomTemplate();
 }
 
 function isRoomTemplateUnlocked(template) {
-    const level = getPlayerLevel();
-    const minLevel = {
+    return getPlayerLevel() >= ({
         mixedGate: 3,
         fireWater: 3,
         revealRoute: 3,
@@ -1672,26 +1838,15 @@ function isRoomTemplateUnlocked(template) {
         fireLeech: 4,
         sentinelThief: 5,
         fogBurrow: 5
-    }[template] || 1;
-    return level >= minLevel;
+    }[template] || 1);
 }
 
 function getRoomObjectiveText() {
-    if (!game.roomObjective) return '';
-    const language = currentLanguage === 'es-419' ? 'es-419' : 'en';
-    const status = game.roomObjective.isComplete() ? 'OK ' : '';
-    return `${status}${game.roomObjective.label[language]} - ${game.roomObjective.hint[language]}`;
+    return roomTemplateSystem.getRoomObjectiveText();
 }
 
 function updateObjectiveProgress() {
-    if (!game.roomObjective || game.objectiveProgress.rewarded) return;
-    const exit = game.exitCell ? getCell(game.exitCell.q, game.exitCell.r) : null;
-    game.objectiveProgress.exitSeen = Boolean(exit?.revealed);
-    if (!game.roomObjective.isComplete()) return;
-
-    game.objectiveProgress.rewarded = true;
-    awardXp(XP_REWARDS.objective + game.roomDepth * 2, currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective');
-    addWarningPopup(game.player.q, game.player.r, currentLanguage === 'es-419' ? 'Objetivo completo' : 'Objective complete');
+    roomTemplateSystem.updateObjectiveProgress();
 }
 
 function generateCaveBlob(targetCount) {
@@ -1742,49 +1897,16 @@ function placeTeachingEnemy() {
     game.roomSpawnCounts.enemies += 1;
 }
 
-function placeFirstRoomTeachingPickups() {
-    if (game.roomDepth !== 1) return;
-    const lessons = ['pollen', 'water', 'upgrade'];
-    const candidates = game.cells
-        .filter((cell) => (
-            cell.object === 'empty'
-            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 2
-            && !(cell.q === game.player.q && cell.r === game.player.r)
-            && !(cell.q === game.exitCell.q && cell.r === game.exitCell.r)
-        ))
-        .sort((a, b) => (
-            hexDistance(a.q, a.r, game.player.q, game.player.r)
-            - hexDistance(b.q, b.r, game.player.q, game.player.r)
-        ));
+function applyFirstRunOnboardingTemplate() {
+    roomTemplateSystem.applyFirstRunOnboardingTemplate();
+}
 
-    lessons.forEach((object, index) => {
-        const cell = candidates[index];
-        if (cell) cell.object = object;
-    });
+function placeFirstRoomTeachingPickups() {
+    roomTemplateSystem.placeFirstRoomTeachingPickups();
 }
 
 function placeRoomLessonGate(template = 'mixedGate') {
-    if (!game.exitCell || game.roomDepth <= 1) return;
-    if (template === 'waxDoorPollen') {
-        placeWaxDoorExitGate();
-        placeResourceNearPlayer('pollen');
-        return;
-    }
-    if (template === 'enemyGate') {
-        placeEnemyExitGate('enemy');
-        placeResourceNearPlayer('pollen');
-        return;
-    }
-    if (template === 'fireWater') {
-        placeFireWaterExitGate();
-        placeResourceNearPlayer('water');
-        return;
-    }
-    if (template === 'revealRoute') {
-        placeRevealRouteLesson();
-        return;
-    }
-    placeMixedExitGate();
+    roomTemplateSystem.placeRoomLessonGate(template);
 }
 
 function revealExitCell() {
@@ -1876,34 +1998,7 @@ function placeRevealRouteLesson() {
 }
 
 function placeEnemySynergy(template) {
-    const pairs = {
-        hiveQueen: ['waspHive', 'queenSignaler'],
-        fireLeech: ['crawlingFire', 'waterLeech'],
-        sentinelThief: ['waxSentinel', 'pollenThiefMoth'],
-        fogBurrow: ['fogShepherd', 'burrowBeetle']
-    };
-    const pair = pairs[template];
-    if (!pair) return;
-    if (pair.some((object) => getObjectUnlockLevel(object) > getPlayerLevel())) return;
-    const anchor = game.cells
-        .filter((cell) => cell.object === 'empty'
-            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 4
-            && hexDistance(cell.q, cell.r, game.exitCell.q, game.exitCell.r) > 1)
-        .sort((a, b) => hexDistance(a.q, a.r, game.exitCell.q, game.exitCell.r) - hexDistance(b.q, b.r, game.exitCell.q, game.exitCell.r))[0];
-    if (!anchor) return;
-    anchor.object = pair[0];
-    anchor.nextAuraAt = performance.now() + 900;
-    anchor.hits = 0;
-    game.roomSpawnCounts.enemies += 1;
-
-    const partner = HEX_DIRECTIONS
-        .map((direction) => getCell(anchor.q + direction.q, anchor.r + direction.r))
-        .filter((cell) => cell && cell.object === 'empty' && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 3)[0];
-    if (!partner) return;
-    partner.object = pair[1];
-    partner.nextAuraAt = performance.now() + 900;
-    partner.hits = 0;
-    game.roomSpawnCounts.enemies += 1;
+    roomTemplateSystem.placeEnemySynergy(template);
 }
 
 function isGateCandidateCell(cell) {
@@ -1969,12 +2064,29 @@ function revealAround(q, r, radius) {
         if (hexDistance(q, r, cell.q, cell.r) <= radius) {
             const wasRevealed = cell.revealed;
             cell.revealed = true;
+            cell.litByLamp = false;
             if (!wasRevealed) {
                 maybeShowDiscoveryCallout(cell.object);
             }
         }
     });
     updateObjectiveProgress();
+}
+
+function updateLampLightFields() {
+    game.cells.forEach((cell) => {
+        cell.litByLamp = false;
+    });
+
+    game.cells
+        .filter((cell) => cell.object === 'lampCell')
+        .forEach((lamp) => {
+            game.cells.forEach((cell) => {
+                if (cell !== lamp && !cell.revealed && hexDistance(lamp.q, lamp.r, cell.q, cell.r) <= 1) {
+                    cell.litByLamp = true;
+                }
+            });
+        });
 }
 
 function getRelic(id) {
@@ -2645,30 +2757,36 @@ function drawCell(cell) {
     const isPlayer = cell.q === game.player.q && cell.r === game.player.r;
     const { x, y, size } = hexToPixel(cell.q, cell.r);
     const hidden = game.mode !== 'dance' && !cell.revealed;
+    const softLit = hidden && cell.litByLamp;
     const visibleObject = getVisibleCellObject(cell, hidden);
     const object = OBJECTS[visibleObject] || OBJECTS.empty;
     const disguised = visibleObject !== cell.object;
 
-    drawCellBackground(cell, x, y, size, hidden);
+    drawCellBackground(cell, x, y, size, hidden, softLit);
     if (!hidden) {
         drawThreatPreview(cell, x, y, size);
     }
 
     drawHexPath(x, y, size - 2);
-    ctx.lineWidth = visibleObject !== 'empty' && !hidden ? 3 : 1.5;
-    ctx.strokeStyle = visibleObject !== 'empty' && !hidden ? object.color : 'rgba(233, 199, 110, 0.38)';
+    ctx.lineWidth = visibleObject !== 'empty' && (!hidden || softLit) ? 3 : 1.5;
+    ctx.strokeStyle = visibleObject !== 'empty' && (!hidden || softLit)
+        ? (softLit ? 'rgba(255, 218, 113, 0.68)' : object.color)
+        : 'rgba(233, 199, 110, 0.38)';
     ctx.stroke();
 
-    if (!hidden && visibleObject !== 'empty') {
-        if (visibleObject === 'exit' || visibleObject === 'finalExit') {
+    if ((!hidden || softLit) && visibleObject !== 'empty') {
+        ctx.save();
+        if (softLit) ctx.globalAlpha = 0.46;
+        if (!softLit && (visibleObject === 'exit' || visibleObject === 'finalExit')) {
             drawTileArt('exit', x, y, size, visibleObject === 'finalExit' ? 1 : 0.88);
-        } else if (isEnemyObject(visibleObject)) {
+        } else if (!softLit && isEnemyObject(visibleObject)) {
             drawTileArt('enemyBorder', x, y, size, 0.9);
-        } else if (!['entry', 'vine', 'stickyTrap'].includes(visibleObject)) {
+        } else if (!softLit && !['entry', 'vine', 'stickyTrap'].includes(visibleObject)) {
             drawTileArt('pickableBorder', x, y, size, 0.9);
         }
         drawSprite(visibleObject, x, y, size, cell);
-        if (!disguised && isEnemyObject(cell.object)) {
+        ctx.restore();
+        if (!softLit && !disguised && isEnemyObject(cell.object)) {
             drawEnemyHealthPips(cell, x, y, size);
             drawEnemyTypeBadge(cell.object, x, y, size);
         }
@@ -2683,7 +2801,7 @@ function drawCell(cell) {
     }
 
     if (hidden) {
-        drawMist(x, y, size);
+        drawMist(x, y, size, softLit);
     }
 }
 
@@ -2932,15 +3050,19 @@ function resolveBossAntiKite(reason) {
     addWarningPopup(game.player.q, game.player.r, currentLanguage === 'es-419' ? 'La colmena acelera' : 'Hives accelerate');
 }
 
-function drawCellBackground(cell, x, y, size, hidden) {
+function drawCellBackground(cell, x, y, size, hidden, softLit = false) {
     drawHexPath(x, y, size - 2);
     ctx.save();
     ctx.clip();
     const tileKey = getCellTileKey(cell, hidden);
-    const hasTileArt = game.mode !== 'dance' && drawTileArt(tileKey, x, y, size, hidden ? 0.92 : 0.96);
+    const hasTileArt = game.mode !== 'dance' && drawTileArt(tileKey, x, y, size, softLit ? 0.68 : hidden ? 0.92 : 0.96);
     if (!hasTileArt) {
         const baseGradient = ctx.createLinearGradient(x - size, y - size, x + size, y + size);
-        if (hidden) {
+        if (softLit) {
+            baseGradient.addColorStop(0, '#2c3424');
+            baseGradient.addColorStop(0.55, '#344432');
+            baseGradient.addColorStop(1, '#1b2b23');
+        } else if (hidden) {
             baseGradient.addColorStop(0, '#101a15');
             baseGradient.addColorStop(1, '#1f2c24');
         } else if (cell.visited) {
@@ -2951,19 +3073,19 @@ function drawCellBackground(cell, x, y, size, hidden) {
             baseGradient.addColorStop(1, '#26372f');
         }
         ctx.fillStyle = baseGradient;
-        ctx.globalAlpha = hidden ? 0.96 : game.mode === 'dance'
+        ctx.globalAlpha = softLit ? 0.92 : hidden ? 0.96 : game.mode === 'dance'
             ? (cell.visited ? 0.52 : 0.34)
             : 0.9;
         ctx.fill();
     }
 
     drawHexPath(x, y, size - 6);
-    ctx.globalAlpha = hasTileArt ? 0.04 : hidden ? 0.06 : 0.12;
-    ctx.strokeStyle = getCurrentTheme()?.borderTint || '#e8c76b';
-    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = softLit ? 0.4 : hasTileArt ? 0.04 : hidden ? 0.06 : 0.12;
+    ctx.strokeStyle = softLit ? '#ffd86f' : getCurrentTheme()?.borderTint || '#e8c76b';
+    ctx.lineWidth = softLit ? 2.2 : 1.2;
     ctx.stroke();
 
-    ctx.globalAlpha = hasTileArt ? 0.06 : hidden ? 0.08 : 0.16;
+    ctx.globalAlpha = softLit ? 0.22 : hasTileArt ? 0.06 : hidden ? 0.08 : 0.16;
     ctx.fillStyle = '#f1cf79';
     for (let i = 0; i < 7; i++) {
         const offsetX = (seededNoise(cell.q * 37 + cell.r * 101, i) - 0.5) * size * 1.1;
@@ -2973,9 +3095,9 @@ function drawCellBackground(cell, x, y, size, hidden) {
         ctx.fill();
     }
 
-    if (!hidden && cell.object !== 'empty') {
+    if ((!hidden || softLit) && cell.object !== 'empty') {
         ctx.fillStyle = objectTint(cell.object);
-        ctx.globalAlpha = hasTileArt ? 0.08 : 0.22;
+        ctx.globalAlpha = softLit ? 0.14 : hasTileArt ? 0.08 : 0.22;
         ctx.fill();
     }
 
@@ -3105,14 +3227,20 @@ function drawEnemyTypeBadge(object, x, y, size) {
     ctx.restore();
 }
 
-function drawMist(x, y, size) {
+function drawMist(x, y, size, softLit = false) {
     ctx.save();
     drawHexPath(x, y, size - 3);
-    ctx.fillStyle = 'rgba(185, 214, 209, 0.12)';
+    ctx.fillStyle = softLit ? 'rgba(255, 220, 122, 0.08)' : 'rgba(185, 214, 209, 0.12)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(210, 232, 227, 0.12)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = softLit ? 'rgba(255, 222, 130, 0.42)' : 'rgba(210, 232, 227, 0.12)';
+    ctx.lineWidth = softLit ? 2 : 1;
     ctx.stroke();
+    if (softLit) {
+        drawHexPath(x, y, size - 12);
+        ctx.strokeStyle = 'rgba(255, 238, 174, 0.22)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
     ctx.restore();
 }
 
@@ -3911,7 +4039,7 @@ function renderInspectPanel() {
         inspectUi.render(inspectPanelNode, { hidden: true });
         return;
     }
-    const object = liveCell.revealed ? liveCell.object : 'empty';
+    const object = liveCell.revealed || liveCell.litByLamp ? liveCell.object : 'empty';
     if (object === 'empty') {
         inspectUi.render(inspectPanelNode, { hidden: true });
         return;
@@ -3933,9 +4061,13 @@ function renderInspectPanel() {
 
 function getInspectStats(cell, object) {
     const stats = [];
-    if (!cell.revealed && game.mode !== 'dance') {
+    if (!cell.revealed && !cell.litByLamp && game.mode !== 'dance') {
         stats.push({ icon: '?', label: currentLanguage === 'es-419' ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden', hudRow: HUD_ICON_ROWS.objective });
         return stats;
+    }
+
+    if (!cell.revealed && cell.litByLamp && game.mode !== 'dance') {
+        stats.push({ icon: '◎', label: currentLanguage === 'es-419' ? 'Iluminada' : 'Lit', tone: 'route', kind: 'reveal', hudRow: HUD_ICON_ROWS.objective });
     }
 
     if (isEnemyObject(object)) {
@@ -4018,7 +4150,7 @@ function getObjectEffectStats(object) {
 }
 
 function getCellInfo(cell) {
-    if (!cell.revealed && game.mode !== 'dance') {
+    if (!cell.revealed && !cell.litByLamp && game.mode !== 'dance') {
         const roles = I18N[currentLanguage].roles;
         return {
             color: '#b8c2aa',
@@ -4075,117 +4207,23 @@ function getCellInfo(cell) {
 }
 
 function getPathPreview(cell) {
-    if (!cell || game.mode !== 'dungeon' || !cell.revealed) return null;
-    const riskTick = Math.floor(performance.now() / 300);
-    const key = `${game.player.q},${game.player.r}->${cell.q},${cell.r}:${game.player.steps}:${game.cells.length}:${game.player.health}:${game.player.upgrades}:${game.player.water}:${game.player.movePoints}:${game.player.actionAvailable}:${riskTick}`;
-    if (game.pathCache[key]) return game.pathCache[key];
-    const preview = annotatePathRisk(findPathToCell(cell));
-    game.pathCache[key] = preview;
-    return preview;
+    return pathfindingSystem.getPathPreview(cell);
 }
 
 function findPathToCell(target) {
-    const startKey = cellKey(game.player.q, game.player.r);
-    const targetKey = cellKey(target.q, target.r);
-    const targetIsBlocked = isPathBlockedTarget(target);
-    const queue = [{ q: game.player.q, r: game.player.r, path: [] }];
-    const visited = new Set([startKey]);
-    let best = null;
-
-    while (queue.length) {
-        const current = queue.shift();
-        if (cellKey(current.q, current.r) === targetKey) {
-            return { path: current.path, complete: true };
-        }
-        if (targetIsBlocked && current.path.length && isAdjacent(current.q, current.r, target.q, target.r)) {
-            return {
-                path: current.path,
-                complete: false,
-                blockedTarget: { q: target.q, r: target.r, object: target.object }
-            };
-        }
-        HEX_DIRECTIONS.forEach((direction) => {
-            const next = getCell(current.q + direction.q, current.r + direction.r);
-            if (!next) return;
-            const key = cellKey(next.q, next.r);
-            if (visited.has(key)) return;
-            visited.add(key);
-            if (!isPathWalkable(next, target)) {
-                const blockedPath = [...current.path];
-                if (!best || blockedPath.length > best.path.length) {
-                    best = { path: blockedPath, complete: false };
-                }
-                return;
-            }
-            const nextPath = [...current.path, next];
-            if (!best || nextPath.length > best.path.length || hexDistance(next.q, next.r, target.q, target.r) < hexDistance(best.path.at(-1)?.q ?? game.player.q, best.path.at(-1)?.r ?? game.player.r, target.q, target.r)) {
-                best = { path: nextPath, complete: false };
-            }
-            queue.push({ q: next.q, r: next.r, path: nextPath });
-        });
-    }
-
-    return best || { path: [], complete: false };
+    return pathfindingSystem.findPathToCell(target);
 }
 
 function isPathWalkable(cell, target) {
-    if (!cell.revealed) return false;
-    if (cell.object === 'wall' || cell.object === 'waxDoor') return false;
-    if ((cell.object === 'vine' || cell.object === 'burningCell' || isEnemyObject(cell.object)) && cell !== target) return false;
-    if (isEnemyObject(cell.object) && cell === target && !game.player.actionAvailable) return false;
-    return true;
+    return pathfindingSystem.isPathWalkable(cell, target);
 }
 
 function isPathBlockedTarget(cell) {
-    return cell?.object === 'wall' || cell?.object === 'waxDoor';
+    return pathfindingSystem.isPathBlockedTarget(cell);
 }
 
 function annotatePathRisk(preview) {
-    if (!preview?.path) return preview;
-    let health = game.player.health;
-    let shield = game.player.upgrades;
-    let water = game.player.water;
-    let totalDamage = 0;
-    let totalBlocked = 0;
-    let waterSpent = 0;
-    let deathCell = null;
-
-    preview.path.forEach((cell) => {
-        if (deathCell) return;
-        let damage = 0;
-        if (cell.object === 'vine') {
-            damage += VINE_DAMAGE;
-        }
-        if (cell.object === 'burningCell') {
-            if (water > 0) {
-                water -= 1;
-                waterSpent += 1;
-            } else {
-                damage += 1;
-            }
-        }
-        const threat = getThreatAtCell(cell.q, cell.r);
-        if (threat?.imminent && threat.damage > 0) {
-            damage += threat.damage;
-        }
-        const blocked = Math.min(shield, damage);
-        shield -= blocked;
-        health -= Math.max(0, damage - blocked);
-        totalDamage += damage;
-        totalBlocked += blocked;
-        if (health <= 0) {
-            deathCell = { q: cell.q, r: cell.r };
-        }
-    });
-
-    return {
-        ...preview,
-        fullLength: preview.path.length,
-        reachablePath: preview.path.slice(0, getRouteMoveBudget()),
-        reachableLength: Math.min(preview.path.length, getRouteMoveBudget()),
-        risk: { totalDamage, totalBlocked, waterSpent, lethal: Boolean(deathCell) },
-        deathCell
-    };
+    return pathfindingSystem.annotatePathRisk(preview);
 }
 
 function getRouteMoveBudget() {
@@ -4193,7 +4231,7 @@ function getRouteMoveBudget() {
 }
 
 function getRouteMoveCost(path = []) {
-    return path.length;
+    return pathfindingSystem.getRouteMoveCost(path);
 }
 
 function getObjectRole(object) {
@@ -4237,8 +4275,8 @@ function getActionPreview(cell) {
     if (object === 'npc') return t('actions', 'trade');
     if (object === 'exit') return t('actions', 'nextRoom');
     if (object === 'finalExit') return t('actions', 'finalDance');
-    if (object === 'entry') return t('actions', 'previousRoom');
-    if (object === 'empty' || object === 'stickyTrap' || object === 'burrowWarningCell' || object === 'bomberMarkedCell') return t('actions', 'move');
+    if (object === 'entry') return currentLanguage === 'es-419' ? 'Accion: la entrada ya esta cerrada.' : 'Action: the entry is sealed.';
+    if (isFreeWalkoverObject(object)) return t('actions', 'move');
     return t('actions', 'collect');
 }
 
@@ -4331,9 +4369,9 @@ function moveTo(cell) {
     }
 
     const targetObject = cell.object;
-    if (targetObject === 'waxDoor') {
-        game.autoPath = [];
-        openWaxDoor(cell);
+    const registeredMoveHandler = cellInteractions.getMoveHandler(targetObject);
+    if (registeredMoveHandler?.timing === 'beforeMove') {
+        registeredMoveHandler.run({ cell, targetObject });
         return;
     }
 
@@ -4343,7 +4381,7 @@ function moveTo(cell) {
     }
 
     const collectOnMove = isCollectOnMoveObject(targetObject);
-    const targetRequiresAction = !collectOnMove && !['empty', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject);
+    const targetRequiresAction = !collectOnMove && !isFreeWalkoverObject(targetObject);
     if (targetRequiresAction && !game.player.actionAvailable) {
         game.autoPath = [];
         showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu acción este turno.' : 'You already used your action this turn.');
@@ -4362,7 +4400,7 @@ function moveTo(cell) {
     }
     game.metrics.movesMade += 1;
     game.metrics.cellsMoved += 1;
-    audioSystem.playEffect(isEnemyObject(targetObject) ? 'sting' : ['empty', 'entry', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject) ? 'move' : 'pick');
+    audioSystem.playEffect(isEnemyObject(targetObject) ? 'sting' : isFreeWalkoverObject(targetObject) ? 'move' : 'pick');
     game.player.q = cell.q;
     game.player.r = cell.r;
     startPlayerMotion(previousPosition.q, previousPosition.r, cell.q, cell.r);
@@ -4370,6 +4408,11 @@ function moveTo(cell) {
     cell.visited = true;
     if (targetRequiresAction) {
         game.autoPath = [];
+    }
+
+    if (registeredMoveHandler?.timing === 'afterMove') {
+        registeredMoveHandler.run({ cell, targetObject, previousPosition });
+        return;
     }
 
     if (targetObject === 'exit') {
@@ -4435,6 +4478,20 @@ function moveTo(cell) {
         return;
     }
 
+    if (cellInteractions.handleWalkoverObject(targetObject, {
+        cell,
+        game,
+        currentLanguage,
+        revealAround,
+        addLog,
+        recordReplayEvent,
+        updateObjectiveProgress,
+        endPlayerTurn,
+        draw
+    })) {
+        return;
+    }
+
     if (targetObject === 'npc') {
         game.autoPath = [];
         if (!consumeAction('trade')) {
@@ -4449,7 +4506,10 @@ function moveTo(cell) {
     }
 
     const interaction = resolveInteraction(targetObject, cell);
-    const actionObject = !collectOnMove && !['empty', 'entry', 'stickyTrap', 'burrowWarningCell', 'bomberMarkedCell'].includes(targetObject);
+    if (cell.isBoss && game.roomDepth >= FINAL_ROOM) {
+        interaction.consume = true;
+    }
+    const actionObject = !collectOnMove && !isFreeWalkoverObject(targetObject);
     if (actionObject && !consumeAction(`interact:${targetObject}`)) {
         showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu acción este turno.' : 'You already used your action this turn.');
         return;
@@ -4513,6 +4573,9 @@ function attackEnemyCell(cell) {
     addAttackEffect(game.player.q, game.player.r, cell.q, cell.r, cell.object, 'melee');
     const targetObject = cell.object;
     const interaction = resolveInteraction(targetObject, cell);
+    if (cell.isBoss && game.roomDepth >= FINAL_ROOM) {
+        interaction.consume = true;
+    }
     game.message = interaction.message;
     addLog(OBJECTS[targetObject].name, interaction.message);
     addStatPopups(cell.q, cell.r, interaction.deltas);
@@ -4520,6 +4583,9 @@ function attackEnemyCell(cell) {
         game.objectiveProgress.kills += 1;
         awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
         applyEnemyKillRelics(cell);
+        if (targetObject === 'waspHive' && game.roomDepth >= FINAL_ROOM) {
+            clearBossHiveSummons(cell);
+        }
         if (cell.isBoss) {
             game.autoPath = [];
             audioSystem.playEffect('win');
@@ -4532,6 +4598,23 @@ function attackEnemyCell(cell) {
     recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r, action: 'attack' });
     endPlayerTurn('attack');
     draw();
+}
+
+function clearBossHiveSummons(hiveCell) {
+    let cleared = 0;
+    game.cells.forEach((cell) => {
+        if (cell.object === 'enemy' && hexDistance(cell.q, cell.r, hiveCell.q, hiveCell.r) <= 3) {
+            cell.object = 'empty';
+            cell.hits = 0;
+            cell.nextAuraAt = 0;
+            cleared += 1;
+        }
+    });
+    if (cleared > 0) {
+        addLog(currentLanguage === 'es-419' ? 'Colmena rota' : 'Hive Broken', currentLanguage === 'es-419'
+            ? 'La avispa invocada se dispersó.'
+            : 'The summoned wasp scattered.');
+    }
 }
 
 function getActionRange(cell) {
@@ -5183,8 +5266,24 @@ function endRun(reason = 'final-exit') {
         [currentLanguage === 'es-419' ? 'Semilla' : 'Seed', game.runSeed]
     ];
 
-    endStatsNode.innerHTML = stats.map(([label, value]) => (
-        `<div><span>${label}</span><strong>${value}</strong></div>`
+    const danceOffset = game.dance ? 1 : 0;
+    const deathOffset = reason === 'death' ? 2 : 0;
+    const progressionIndex = 4 + danceOffset;
+    const timeIndex = progressionIndex + 2;
+    const deathIndex = timeIndex + 2;
+    const lifetimeIndex = deathIndex + deathOffset;
+    const tacticsIndex = lifetimeIndex + 2;
+    const groupedStats = [
+        [currentLanguage === 'es-419' ? 'Run' : 'Run', stats.slice(0, progressionIndex).concat(stats.slice(timeIndex, timeIndex + 2))],
+        ...(reason === 'death' ? [[currentLanguage === 'es-419' ? 'Derrota' : 'Defeat', stats.slice(deathIndex, deathIndex + 2)]] : []),
+        [currentLanguage === 'es-419' ? 'Progreso' : 'Progression', stats.slice(progressionIndex, progressionIndex + 2).concat(stats.slice(lifetimeIndex, lifetimeIndex + 2), stats.slice(-2, -1))],
+        [currentLanguage === 'es-419' ? 'Tactica' : 'Tactics', stats.slice(tacticsIndex, -2).concat(stats.slice(-1))]
+    ];
+
+    endStatsNode.innerHTML = groupedStats.map(([title, entries]) => (
+        `<section class="end-stat-group"><h3>${escapeHtml(title)}</h3>${entries.map(([label, value]) => (
+            `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`
+        )).join('')}</section>`
     )).join('');
     recordReplayEvent('runEnd', { reason });
     endScreen.classList.add('visible');
@@ -5504,20 +5603,15 @@ function showTopToast(title, message, tone = 'info') {
         if (game.toast?.id !== toastId) return;
         game.toast = null;
         renderTopToast();
-    }, tone === 'danger' ? 4200 : 3400);
+    }, tone === 'danger' ? 3800 : tone === 'warning' ? 2600 : 2400);
 }
 
 function openSettingsOverlay() {
-    game.settingsPaused = true;
-    applyAudioSettings();
-    settingsScreen?.classList.add('visible');
-    audioSystem.pauseAll();
+    menuController.openSettingsOverlay();
 }
 
 function closeSettingsOverlay() {
-    game.settingsPaused = false;
-    settingsScreen?.classList.remove('visible');
-    audioSystem.resumeActive();
+    menuController.closeSettingsOverlay();
 }
 
 function getToastTone(title = '', message = '') {
@@ -5751,9 +5845,6 @@ function getCellActionState(cell) {
     if (game.mode === 'dance') {
         return { available: true, symbol: '>', color: '#f5c84b' };
     }
-    if (!cell.revealed) {
-        return { available: false, reason: t('ui', 'blockedHidden'), symbol: '?', color: '#b8c2aa' };
-    }
     if (!isAdjacent(game.player.q, game.player.r, cell.q, cell.r)) {
         const preview = getPathPreview(cell);
         if (preview?.path?.length) {
@@ -5776,6 +5867,9 @@ function getCellActionState(cell) {
             };
         }
         return { available: false, reason: t('ui', 'blockedNotAdjacent'), symbol: 'i', color: '#b8c2aa' };
+    }
+    if (!cell.revealed) {
+        return { available: false, reason: t('ui', 'blockedHidden'), symbol: '?', color: '#b8c2aa' };
     }
     const object = cell.object;
     if (isEnemyObject(object)) {
@@ -5808,7 +5902,7 @@ function getCellActionState(cell) {
     if (object === 'burningCell') return { available: true, symbol: '!', color: '#ff6a2a' };
     if (object === 'npc') return { available: true, symbol: '$', color: '#64b5f6' };
     if (object === 'exit' || object === 'entry' || object === 'finalExit') return { available: true, symbol: '>', color: '#f2bd4b' };
-    if (object === 'empty' || object === 'stickyTrap' || object === 'burrowWarningCell' || object === 'bomberMarkedCell') {
+    if (isFreeWalkoverObject(object)) {
         const canMove = (game.player.movePoints ?? game.player.stamina) > 0;
         return { available: canMove, reason: canMove ? '' : t('ui', 'blockedStamina'), symbol: '.', color: '#fff2a7' };
     }
@@ -5880,7 +5974,9 @@ window.HW_TEST_API = {
         if (!cell) return false;
         cell.object = object;
         cell.revealed = revealed;
+        cell.litByLamp = false;
         cell.visited = false;
+        updateLampLightFields();
         draw();
         return true;
     },
@@ -5926,7 +6022,8 @@ window.HW_TEST_API = {
             r: game.pathPreview.path[game.pathPreview.path.length - 1].r
         } : null
     } : null,
-    generateBossRoom: () => generateBossRoom()
+    generateBossRoom: () => generateBossRoom(),
+    endRun: (reason = 'final-exit') => endRun(reason)
 };
 
 function makeCursor(symbol, color, available = true) {
@@ -6129,11 +6226,10 @@ logToggle.addEventListener('click', () => {
     node?.addEventListener('mousemove', (event) => forwardHudPointerToBoard(event, false));
     node?.addEventListener('click', (event) => forwardHudPointerToBoard(event, true));
 });
-optionsButton.addEventListener('click', () => {
-    optionsPanel.classList.toggle('visible');
-});
+optionsButton.addEventListener('click', () => menuController.toggleOptions());
 settingsToggle?.addEventListener('click', openSettingsOverlay);
 settingsCloseButton?.addEventListener('click', closeSettingsOverlay);
+resetProgressionButton?.addEventListener('click', resetBeeProgression);
 musicVolumeInput?.addEventListener('input', () => {
     audioSettings.music = Number(musicVolumeInput.value) / 100;
     applyAudioSettings();
@@ -6170,6 +6266,17 @@ testObjectListNode.addEventListener('click', (event) => {
     if (button) {
         startObjectTestScenario(button.dataset.testObject);
     }
+});
+window.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
+    if (settingsScreen?.classList.contains('visible')) {
+        closeSettingsOverlay();
+        return;
+    }
+    if (!startScreen.classList.contains('hidden') || game.ended || game.replay) return;
+    event.preventDefault();
+    openSettingsOverlay();
 });
 window.addEventListener('resize', resizeCanvas);
 

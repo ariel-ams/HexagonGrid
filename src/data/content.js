@@ -7,6 +7,10 @@ const I18N = {
             objective: 'Guide the bee through misty honeycomb chambers. Start by collecting pollen, water, and shield, avoid danger rings, use the sting only when it is ready, spend supplies between rooms, then defeat the final boss.',
             language: 'Language',
             languageSettings: 'Language Settings',
+            testingSettings: 'Testing',
+            testingSettingsCopy: 'Reset saved bee progression to replay the first-run experience from level 1.',
+            resetProgression: 'Reset Bee Level',
+            progressionReset: 'Bee progression reset. The next run starts at level 1.',
             newRun: 'New Run',
             startNewRun: 'Start New Run',
             testDance: 'Test',
@@ -150,6 +154,7 @@ const I18N = {
             stingUpgrade: ['Double Sting', 'One-use stronger sting.'],
             pollen: ['Pollen', 'Adds pollen.'],
             water: ['Water', 'Adds water.'],
+            lampCell: ['Lamp Cell', 'Walk over it to reveal nearby hidden cells. It stays on the board.'],
             vine: ['Vines', 'Persistent thorny hazard.'],
             glowPollen: ['Glow Pollen', 'Reveals a wide patch of mist around this cell.'],
             nectarCache: ['Nectar Cache', 'Grants pollen and water together.'],
@@ -167,7 +172,7 @@ const I18N = {
             burrowWarningCell: ['Burrow Warning', 'Cracked ground. A burrow beetle is about to emerge here.'],
             bomberMarkedCell: ['Marked Blast Cell', 'A comb bomber has marked this cell. Leave before the blast lands.'],
             compassPollen: ['Compass Pollen', 'Reveals the exit through the mist.'],
-            entry: ['Entry', 'Return to the previous room.'],
+            entry: ['Entry', 'The chamber seals behind you. You cannot return to previous rooms.'],
             exit: ['Exit', 'Open the next room.'],
             finalExit: ['Final Boss', 'Defeat the final enemy to end the run.']
         },
@@ -213,6 +218,10 @@ const I18N = {
             objective: 'Guía a la abeja por cámaras llenas de niebla. Empieza juntando polen, agua y escudo, evita los anillos de peligro, usa el aguijón solo cuando esté listo, gasta suministros entre salas y derrota al jefe final.',
             language: 'Idioma',
             languageSettings: 'Configuración de idioma',
+            testingSettings: 'Pruebas',
+            testingSettingsCopy: 'Reinicia el progreso guardado de la abeja para probar la primera experiencia desde nivel 1.',
+            resetProgression: 'Reiniciar nivel de abeja',
+            progressionReset: 'Progreso de abeja reiniciado. La próxima partida empieza en nivel 1.',
             newRun: 'Nueva partida',
             startNewRun: 'Empezar otra partida',
             testDance: 'Probar',
@@ -356,6 +365,7 @@ const I18N = {
             stingUpgrade: ['Aguijón doble', 'Un aguijón más fuerte de un solo uso.'],
             pollen: ['Polen', 'Suma polen.'],
             water: ['Agua', 'Suma agua.'],
+            lampCell: ['Celda lámpara', 'Camina sobre ella para revelar celdas ocultas cercanas. Se queda en el tablero.'],
             vine: ['Enredaderas', 'Peligro persistente con espinas.'],
             glowPollen: ['Polen brillante', 'Revela una zona amplia de niebla alrededor de esta celda.'],
             nectarCache: ['Reserva de néctar', 'Otorga polen y agua juntos.'],
@@ -373,7 +383,7 @@ const I18N = {
             burrowWarningCell: ['Advertencia de madriguera', 'Suelo agrietado. Un escarabajo excavador está por emerger aquí.'],
             bomberMarkedCell: ['Celda marcada', 'Un bombardero de panal marcó esta celda. Sal antes de la explosión.'],
             compassPollen: ['Polen brújula', 'Revela la salida a través de la niebla.'],
-            entry: ['Entrada', 'Vuelve a la sala anterior.'],
+            entry: ['Entrada', 'La camara se cierra detras de ti. No puedes volver a salas anteriores.'],
             exit: ['Salida', 'Abre la siguiente sala.'],
             finalExit: ['Jefe final', 'Derrota al enemigo final para terminar la partida.']
         },
@@ -516,6 +526,7 @@ const SPRITE_DEFS = {
     larvaBrood: { src: 'assets/enemies/larva-brood-alpha.png', columns: 4, rows: 4, row: 0, frameMs: 220 },
     pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
+    lampCell: { src: '', plannedAsset: 'assets/items/lamp-cell.png', columns: 4, rows: 1, row: 0, frameMs: 190, fallback: 'L' },
     upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     stingUpgrade: { src: 'assets/sting-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
@@ -569,7 +580,7 @@ const ENEMY_DEFS = {
     miteSwarm: {
         name: 'Mite Swarm',
         color: '#c98954',
-        sprite: 'guardWasp',
+        sprite: 'miteSwarm',
         hp: 1,
         attack: 1,
         intervalMs: 900,
@@ -653,7 +664,7 @@ const ENEMY_DEFS = {
     guardWasp: {
         name: 'Guard Wasp',
         color: '#b83f4a',
-        sprite: 'enemy',
+        sprite: 'guardWasp',
         hp: 2,
         attack: 2,
         intervalMs: 1200,
@@ -692,12 +703,12 @@ const ENEMY_DEFS = {
         sprite: 'waspHive',
         plannedAsset: 'assets/enemies/wasp-hive.png',
         hp: 3,
-        attack: 1,
+        attack: 0,
         intervalMs: 2200,
         range: 2,
         behavior: 'Living hive. After a warning pulse, releases a wasp into a nearby empty cell.',
         lesson: 'Clear it before fighting other threats or the room slowly fills with wasps.',
-        behaviors: [{ type: 'spawnEnemyAura', object: 'enemy' }, { type: 'damageAura', fallbackOnly: true }]
+        behaviors: [{ type: 'spawnEnemyAura', object: 'enemy', spawnDelayMs: 1600, preferAwayFromPlayer: true }, { type: 'damageAura', fallbackOnly: true }]
     },
     crawlingFire: {
         name: 'Crawling Fire',
@@ -938,6 +949,11 @@ const OBJECTS = {
         color: '#4bb6f2',
         description: 'Adds water.',
         effects: [{ type: 'gainResource', resource: 'water', amount: 1, runStat: true }, { type: 'heal', amount: 2 }]
+    },
+    lampCell: {
+        name: 'Lamp Cell',
+        color: '#ffd56b',
+        description: 'Walk over it to reveal nearby hidden cells. It stays on the board.'
     },
     vine: {
         name: 'Vines',
