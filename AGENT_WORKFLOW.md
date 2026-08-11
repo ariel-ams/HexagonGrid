@@ -15,6 +15,7 @@ This file gives future agents enough project context to work independently witho
 3. Read the relevant project docs:
    - `src/README.md` for architecture and current gameplay model.
    - `CONTENT_AUTHORING_GUIDE.md` for adding content.
+   - `CONTENT_MANIFEST_CHECKLIST.md` for the definition of ready for new content.
    - `GAME_DESIGN_DOCUMENT.md` for design pillars and mechanics.
    - `ui-development/player-experience-roadmap.md` for current roadmap priorities.
    - `SURROUNDING_MOSAIC_SYSTEM.md` for theme environment work.
@@ -83,6 +84,7 @@ For layout-heavy work, save or reference screenshots under `.codex-video-frames/
 - Every new object needs either a sprite file or a fallback label.
 - Every new enemy/item/hazard should appear in the Test list.
 - If a mechanic needs setup to understand, add a focused test scenario.
+- Use `CONTENT_MANIFEST_CHECKLIST.md` before adding or reviewing new content.
 - Red visual language is reserved for damage, death, or immediate danger.
 - Pickups, buffs, drains, and utility effects need distinct colors/icons.
 

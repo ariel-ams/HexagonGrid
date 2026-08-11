@@ -2,6 +2,8 @@
 
 This guide explains how new content is wired into the game and which files usually need to change. The game is still partly monolithic, but most content data now lives in tables, with systems reading from those tables.
 
+Before adding or reviewing content, copy the relevant section from `CONTENT_MANIFEST_CHECKLIST.md`. That checklist is the quick definition of ready; this guide explains the wiring details behind it.
+
 ## Main Files
 
 - `index.html`: DOM, CSS, script order, overlays, HUD containers, replay controls.
@@ -46,7 +48,7 @@ Edit `src/data/content.js`.
 1. Add translation strings in `I18N.en.objects` and `I18N['es-419'].objects`.
 2. Add a sprite entry in `SPRITE_DEFS`.
 3. Add an object definition in `OBJECTS`.
-4. Add an unlock level in `OBJECT_UNLOCK_LEVELS` in `index.js`.
+4. Add an unlock level in `OBJECT_UNLOCK_LEVELS` in `src/data/progression.js`.
 5. Add it to `DISCOVERY_OBJECT_WEIGHTS` if it should appear as a special generated item.
 6. Add it to room profile `allowedDiscovery` or `allowedUtility` in `ROOM_PROFILES`.
 
