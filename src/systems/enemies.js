@@ -23,6 +23,7 @@ function createEnemySystem(context) {
             || behavior.type === 'burrowAmbush'
             || behavior.type === 'weakPointWindow'
             || behavior.type === 'markCellsAura'
+            || behavior.type === 'chargeLane'
         )));
     }
 
@@ -115,6 +116,15 @@ function createEnemySystem(context) {
                 if (marked > 0) {
                     helpers.addLog(enemy.name, `${enemy.name} marked ${marked} blast cell${marked === 1 ? '' : 's'}.`);
                     helpers.recordReplayEvent('enemySpecial', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'markCells', count: marked });
+                }
+                return true;
+            }
+
+            if (behavior.type === 'chargeLane') {
+                const marked = markChargeLane(enemyCell, behavior);
+                if (marked > 0) {
+                    helpers.addLog(enemy.name, `${enemy.name} marked a charge lane.`);
+                    helpers.recordReplayEvent('enemySpecial', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'chargeLane', count: marked });
                 }
                 return true;
             }
@@ -242,6 +252,33 @@ function createEnemySystem(context) {
                 marked += 1;
             });
         return marked;
+    }
+
+    function markChargeLane(enemyCell, behavior) {
+        const direction = directions[enemyCell.facingDir] || getDirectionTowardPlayer(enemyCell);
+        if (!direction) return 0;
+        let marked = 0;
+        const length = behavior.length || 2;
+        for (let distance = 1; distance <= length; distance += 1) {
+            const cell = helpers.getCell(enemyCell.q + direction.q * distance, enemyCell.r + direction.r * distance);
+            if (!cell || cell.object !== 'empty' || (cell.q === game.player.q && cell.r === game.player.r)) continue;
+            cell.object = behavior.object || 'bomberMarkedCell';
+            cell.revealed = true;
+            cell.detonateAt = performance.now() + (behavior.detonateMs || 900);
+            cell.detonateDamage = behavior.damage || 1;
+            cell.sourceEnemy = enemyCell.object;
+            marked += 1;
+        }
+        return marked;
+    }
+
+    function getDirectionTowardPlayer(enemyCell) {
+        const distance = helpers.hexDistance(enemyCell.q, enemyCell.r, game.player.q, game.player.r);
+        if (distance < 1) return null;
+        return directions.find((direction) => (
+            direction.q * distance === game.player.q - enemyCell.q
+            && direction.r * distance === game.player.r - enemyCell.r
+        )) || null;
     }
 
     return {

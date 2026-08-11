@@ -59,6 +59,7 @@ function createRoomTemplateSystem(context) {
 
     function chooseRoomObjective() {
         const options = ROOM_OBJECTIVES.filter((objective) => game.roomDepth >= objective.minDepth);
+        if (getPlayerLevel() === 1 && game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'collectTwo'));
         if (game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit'));
         return decorateObjective(randomFrom(options));
     }
@@ -74,7 +75,7 @@ function createRoomTemplateSystem(context) {
         if (game.roomDepth === 1 && getPlayerLevel() === 1) return 'onboardingPath';
         if (game.roomDepth === 1) return 'introSupplies';
         if (game.roomDepth === 2) return 'waxDoorPollen';
-        if (game.roomDepth === 3) return seededRandom() < 0.55 ? 'enemyGate' : 'fireWater';
+        if (game.roomDepth === 3) return 'enemyGate';
         const candidates = [
             'mixedGate',
             'fireWater',
@@ -115,28 +116,51 @@ function createRoomTemplateSystem(context) {
     function applyFirstRunOnboardingTemplate() {
         if (game.roomDepth !== 1 || getPlayerLevel() > 1 || !game.entryCell || !game.exitCell) return;
         const route = findRoomPathBetween(game.entryCell, game.exitCell);
-        if (route.length < 7) return;
         game.roomTemplate = 'onboardingPath';
-        route.slice(0, 7).forEach((step) => {
+        game.roomSpawnCounts.enemies = 0;
+        game.roomSpawnCounts.hazards = 0;
+        game.cells.forEach((cell) => {
+            if (cell.object !== 'entry' && cell.object !== 'exit' && cell.object !== 'finalExit') {
+                cell.object = 'empty';
+                cell.hits = 0;
+                cell.nextAuraAt = 0;
+                cell.nextAttackAt = 0;
+            }
+        });
+        route.forEach((step) => {
             const cell = getCell(step.q, step.r);
             if (cell && cell.object !== 'entry' && cell.object !== 'exit') cell.object = 'empty';
         });
+        const routeCells = route
+            .map((step) => getCell(step.q, step.r))
+            .filter((cell) => cell && cell.object === 'empty' && cell.object !== 'exit');
+        const placementCells = [...routeCells, ...findOffRouteCells(route)]
+            .filter((cell, index, cells) => (
+                cell.object === 'empty'
+                && !(cell.q === game.player.q && cell.r === game.player.r)
+                && !(cell.q === game.exitCell.q && cell.r === game.exitCell.r)
+                && cells.findIndex((candidate) => cellKey(candidate.q, candidate.r) === cellKey(cell.q, cell.r)) === index
+            ))
+            .sort((a, b) => {
+                const routeA = routeCells.includes(a) ? 0 : 1;
+                const routeB = routeCells.includes(b) ? 0 : 1;
+                if (routeA !== routeB) return routeA - routeB;
+                return hexDistance(a.q, a.r, game.player.q, game.player.r) - hexDistance(b.q, b.r, game.player.q, game.player.r);
+            });
         ['pollen', 'water', 'lampCell', 'upgrade'].forEach((object, index) => {
-            const cell = getCell(route[index + 1].q, route[index + 1].r);
-            if (cell && cell.object === 'empty') cell.object = object;
+            const cell = placementCells[index];
+            if (cell) cell.object = object;
         });
-        const enemyStep = route[Math.min(route.length - 2, 6)];
-        const distantEnemy = enemyStep ? getCell(enemyStep.q, enemyStep.r) : null;
-        if (distantEnemy && distantEnemy.object === 'empty' && game.roomSpawnCounts.enemies < game.roomProfile.maxEnemies) {
-            distantEnemy.object = 'enemy';
-            distantEnemy.nextAuraAt = 0;
-            distantEnemy.hits = 0;
-            game.roomSpawnCounts.enemies += 1;
-        }
+        const offRoute = findOffRouteCells(route)
+            .filter((cell) => hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 3);
+        offRoute.slice(0, 2).forEach((cell) => {
+            if (cell.object === 'empty') cell.object = seededRandom() < 0.5 ? 'pollen' : 'water';
+        });
     }
 
     function placeFirstRoomTeachingPickups() {
         if (game.roomDepth !== 1) return;
+        if (game.roomTemplate === 'onboardingPath') return;
         const candidates = game.cells
             .filter((cell) => (
                 cell.object === 'empty'
@@ -154,13 +178,14 @@ function createRoomTemplateSystem(context) {
 
     function placeRoomLessonGate(template = 'mixedGate') {
         if (!game.exitCell || game.roomDepth <= 1) return;
+        const route = findRoomPathBetween(game.entryCell, game.exitCell);
         if (template === 'waxDoorPollen') {
-            placeWaxDoorExitGate();
+            placeWaxDoorRouteLesson(route);
             placeResourceNearPlayer('pollen');
             return;
         }
         if (template === 'enemyGate') {
-            placeEnemyExitGate('enemy');
+            placeEnemyRouteLesson(route, 'thornBeetle');
             placeResourceNearPlayer('pollen');
             return;
         }
@@ -174,6 +199,29 @@ function createRoomTemplateSystem(context) {
             return;
         }
         placeMixedExitGate();
+    }
+
+    function clearRouteForLesson(route) {
+        route.forEach((step) => {
+            const cell = getCell(step.q, step.r);
+            if (!cell || cell.object === 'entry' || cell.object === 'exit' || cell.object === 'finalExit') return;
+            cell.object = 'empty';
+            cell.hits = 0;
+            cell.nextAuraAt = 0;
+            cell.nextAttackAt = 0;
+            cell.facingDir = null;
+            cell.lessonSafe = false;
+        });
+    }
+
+    function findOffRouteCells(route) {
+        const routeKeys = new Set(route.map((step) => cellKey(step.q, step.r)));
+        return game.cells
+            .filter((cell) => cell.object === 'empty'
+                && !routeKeys.has(cellKey(cell.q, cell.r))
+                && cell.object !== 'entry'
+                && cell.object !== 'exit')
+            .sort((a, b) => hexDistance(a.q, a.r, game.player.q, game.player.r) - hexDistance(b.q, b.r, game.player.q, game.player.r));
     }
 
     function placeEnemySynergy(template) {
@@ -218,6 +266,33 @@ function createRoomTemplateSystem(context) {
         });
     }
 
+    function placeWaxDoorRouteLesson(route) {
+        if (!Array.isArray(route) || route.length < 4) {
+            placeWaxDoorExitGate();
+            return;
+        }
+        clearRouteForLesson(route);
+        const doorStep = route[route.length - 2];
+        const door = getCell(doorStep.q, doorStep.r);
+        if (!door || !isGateCandidateCell(door)) {
+            placeWaxDoorExitGate();
+            return;
+        }
+        door.object = 'waxDoor';
+        game.roomSpawnCounts.hazards += 1;
+
+        const supplyStep = route[Math.max(0, Math.min(1, route.length - 4))];
+        const supply = getCell(supplyStep.q, supplyStep.r);
+        if (supply && supply.object === 'empty') supply.object = 'pollen';
+
+        getExitNeighborCells()
+            .filter((cell) => cell !== door && isGateCandidateCell(cell))
+            .slice(0, 2)
+            .forEach((cell) => {
+                cell.object = 'wall';
+            });
+    }
+
     function placeEnemyExitGate(enemyObject = 'enemy') {
         const neighbors = getExitNeighborCells().filter(isGateCandidateCell)
             .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
@@ -230,6 +305,48 @@ function createRoomTemplateSystem(context) {
         game.roomSpawnCounts.enemies += 1;
         neighbors.slice(1, 3).forEach((cell) => {
             if (isGateCandidateCell(cell)) cell.object = 'wall';
+        });
+    }
+
+    function placeEnemyRouteLesson(route, enemyObject = 'enemy') {
+        if (!Array.isArray(route) || route.length < 5) {
+            placeEnemyExitGate(enemyObject);
+            return;
+        }
+        clearRouteForLesson(route);
+        const guardIndex = Math.max(2, route.length - 3);
+        const guardStep = route[guardIndex];
+        const guard = getCell(guardStep.q, guardStep.r);
+        if (!guard || !isGateCandidateCell(guard) || hexDistance(guard.q, guard.r, game.entryCell.q, game.entryCell.r) <= 2) {
+            placeEnemyExitGate(enemyObject);
+            return;
+        }
+        const lessonEnemy = getObjectUnlockLevel(enemyObject) <= Math.max(2, getPlayerLevel())
+            ? enemyObject
+            : 'enemy';
+        guard.object = lessonEnemy;
+        guard.nextAuraAt = 0;
+        guard.nextAttackAt = 0;
+        guard.hits = 0;
+        guard.revealed = true;
+        guard.litByLamp = true;
+        game.roomSpawnCounts.enemies += 1;
+
+        const routeKeys = new Set(route.map((step) => cellKey(step.q, step.r)));
+        let safeCells = directions
+            .map((direction) => getCell(guard.q + direction.q, guard.r + direction.r))
+            .filter((cell) => cell && cell.object === 'empty' && cell.object !== 'exit' && !routeKeys.has(cellKey(cell.q, cell.r)))
+            .slice(0, 3);
+        if (!safeCells.length) {
+            safeCells = directions
+                .map((direction) => getCell(guard.q + direction.q, guard.r + direction.r))
+                .filter((cell) => cell && cell.object === 'empty' && cell.object !== 'exit')
+                .slice(0, 2);
+        }
+        safeCells.forEach((cell) => {
+            cell.revealed = true;
+            cell.litByLamp = true;
+            cell.lessonSafe = true;
         });
     }
 

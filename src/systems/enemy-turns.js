@@ -8,6 +8,7 @@ function createEnemyTurns(steps) {
         steps.moveMirrorWasps();
         steps.resolveTurnEnemyPressure();
         steps.tickSpecialEnemyTelegraphs();
+        steps.updateArmoredEnemyFacing?.();
         steps.resolveBossAntiKite(reason);
     }
 
