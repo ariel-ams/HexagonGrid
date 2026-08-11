@@ -29,6 +29,15 @@ async function main() {
     assert(await page.locator('#loadingScreen.ready').count() === 1, 'Loading screen should hide after assets are ready.');
     const testObjectEntries = await page.evaluate(() => window.HW_TEST_API.getTestObjectEntries());
     assert(testObjectEntries.length > 0, 'Test menu should expose testable game objects.');
+    const effectStatCoverage = await page.evaluate(() => window.HW_TEST_API.getObjectEffectStatCoverage());
+    assert(effectStatCoverage.length > 0, 'Inspectable effect stat coverage should include item objects.');
+    effectStatCoverage.forEach((entry) => {
+        assert(entry.statCount > 0, `Object ${entry.id} has effects but no inspect stat metadata.`);
+        entry.stats.forEach((stat) => {
+            assert(stat.kind && stat.label, `Object ${entry.id} has an inspect stat without kind or label.`);
+            assert(Number.isInteger(stat.hudRow), `Object ${entry.id} inspect stat ${stat.kind} needs a HUD sprite row.`);
+        });
+    });
     await page.click('#testDanceButton');
     await page.waitForSelector('#testScreen.visible');
     const renderedTestObjects = await page.locator('#testObjectList [data-test-object]').evaluateAll((nodes) => (

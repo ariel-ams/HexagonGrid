@@ -312,7 +312,7 @@ The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is th
 After content changes:
 
 - Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, and equipment slot mismatches.
-- Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list and verifies each entry has an icon canvas.
+- Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.
 - Verify no scrollbars on desktop and mobile.

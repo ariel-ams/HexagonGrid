@@ -4513,6 +4513,8 @@ function getObjectEffectStats(object) {
             stats.push({ icon: icons[effect.resource] || '+', label: `+${effect.amount}`, tone: 'good', kind: kinds[effect.resource] || 'gain', hudRow: rows[effect.resource] });
         } else if (effect.type === 'heal') {
             stats.push({ icon: '♥', label: `+${effect.amount}`, tone: 'good', kind: 'health', hudRow: HUD_ICON_ROWS.health });
+        } else if (effect.type === 'royalNectar') {
+            stats.push({ icon: '+', label: `+${effect.heal}`, tone: 'good', kind: 'health', hudRow: HUD_ICON_ROWS.health });
         } else if (effect.type === 'gainShield') {
             stats.push({ icon: '⬟', label: `+${effect.amount}`, tone: 'good', kind: 'shield', hudRow: HUD_ICON_ROWS.shield });
         } else if (effect.type === 'revealAround') {
@@ -6429,6 +6431,18 @@ function getCursorForCell(cell) {
 window.HW_TEST_API = {
     areAssetsReady: () => assetLoader.ready,
     getTestObjectEntries: () => getTestObjectEntries().map((entry) => ({ ...entry })),
+    getObjectEffectStatCoverage: () => Object.entries(OBJECTS)
+        .filter(([, object]) => Array.isArray(object.effects) && object.effects.length > 0)
+        .map(([id, object]) => ({
+            id,
+            effectTypes: object.effects.map((effect) => effect.type),
+            statCount: getObjectEffectStats(id).length,
+            stats: getObjectEffectStats(id).map((stat) => ({
+                kind: stat.kind,
+                label: stat.label,
+                hudRow: stat.hudRow
+            }))
+        })),
     getState: () => ({
         mode: game.mode,
         isTestScenario: game.isTestScenario,
