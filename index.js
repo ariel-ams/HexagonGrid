@@ -4507,47 +4507,6 @@ function getInspectStats(cell, object) {
     return stats.slice(0, 8);
 }
 
-function getLegacyObjectEffectStats(object) {
-    const stats = [];
-    const def = OBJECTS[object] || OBJECTS.empty;
-    const effects = def.effects || [];
-    effects.forEach((effect) => {
-        if (effect.type === 'gainResource') {
-            const icons = { pollen: '✿', water: '◇', honey: '⬢', stingCharges: '✦' };
-            const kinds = { pollen: 'pollen', water: 'water', honey: 'honey', stingCharges: 'sting' };
-            const rows = { pollen: HUD_ICON_ROWS.pollen, water: HUD_ICON_ROWS.water, honey: HUD_ICON_ROWS.honey, stingCharges: HUD_ICON_ROWS.sting };
-            stats.push({ icon: icons[effect.resource] || '+', label: `+${effect.amount}`, tone: 'good', kind: kinds[effect.resource] || 'gain', hudRow: rows[effect.resource] });
-        } else if (effect.type === 'heal') {
-            stats.push({ icon: '♥', label: `+${effect.amount}`, tone: 'good', kind: 'health', hudRow: HUD_ICON_ROWS.health });
-        } else if (effect.type === 'royalNectar') {
-            stats.push({ icon: '+', label: `+${effect.heal}`, tone: 'good', kind: 'health', hudRow: HUD_ICON_ROWS.health });
-        } else if (effect.type === 'gainShield') {
-            stats.push({ icon: '⬟', label: `+${effect.amount}`, tone: 'good', kind: 'shield', hudRow: HUD_ICON_ROWS.shield });
-        } else if (effect.type === 'revealAround') {
-            stats.push({ icon: '◎', label: `${currentLanguage === 'es-419' ? 'Radio' : 'Radius'} ${effect.radius}`, tone: 'route', kind: 'reveal', hudRow: HUD_ICON_ROWS.objective });
-        } else if (effect.type === 'pauseEnemyTimers') {
-            stats.push({ icon: 'Ⅱ', label: `${Math.round(effect.durationMs / 1000)}s`, tone: 'route', kind: 'pause', hudRow: HUD_ICON_ROWS.pause });
-        } else if (effect.type === 'revealEnemies' || effect.type === 'revealExitHint' || effect.type === 'revealExitRoute') {
-            stats.push({ icon: '◎', label: currentLanguage === 'es-419' ? 'Revela' : 'Reveal', tone: 'route', kind: 'reveal', hudRow: HUD_ICON_ROWS.objective });
-        }
-    });
-
-    if (object === 'vine') {
-        stats.push({ icon: '−', label: `${VINE_DAMAGE}`, tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
-    } else if (object === 'burningCell') {
-        stats.push({ icon: '−', label: '1', tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
-        stats.push({ icon: '◇', label: '1', tone: 'cost', kind: 'water', hudRow: HUD_ICON_ROWS.water });
-    } else if (object === 'waxDoor') {
-        stats.push({ icon: '✿', label: '1', tone: 'cost', kind: 'pollen', hudRow: HUD_ICON_ROWS.pollen });
-    } else if (object === 'wall') {
-        stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Paso' : 'Path', tone: 'cost', kind: 'blocked', hudRow: HUD_ICON_ROWS.danger });
-    } else if (object === 'exit' || object === 'finalExit' || object === 'entry') {
-        stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Accion' : 'Action', tone: 'route', kind: 'action', hudRow: HUD_ICON_ROWS.objective });
-    }
-
-    return stats;
-}
-
 function getObjectEffectStats(object) {
     return inspectStatsSystem.getObjectEffectStats(object, OBJECTS);
 }
