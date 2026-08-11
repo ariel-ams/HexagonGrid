@@ -68,8 +68,23 @@ Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {
         assert(Array.isArray(theme[listName]), `Theme ${themeId} is missing ${listName}`);
         theme[listName].forEach((objectId) => {
             assert(HW_CONTENT.OBJECTS[objectId] || HW_CONTENT.ENEMY_DEFS[objectId], `Theme ${themeId} references missing object ${objectId}`);
+            assert(HW_PROGRESSION.OBJECT_UNLOCK_LEVELS[objectId], `Theme ${themeId} references ${objectId} without an unlock level`);
         });
     });
+    ['pollen', 'water', 'upgrade'].forEach((objectId) => {
+        assert(theme.items.includes(objectId), `Theme ${themeId} must include core supply ${objectId}`);
+    });
+    if (theme.boardBackground) assertFile(theme.boardBackground);
+
+    HW_PROGRESSION.ROOM_PROFILES
+        .filter((profile) => profile.depth >= 3 && profile.maxEnemies > 0)
+        .forEach((profile) => {
+            const eligibleEnemies = theme.enemies.filter((enemyId) => {
+                const unlockLevel = HW_PROGRESSION.OBJECT_UNLOCK_LEVELS[enemyId];
+                return unlockLevel <= profile.depth && profile.allowedEnemies.includes(enemyId);
+            });
+            assert(eligibleEnemies.length > 0, `Theme ${themeId} has no eligible enemy for room depth ${profile.depth}`);
+        });
 });
 
 function assertLocalizedTuple(section, id, expectedLength = 2) {

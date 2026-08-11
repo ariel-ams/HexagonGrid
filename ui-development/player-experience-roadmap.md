@@ -116,7 +116,7 @@ Acceptance checks:
 
 Goal: make adding enemies, items, relics, and themes less dependent on editing `index.js`.
 
-Status: in progress. The first content-scaling sprint expanded `tools/smoke-data.js` so it now validates localized object/enemy copy, unlock levels, enemy object mirrors, sprite metadata, theme references, and equipment slot references. `stickyTrap` now has unlock metadata because it is created by sticky honey and spider behavior. The next sprint added browser smoke coverage for Test page availability, comparing the rendered scenario list against the generated object entries and checking that each scenario has an icon canvas. The latest sprint added inspect stat coverage for effect-bearing objects, including the missing Royal Nectar heal chip.
+Status: in progress. The first content-scaling sprint expanded `tools/smoke-data.js` so it now validates localized object/enemy copy, unlock levels, enemy object mirrors, sprite metadata, theme references, and equipment slot references. `stickyTrap` now has unlock metadata because it is created by sticky honey and spider behavior. The next sprint added browser smoke coverage for Test page availability, comparing the rendered scenario list against the generated object entries and checking that each scenario has an icon canvas. The latest sprints added inspect stat coverage for effect-bearing objects, including the missing Royal Nectar heal chip, and theme eligibility coverage for core supplies, unlock levels, board background assets, and mid/late enemy availability.
 
 Scope:
 
@@ -126,7 +126,7 @@ Scope:
   - localized names/descriptions,
   - sprite fallback or file existence,
   - test scenario availability: done for Test page list coverage,
-  - theme eligibility,
+  - theme eligibility: done for core supplies, unlocks, board backgrounds, and mid/late enemy availability,
   - inspect panel stat metadata: done for object effect chips; enemy/route chip coverage remains in browser smoke.
 - Add a content manifest or authoring checklist for each object type.
 - Keep every new object available from the Test screen.

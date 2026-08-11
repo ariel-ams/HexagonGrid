@@ -290,6 +290,8 @@ The main menu Options panel can force a theme or leave it on `Random`. Room gene
 
 When adding a new theme, make sure it has at least one valid enemy for mid/late profiles and enough basic supplies (`pollen`, `water`, `upgrade`, and `stingUpgrade`) unless the theme deliberately changes the economy.
 
+The data smoke test verifies that theme object references have unlock levels, board background files exist, core supplies are present, and each theme has at least one eligible enemy in mid/late room profiles.
+
 ## Adding Wearable Gear
 
 Wearable metadata lives in `src/data/content.js`:
