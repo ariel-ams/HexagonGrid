@@ -133,6 +133,7 @@ const OBJECT_UNLOCK_LEVELS = {
     nectarCache: 3,
     compassPollen: 3,
     stickyHoney: 3,
+    stickyTrap: 3,
     honeySnareSpider: 3,
     pollenThiefMoth: 3,
     waxDoor: 3,

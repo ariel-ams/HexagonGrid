@@ -116,6 +116,8 @@ Acceptance checks:
 
 Goal: make adding enemies, items, relics, and themes less dependent on editing `index.js`.
 
+Status: in progress. The first content-scaling sprint expanded `tools/smoke-data.js` so it now validates localized object/enemy copy, unlock levels, enemy object mirrors, sprite metadata, theme references, and equipment slot references. `stickyTrap` now has unlock metadata because it is created by sticky honey and spider behavior.
+
 Scope:
 
 - Move remaining object-specific interaction branches into registered handlers by object id.

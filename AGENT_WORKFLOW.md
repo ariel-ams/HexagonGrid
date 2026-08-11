@@ -113,3 +113,4 @@ End meaningful work with:
 - unresolved risks,
 - next recommended action.
 
+When the user has authorized publishing, finish the task by committing focused changes and pushing the active branch. Keep unrelated or unsafe local files out of the commit, and report the commit hash, branch, remote, and verification results.
