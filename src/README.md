@@ -31,6 +31,7 @@ Inspect and learning UI
 - Hovering a revealed cell updates the panel on desktop. Tapping or clicking pins/replaces the panel on touch or desktop.
 - Floating popups are reserved for fast feedback: damage, healing, shield block, resource gain, blocked action, and rhythm feedback.
 - The inspect panel should show the object name, type, explanation, route information, and compact stat chips for effects such as `+1 pollen`, `-1 damage`, `HP`, `ATK`, `range`, cost, or lethal route warnings.
+- Route explanations in the inspect panel include movement cost, reachable steps this turn, stop reasons, expected damage/shield/water cost, and short lesson text for early teaching objects such as wax doors, enemies, and lamp cells.
 
 Adding content
 
@@ -52,5 +53,7 @@ Smoke checks
 Room lesson templates
 
 - Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
+- Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.
+- The Stag Beetle now uses `chargeLane` to turn armored combat into a lane-dodge puzzle: it marks cells in its facing direction, then those marked cells detonate if the bee stays in the lane.
 - Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.
 - Exit cells remain visible, but the route to them can be shaped by blockers, hazards, or enemies so the room asks for a specific plan.

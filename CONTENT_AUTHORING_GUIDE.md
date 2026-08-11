@@ -120,6 +120,7 @@ Existing behavior types:
 - `stealResourceAura`: steals a resource.
 - `fleeFromPlayer`: moves away after stealing.
 - `spawnEnemyAura`: spawns another enemy nearby.
+- `chargeLane`: marks a short line in the enemy's facing direction with delayed danger cells.
 - `disguiseAs`: appears as another object until close.
 
 If a behavior does not exist yet, add a data entry and then implement it in `src/systems/enemies.js` or the movement/timer functions in `index.js`.
