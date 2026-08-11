@@ -1,6 +1,6 @@
 // Data-to-chip helpers for the persistent dungeon inspect panel.
 (() => {
-function createInspectStatsSystem({ hudRows, getLanguage, vineDamage }) {
+function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBehavior, getEnemyBehavior }) {
     const resourceIcons = { pollen: '*', water: '~', honey: 'H', stingCharges: '+' };
     const resourceKinds = { pollen: 'pollen', water: 'water', honey: 'honey', stingCharges: 'sting' };
     const resourceRows = { pollen: hudRows.pollen, water: hudRows.water, honey: hudRows.honey, stingCharges: hudRows.sting };
@@ -42,6 +42,32 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage }) {
         return stats;
     }
 
+    function getEnemyStats(objectId, cell, enemy) {
+        const stats = [];
+        const maxHp = cell.bossHp || enemy.hp;
+        const hp = Math.max(0, maxHp - (cell.hits || 0));
+
+        stats.push({ icon: '+', label: `${hp}/${maxHp}`, tone: 'danger', kind: 'health', hudRow: hudRows.health });
+        stats.push({ icon: '!', label: `${enemy.attack}`, tone: 'danger', kind: 'attack', hudRow: hudRows.danger });
+        stats.push({ icon: 'R', label: `${enemy.range}`, tone: 'route', kind: 'range', hudRow: hudRows.sting });
+
+        if (hasEnemyBehavior(objectId, 'armoredFacing')) {
+            stats.push({ icon: 'S', label: isSpanish() ? 'Frente' : 'Front', tone: 'cost', kind: 'guard', hudRow: hudRows.shield });
+            const flankBonus = getEnemyBehavior(objectId, 'armoredFacing')?.flankBonus || 0;
+            if (flankBonus > 0) {
+                stats.push({ icon: '+', label: isSpanish() ? `Flanco +${flankBonus}` : `Flank +${flankBonus}`, tone: 'good', kind: 'attack', hudRow: hudRows.sting });
+            }
+        }
+        if (hasEnemyBehavior(objectId, 'chargeLane')) {
+            stats.push({ icon: '!', label: isSpanish() ? 'Carril' : 'Lane', tone: 'danger', kind: 'danger', hudRow: hudRows.danger });
+        }
+        if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemy')) {
+            stats.push({ icon: '!', label: isSpanish() ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: hudRows.danger });
+        }
+
+        return stats;
+    }
+
     function addTerrainStats(stats, objectId) {
         if (objectId === 'vine') {
             stats.push({ icon: '-', label: `${vineDamage}`, tone: 'danger', kind: 'damage', hudRow: hudRows.danger });
@@ -62,6 +88,7 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage }) {
     }
 
     return {
+        getEnemyStats,
         getObjectEffectStats
     };
 }

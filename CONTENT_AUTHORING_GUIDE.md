@@ -11,7 +11,7 @@ Before adding or reviewing content, copy the relevant section from `CONTENT_MANI
 - `src/data/content.js`: content tables for translations, relics, sprites, enemies, objects, spawn weights.
 - `src/systems/items.js`: data-driven item effects.
 - `src/systems/enemies.js`: data-driven enemy behaviors.
-- `src/systems/inspect-stats.js`: maps object effects and terrain costs into inspect panel stat chips.
+- `src/systems/inspect-stats.js`: maps enemy stats, object effects, and terrain costs into inspect panel stat chips.
 - `src/systems/dance.js`: final dance move generation, scoring, drawing, and dance replay events.
 - `src/systems/audio.js`: music/audio tracks, cue start times, volume ducking, replay audio sync helpers.
 - `src/systems/hud.js`: compact icon HUD rendering and tooltip/pulse behavior.
@@ -112,6 +112,7 @@ guardWasp: {
 ```
 
 Enemy behaviors are interpreted by `src/systems/enemies.js` and `index.js`.
+If the enemy should show a new stat chip or behavior tag in the inspect panel, add that metadata to `src/systems/inspect-stats.js`.
 
 Existing behavior types:
 

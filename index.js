@@ -183,7 +183,9 @@ const inspectUi = window.HW_INSPECT_UI.createInspectUi({
 const inspectStatsSystem = window.HW_INSPECT_STATS.createInspectStatsSystem({
     hudRows: HUD_ICON_ROWS,
     getLanguage: () => currentLanguage,
-    vineDamage: VINE_DAMAGE
+    vineDamage: VINE_DAMAGE,
+    hasEnemyBehavior: (object, type) => Boolean(enemySystem?.hasBehavior(object, type)),
+    getEnemyBehavior: (object, type) => enemySystem?.getBehavior(object, type)
 });
 
 const tacticalFlow = window.HW_TACTICAL_FLOW.createTacticalFlow({
@@ -4456,24 +4458,7 @@ function getInspectStats(cell, object) {
 
     if (isEnemyObject(object)) {
         const enemy = getEnemyDef(object);
-        const maxHp = cell.bossHp || enemy.hp;
-        const hp = Math.max(0, maxHp - (cell.hits || 0));
-        stats.push({ icon: '♥', label: `${hp}/${maxHp}`, tone: 'danger', kind: 'health', hudRow: HUD_ICON_ROWS.health });
-        stats.push({ icon: '✦', label: `${enemy.attack}`, tone: 'danger', kind: 'attack', hudRow: HUD_ICON_ROWS.danger });
-        stats.push({ icon: '⌁', label: `${enemy.range}`, tone: 'route', kind: 'range', hudRow: HUD_ICON_ROWS.sting });
-        if (enemySystem.hasBehavior(object, 'armoredFacing')) {
-            stats.push({ icon: '▰', label: currentLanguage === 'es-419' ? 'Frente' : 'Front', tone: 'cost', kind: 'guard', hudRow: HUD_ICON_ROWS.shield });
-            const flankBonus = enemySystem.getBehavior(object, 'armoredFacing')?.flankBonus || 0;
-            if (flankBonus > 0) {
-                stats.push({ icon: '+', label: currentLanguage === 'es-419' ? `Flanco +${flankBonus}` : `Flank +${flankBonus}`, tone: 'good', kind: 'attack', hudRow: HUD_ICON_ROWS.sting });
-            }
-        }
-        if (enemySystem.hasBehavior(object, 'chargeLane')) {
-            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Carril' : 'Lane', tone: 'danger', kind: 'danger', hudRow: HUD_ICON_ROWS.danger });
-        }
-        if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemy')) {
-            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: HUD_ICON_ROWS.danger });
-        }
+        inspectStatsSystem.getEnemyStats(object, cell, enemy).forEach((stat) => stats.push(stat));
     } else {
         getObjectEffectStats(object).forEach((stat) => stats.push(stat));
     }
