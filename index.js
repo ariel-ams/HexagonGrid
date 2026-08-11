@@ -6431,6 +6431,18 @@ function getCursorForCell(cell) {
 window.HW_TEST_API = {
     areAssetsReady: () => assetLoader.ready,
     getTestObjectEntries: () => getTestObjectEntries().map((entry) => ({ ...entry })),
+    startTestScenario: (objectId) => {
+        startObjectTestScenario(objectId);
+        const target = getCell(1, 0);
+        return {
+            activeTestObject: game.activeTestObject,
+            mode: game.mode,
+            isTestScenario: game.isTestScenario,
+            targetObject: target?.object || null,
+            player: { q: game.player.q, r: game.player.r },
+            message: game.message
+        };
+    },
     getObjectEffectStatCoverage: () => Object.entries(OBJECTS)
         .filter(([, object]) => Array.isArray(object.effects) && object.effects.length > 0)
         .map(([id, object]) => ({

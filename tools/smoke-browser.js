@@ -52,6 +52,20 @@ async function main() {
         assert(!renderedTestObjectSet.has(objectId), `Test menu should not include navigation/internal object ${objectId}.`);
     });
     assert(await page.locator('#testObjectList canvas.test-object-icon').count() === testObjectEntries.length, 'Each test object should render an icon canvas.');
+    const scenarioResults = await page.evaluate((entries) => (
+        entries.map((entry) => window.HW_TEST_API.startTestScenario(entry.id))
+    ), testObjectEntries);
+    scenarioResults.forEach((result, index) => {
+        const entry = testObjectEntries[index];
+        assert(result.mode === 'dungeon', `Test scenario ${entry.id} should enter dungeon mode.`);
+        assert(result.isTestScenario === true, `Test scenario ${entry.id} should mark test mode.`);
+        assert(result.activeTestObject === entry.id, `Test scenario ${entry.id} should become the active test object.`);
+        assert(result.targetObject === entry.id, `Test scenario ${entry.id} should place the object in the target cell.`);
+        assert(result.player.q === 0 && result.player.r === 0, `Test scenario ${entry.id} should reset the bee at the scenario start.`);
+        assert(typeof result.message === 'string' && result.message.includes(entry.name), `Test scenario ${entry.id} should explain the tested object.`);
+    });
+    await page.click('#testListButton');
+    await page.waitForSelector('#testScreen.visible');
     await page.click('#testBackButton');
     await page.waitForFunction(() => !document.querySelector('#testScreen.visible'));
     await page.click('#newRunButton');
