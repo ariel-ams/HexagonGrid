@@ -27,6 +27,24 @@ async function main() {
     await page.goto(gameUrl, { waitUntil: 'load' });
     await page.waitForFunction(() => window.HW_TEST_API && window.HW_TEST_API.areAssetsReady && window.HW_TEST_API.areAssetsReady());
     assert(await page.locator('#loadingScreen.ready').count() === 1, 'Loading screen should hide after assets are ready.');
+    const testObjectEntries = await page.evaluate(() => window.HW_TEST_API.getTestObjectEntries());
+    assert(testObjectEntries.length > 0, 'Test menu should expose testable game objects.');
+    await page.click('#testDanceButton');
+    await page.waitForSelector('#testScreen.visible');
+    const renderedTestObjects = await page.locator('#testObjectList [data-test-object]').evaluateAll((nodes) => (
+        nodes.map((node) => node.getAttribute('data-test-object'))
+    ));
+    assert(renderedTestObjects.length === testObjectEntries.length, 'Test menu should render every generated test object.');
+    const renderedTestObjectSet = new Set(renderedTestObjects);
+    testObjectEntries.forEach((entry) => {
+        assert(renderedTestObjectSet.has(entry.id), `Test menu is missing ${entry.id}.`);
+    });
+    ['empty', 'entry', 'exit', 'finalExit'].forEach((objectId) => {
+        assert(!renderedTestObjectSet.has(objectId), `Test menu should not include navigation/internal object ${objectId}.`);
+    });
+    assert(await page.locator('#testObjectList canvas.test-object-icon').count() === testObjectEntries.length, 'Each test object should render an icon canvas.');
+    await page.click('#testBackButton');
+    await page.waitForFunction(() => !document.querySelector('#testScreen.visible'));
     await page.click('#newRunButton');
     await page.waitForFunction(() => window.HW_TEST_API && window.HW_TEST_API.getState().mode === 'dungeon');
     assert(await page.locator('#eventToast.visible').count() === 1, 'Top-center toast should appear after starting a run.');

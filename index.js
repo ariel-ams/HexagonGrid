@@ -6428,6 +6428,7 @@ function getCursorForCell(cell) {
 
 window.HW_TEST_API = {
     areAssetsReady: () => assetLoader.ready,
+    getTestObjectEntries: () => getTestObjectEntries().map((entry) => ({ ...entry })),
     getState: () => ({
         mode: game.mode,
         isTestScenario: game.isTestScenario,

@@ -116,7 +116,7 @@ Acceptance checks:
 
 Goal: make adding enemies, items, relics, and themes less dependent on editing `index.js`.
 
-Status: in progress. The first content-scaling sprint expanded `tools/smoke-data.js` so it now validates localized object/enemy copy, unlock levels, enemy object mirrors, sprite metadata, theme references, and equipment slot references. `stickyTrap` now has unlock metadata because it is created by sticky honey and spider behavior.
+Status: in progress. The first content-scaling sprint expanded `tools/smoke-data.js` so it now validates localized object/enemy copy, unlock levels, enemy object mirrors, sprite metadata, theme references, and equipment slot references. `stickyTrap` now has unlock metadata because it is created by sticky honey and spider behavior. The next sprint added browser smoke coverage for Test page availability, comparing the rendered scenario list against the generated object entries and checking that each scenario has an icon canvas.
 
 Scope:
 
@@ -125,7 +125,7 @@ Scope:
 - Add content smoke tests for:
   - localized names/descriptions,
   - sprite fallback or file existence,
-  - test scenario availability,
+  - test scenario availability: done for Test page list coverage,
   - theme eligibility,
   - inspect panel stat metadata.
 - Add a content manifest or authoring checklist for each object type.
