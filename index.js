@@ -180,6 +180,12 @@ const inspectUi = window.HW_INSPECT_UI.createInspectUi({
     escapeAttr
 });
 
+const inspectStatsSystem = window.HW_INSPECT_STATS.createInspectStatsSystem({
+    hudRows: HUD_ICON_ROWS,
+    getLanguage: () => currentLanguage,
+    vineDamage: VINE_DAMAGE
+});
+
 const tacticalFlow = window.HW_TACTICAL_FLOW.createTacticalFlow({
     startMovePoints: START_MOVE_POINTS,
     startAttackRange: START_ATTACK_RANGE
@@ -4501,7 +4507,7 @@ function getInspectStats(cell, object) {
     return stats.slice(0, 8);
 }
 
-function getObjectEffectStats(object) {
+function getLegacyObjectEffectStats(object) {
     const stats = [];
     const def = OBJECTS[object] || OBJECTS.empty;
     const effects = def.effects || [];
@@ -4540,6 +4546,10 @@ function getObjectEffectStats(object) {
     }
 
     return stats;
+}
+
+function getObjectEffectStats(object) {
+    return inspectStatsSystem.getObjectEffectStats(object, OBJECTS);
 }
 
 function getCellInfo(cell) {
