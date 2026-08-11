@@ -35,6 +35,7 @@ assert(HW_CONTENT?.OBJECTS, 'HW_CONTENT.OBJECTS was not registered');
 assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
 assert(HW_ART?.UI_ART_DEFS, 'HW_ART.UI_ART_DEFS was not registered');
 assert(HW_ART?.TILE_ART_DEFS, 'HW_ART.TILE_ART_DEFS was not registered');
+assert(HW_ART?.THEME_TILE_SHEET_DEFS, 'HW_ART.THEME_TILE_SHEET_DEFS was not registered');
 assert(HW_ART?.HUD_ICON_ROWS, 'HW_ART.HUD_ICON_ROWS was not registered');
 assert(HW_PROGRESSION?.ROOM_PROFILES?.length >= 5, 'Expected at least 5 room profiles');
 assert(HW_PROGRESSION?.XP_REWARDS?.room > 0, 'Room XP reward must be positive');
@@ -44,6 +45,7 @@ assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
+Object.values(HW_ART.THEME_TILE_SHEET_DEFS).forEach(assertFile);
 assertFile('assets/ui/alpha/hud-icons.png');
 
 const hudRows = Object.values(HW_ART.HUD_ICON_ROWS);

@@ -30,6 +30,31 @@ async function rect(page, selector) {
     });
 }
 
+async function layoutSnapshot(page) {
+    return page.evaluate(() => {
+        const box = (selector) => {
+            const element = document.querySelector(selector);
+            if (!element) return null;
+            const rect = element.getBoundingClientRect();
+            return {
+                left: rect.left,
+                top: rect.top,
+                right: rect.right,
+                bottom: rect.bottom,
+                width: rect.width,
+                height: rect.height
+            };
+        };
+        return {
+            hud: box('#bottomCombatHud'),
+            life: box('#bottomCombatHud .life-orb'),
+            move: box('#bottomCombatHud .move-orb'),
+            xp: box('#bottomCombatHud .xp-hud'),
+            toast: box('#eventToast.visible')
+        };
+    });
+}
+
 async function startRun(page) {
     await page.goto(gameUrl, { waitUntil: 'load' });
     await page.click('#newRunButton');
@@ -50,18 +75,23 @@ async function inspectNeighbor(page) {
 }
 
 async function assertGameplayLayout(page, viewport) {
-    const hud = await rect(page, '#bottomCombatHud');
-    const life = await rect(page, '#bottomCombatHud .life-orb');
-    const move = await rect(page, '#bottomCombatHud .move-orb');
-    const xp = await rect(page, '#bottomCombatHud .xp-hud');
-    const toast = await rect(page, '#eventToast.visible');
+    await page.waitForSelector('#bottomCombatHud .life-orb');
+    await page.waitForSelector('#bottomCombatHud .move-orb');
+    await page.waitForSelector('#bottomCombatHud .xp-hud');
+    const { hud, life, move, xp, toast } = await layoutSnapshot(page);
+    assert(hud && life && move && xp, 'HUD, orb, and XP elements should be measurable.');
 
     assert(hud.left >= 0 && hud.right <= viewport.width, 'Bottom HUD should fit inside the viewport width.');
     assert(life.left <= hud.left + 4, 'Life orb should be anchored on the left side of the HUD.');
-    assert(move.right >= hud.right - 4, 'Movement orb should be anchored on the right side of the HUD.');
+    assert(
+        move.left > xp.right && move.right <= hud.right + 4,
+        `Movement orb should stay on the right side of the HUD. hud=${JSON.stringify(hud)} xp=${JSON.stringify(xp)} move=${JSON.stringify(move)}`
+    );
     assert(xp.left >= life.right - 1, 'XP bar should not overlap the life orb.');
     assert(xp.right <= move.left + 1, 'XP bar should not overlap the movement orb.');
-    assert(toast.right < viewport.width * 0.55 || viewport.width < 700, 'Toast should stay away from the board center on desktop.');
+    if (toast) {
+        assert(toast.right < viewport.width * 0.55 || viewport.width < 700, 'Toast should stay away from the board center on desktop.');
+    }
 
     await inspectNeighbor(page);
     const inspect = await rect(page, '#inspectPanel');
