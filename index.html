@@ -1187,6 +1187,75 @@
             display: none;
         }
 
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 50% 32%, rgba(245, 200, 75, 0.2), transparent 26rem),
+                rgba(8, 12, 10, 0.94);
+            transition: opacity 220ms ease, visibility 220ms ease;
+        }
+
+        .loading-screen.ready {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-panel {
+            width: min(520px, 100%);
+            border: 30px solid transparent;
+            border-image-source: var(--art-modal-panel);
+            border-image-slice: 96 fill;
+            border-image-width: 30px;
+            border-image-repeat: stretch;
+            border-radius: 20px;
+            background: transparent;
+            color: var(--parchment-ink);
+            display: grid;
+            gap: 14px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 24px 54px rgba(0, 0, 0, 0.48);
+        }
+
+        .loading-panel h1 {
+            margin: 0;
+            color: #57250d;
+            font-size: clamp(28px, 5vw, 42px);
+            line-height: 1;
+            text-shadow: none;
+        }
+
+        .loading-panel p {
+            margin: 0;
+            color: #3f2a18;
+            font-weight: 900;
+            text-shadow: none;
+        }
+
+        .loading-track {
+            height: 16px;
+            overflow: hidden;
+            border: 2px solid rgba(92, 44, 22, 0.38);
+            border-radius: 999px;
+            background: rgba(52, 26, 10, 0.16);
+            box-shadow: inset 0 2px 5px rgba(52, 26, 10, 0.22);
+        }
+
+        .loading-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background:
+                linear-gradient(90deg, #e9a72e, #f5d76b 52%, #a66a23);
+            transition: width 180ms ease;
+        }
+
         .end-screen.visible {
             display: grid;
         }
@@ -1742,6 +1811,15 @@
     </style>
 </head>
 <body>
+    <section class="loading-screen" id="loadingScreen" aria-live="polite">
+        <div class="loading-panel">
+            <h1 data-i18n="title">Honeycomb Wayfinder</h1>
+            <p id="loadingText">Loading hive assets...</p>
+            <div class="loading-track" aria-hidden="true">
+                <div class="loading-fill" id="loadingFill"></div>
+            </div>
+        </div>
+    </section>
     <button class="mobile-toggle" id="statsToggle" type="button" data-i18n="beeStats">Stats</button>
     <button class="mobile-toggle" id="logToggle" type="button" data-i18n="gameLog">Log</button>
     <button class="settings-toggle" id="settingsToggle" type="button" data-i18n="settings">Settings</button>

@@ -54,10 +54,36 @@ function createRendererTools(context) {
         return true;
     }
 
+    function drawSheetTile(ctx, image, meta, x, y, size, row, column, alpha = 1) {
+        if (!image?.complete || !image.naturalWidth || !meta) return false;
+        const frameSize = meta.frameSize;
+        const sourceInset = Math.max(0, Math.min(frameSize * 0.2, meta.sourceInset || 0));
+        const sourceSize = Math.max(1, frameSize - sourceInset * 2);
+        const sourceX = Math.max(0, Math.min(meta.columns - 1, column)) * frameSize + sourceInset;
+        const sourceY = Math.max(0, Math.min(meta.rows - 1, row)) * frameSize + sourceInset;
+        const drawSize = size * 2 * (meta.drawScale || 1);
+        ctx.save();
+        ctx.globalAlpha *= alpha;
+        ctx.drawImage(
+            image,
+            sourceX,
+            sourceY,
+            sourceSize,
+            sourceSize,
+            x - drawSize / 2,
+            y - drawSize / 2,
+            drawSize,
+            drawSize
+        );
+        ctx.restore();
+        return true;
+    }
+
     return {
         drawHexPath,
         drawImageCover,
         drawTileArt,
+        drawSheetTile,
         loadImages
     };
 }

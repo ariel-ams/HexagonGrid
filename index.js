@@ -55,6 +55,9 @@ const replayControls = document.getElementById('replayControls');
 const replayPauseButton = document.getElementById('replayPauseButton');
 const replayCloseButton = document.getElementById('replayCloseButton');
 const replaySpeedButtons = [...document.querySelectorAll('.replay-speed')];
+const loadingScreen = document.getElementById('loadingScreen');
+const loadingText = document.getElementById('loadingText');
+const loadingFill = document.getElementById('loadingFill');
 
 const HEX_RADIUS = 4;
 const VISIBLE_RADIUS = 4;
@@ -121,6 +124,7 @@ const {
 const {
     UI_ART_DEFS,
     TILE_ART_DEFS,
+    THEME_TILE_SHEET_DEFS,
     HUD_ICON_ROWS
 } = window.HW_ART;
 
@@ -140,13 +144,23 @@ progression = progressionSystem.load();
 
 const uiArtAssets = {};
 const tileArtAssets = {};
+const themeTileSheetAssets = {};
+const themeTileSheetMeta = {};
 const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
 const rendererTools = window.HW_RENDERER.createRendererTools();
+const assetLoader = {
+    total: 0,
+    complete: 0,
+    ready: false
+};
+setStartButtonsLoading(true);
 loadUiArt();
 loadTileArt();
+loadThemeTileSheets();
 loadSprites();
+queueMicrotask(checkAssetsReady);
 
 const hudRenderer = window.HW_HUD.createHudRenderer({
     statsNode: statsHudNode,
@@ -526,6 +540,7 @@ enemyTurns = window.HW_ENEMY_TURNS.createEnemyTurns({
     moveMirrorWasps,
     resolveTurnEnemyPressure,
     tickSpecialEnemyTelegraphs,
+    updateArmoredEnemyFacing,
     resolveBossAntiKite
 });
 
@@ -642,6 +657,7 @@ function setLanguage(language) {
     renderCooldown();
     renderLog();
     renderMessage();
+    updateLoadingScreen();
     draw();
 }
 
@@ -1077,6 +1093,7 @@ function chooseWeightedObject(options, fallback) {
 }
 
 function createGrid() {
+    if (!resourcesReady()) return;
     startGameplayMusic();
     startScreen.classList.add('hidden');
     startRunState();
@@ -1168,6 +1185,7 @@ function startRunState() {
 }
 
 function testDanceRun() {
+    if (!resourcesReady()) return;
     stopAllMusic();
     startScreen.classList.add('hidden');
     startRunState();
@@ -1226,6 +1244,7 @@ function renderObjectIcon(targetCtx, objectId, width, height) {
 }
 
 function startObjectTestScenario(objectId) {
+    if (!resourcesReady()) return;
     const object = OBJECTS[objectId];
     if (!object) return;
 
@@ -1264,6 +1283,8 @@ function startObjectTestScenario(objectId) {
         object: 'empty',
         visited: q === 0 && r === 0,
         revealed: true,
+        litByLamp: false,
+        facingDir: null,
         nextAttackAt: 0,
         nextAuraAt: 0,
         hits: 0
@@ -1273,6 +1294,7 @@ function startObjectTestScenario(objectId) {
     if (target) {
         target.object = objectId;
         target.awake = objectId === 'sleepingBat';
+        initializeEnemyFacing(target);
         if (isEnemyObject(objectId) && hasTimedAura(objectId)) {
             target.nextAuraAt = performance.now() + getTestInitialTimer(objectId);
         }
@@ -1373,6 +1395,7 @@ function seedTestSupportCells(objectId) {
 }
 
 function openTestMenu() {
+    if (!resourcesReady()) return;
     menuController.openTestMenu();
 }
 
@@ -1466,6 +1489,9 @@ function generateRoom(reason) {
             visited: false,
             revealed: false,
             litByLamp: false,
+            facingDir: null,
+            themeTileRow: getThemeTileRow(q, r, roomIndex),
+            themeTileVariant: getThemeTileVariant(q, r),
             nextAttackAt: 0,
             nextAuraAt: 0,
             hits: 0
@@ -1480,6 +1506,7 @@ function generateRoom(reason) {
     placeTeachingEnemy();
     placeBats();
     updateLampLightFields();
+    initializePositionalEnemies();
     const startCell = getCell(game.player.q, game.player.r);
     if (startCell) startCell.visited = true;
     runRelicHook('onRoomStart');
@@ -1559,6 +1586,9 @@ function generateBossRoom() {
             visited: false,
             revealed: true,
             litByLamp: false,
+            facingDir: null,
+            themeTileRow: getThemeTileRow(q, r, roomIndex),
+            themeTileVariant: getThemeTileVariant(q, r),
             nextAttackAt: 0,
             nextAuraAt: object === 'queenSignaler'
                 ? performance.now() + 2200
@@ -1575,6 +1605,7 @@ function generateBossRoom() {
     if (boss) {
         boss.bossHp = 1;
     }
+    initializePositionalEnemies();
     clearBossApproachRoute(bossPosition, spawnerPositions[0]);
     game.message = t('messages', 'bossStart');
     addLog(t('logs', 'finalBoss'), game.message);
@@ -1883,7 +1914,7 @@ function randomFrom(items) {
 }
 
 function placeTeachingEnemy() {
-    if (game.roomDepth !== 1 || game.roomSpawnCounts.enemies >= game.roomProfile.maxEnemies) {
+    if (game.roomDepth !== 1 || game.roomTemplate === 'onboardingPath' || game.roomSpawnCounts.enemies >= game.roomProfile.maxEnemies) {
         return;
     }
     const candidates = game.cells.filter((cell) => (
@@ -2079,7 +2110,7 @@ function updateLampLightFields() {
     });
 
     game.cells
-        .filter((cell) => cell.object === 'lampCell')
+        .filter((cell) => cell.object === 'lampCell' && (cell.revealed || cell.visited))
         .forEach((lamp) => {
             game.cells.forEach((cell) => {
                 if (cell !== lamp && !cell.revealed && hexDistance(lamp.q, lamp.r, cell.q, cell.r) <= 1) {
@@ -2087,6 +2118,81 @@ function updateLampLightFields() {
                 }
             });
         });
+}
+
+function getThemeTileSheet() {
+    const themeId = getCurrentTheme()?.id || 'forest';
+    const image = themeTileSheetAssets[themeId] || themeTileSheetAssets.forest;
+    const meta = themeTileSheetMeta[themeId] || themeTileSheetMeta.forest;
+    return image && meta ? { image, meta } : null;
+}
+
+function getThemeTileRow(q, r, roomIndex = 0) {
+    const meta = getThemeTileSheet()?.meta;
+    const baseRows = meta?.baseRows || 5;
+    const roomBand = Number.isFinite(roomIndex) ? roomIndex : 0;
+    const localVariation = Math.floor(seededNoise(q * 31 + r * 47 + game.runSeed, 19) * 2);
+    return Math.max(0, Math.min(baseRows - 1, (roomBand + localVariation) % baseRows));
+}
+
+function getThemeTileVariant(q, r) {
+    const meta = getThemeTileSheet()?.meta;
+    const columns = meta?.columns || 6;
+    return Math.floor(seededNoise(q * 83 + r * 29 + game.runSeed, 7) * columns) % columns;
+}
+
+function initializePositionalEnemies() {
+    game.cells
+        .filter((cell) => isEnemyObject(cell.object))
+        .forEach(initializeEnemyFacing);
+}
+
+function initializeEnemyFacing(cell) {
+    if (!enemySystem?.hasBehavior(cell.object, 'armoredFacing')) return;
+    const directionToPlayer = getDirectionIndexBetween(cell, game.player);
+    cell.facingDir = directionToPlayer >= 0
+        ? directionToPlayer
+        : Math.floor(seededRandom() * HEX_DIRECTIONS.length);
+}
+
+function updateArmoredEnemyFacing() {
+    let turned = 0;
+    game.cells
+        .filter((cell) => isEnemyObject(cell.object) && enemySystem.hasBehavior(cell.object, 'armoredFacing'))
+        .forEach((cell) => {
+            const behavior = enemySystem.getBehavior(cell.object, 'armoredFacing');
+            if (hexDistance(cell.q, cell.r, game.player.q, game.player.r) > (behavior.turnRange || 3)) return;
+            const directionToPlayer = getDirectionIndexBetween(cell, game.player);
+            if (directionToPlayer >= 0 && cell.facingDir !== directionToPlayer) {
+                cell.facingDir = directionToPlayer;
+                cell.guardFlashUntil = performance.now() + 650;
+                turned += 1;
+            } else if (directionToPlayer >= 0 && cell.facingDir == null) {
+                cell.facingDir = directionToPlayer;
+            }
+        });
+    if (turned > 0) {
+        addLog(currentLanguage === 'es-419' ? 'Guardia' : 'Guard', currentLanguage === 'es-419'
+            ? `${turned} enemigo${turned === 1 ? '' : 's'} se giraron para cubrir su frente.`
+            : `${turned} armored threat${turned === 1 ? '' : 's'} turned to guard their front.`);
+    }
+}
+
+function getDirectionIndexBetween(from, to) {
+    const dq = to.q - from.q;
+    const dr = to.r - from.r;
+    const distance = hexDistance(from.q, from.r, to.q, to.r);
+    if (distance < 1) return -1;
+    return HEX_DIRECTIONS.findIndex((direction) => (
+        direction.q * distance === dq && direction.r * distance === dr
+    ));
+}
+
+function isAttackBlockedByFacing(cell) {
+    if (!enemySystem?.hasBehavior(cell.object, 'armoredFacing')) return false;
+    if (cell.facingDir == null) initializeEnemyFacing(cell);
+    const attackDirection = getDirectionIndexBetween(cell, game.player);
+    return attackDirection >= 0 && attackDirection === cell.facingDir;
 }
 
 function getRelic(id) {
@@ -2681,6 +2787,10 @@ function drawBackground(board) {
     drawForestTexture(board);
     ctx.restore();
 
+    if (game.mode === 'dungeon') {
+        drawThemeEnvironmentLayer(board);
+    }
+
     if (game.mode === 'dance') {
         drawDiscoFloor(board);
     }
@@ -2702,12 +2812,104 @@ function drawImageCover(image, x, y, width, height) {
     rendererTools.drawImageCover(ctx, image, x, y, width, height);
 }
 
+function registerAssetLoad() {
+    assetLoader.total += 1;
+    updateLoadingScreen();
+    let settled = false;
+    return () => {
+        if (settled) return;
+        settled = true;
+        assetLoader.complete += 1;
+        updateLoadingScreen();
+        checkAssetsReady();
+    };
+}
+
+function loadTrackedImages(defs, target, onUpdate) {
+    Object.entries(defs || {}).forEach(([key, src]) => {
+        const finish = registerAssetLoad();
+        const image = new Image();
+        image.onload = () => {
+            target[key] = image;
+            if (onUpdate) onUpdate(key, image);
+            finish();
+        };
+        image.onerror = () => {
+            target[key] = null;
+            if (onUpdate) onUpdate(key, null);
+            finish();
+        };
+        image.src = src;
+    });
+}
+
+function updateLoadingScreen() {
+    if (!loadingScreen || !loadingFill || !loadingText) return;
+    const total = Math.max(1, assetLoader.total);
+    const progress = assetLoader.ready ? 1 : Math.min(0.99, assetLoader.complete / total);
+    loadingFill.style.width = `${Math.round(progress * 100)}%`;
+    loadingText.textContent = assetLoader.ready
+        ? (currentLanguage === 'es-419' ? 'Listo para explorar.' : 'Ready to explore.')
+        : (currentLanguage === 'es-419'
+            ? `Cargando recursos de la colmena... ${assetLoader.complete}/${assetLoader.total}`
+            : `Loading hive assets... ${assetLoader.complete}/${assetLoader.total}`);
+}
+
+function checkAssetsReady() {
+    if (assetLoader.ready || assetLoader.complete < assetLoader.total) return;
+    assetLoader.ready = true;
+    spritesReady = true;
+    setStartButtonsLoading(false);
+    updateLoadingScreen();
+    requestAnimationFrame(() => {
+        loadingScreen?.classList.add('ready');
+        draw();
+    });
+}
+
+function setStartButtonsLoading(isLoading) {
+    [newRunButton, testDanceButton].forEach((button) => {
+        if (!button) return;
+        button.disabled = isLoading;
+        button.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    });
+}
+
+function resourcesReady() {
+    if (assetLoader.ready) return true;
+    updateLoadingScreen();
+    loadingScreen?.classList.remove('ready');
+    return false;
+}
+
 function loadUiArt() {
-    rendererTools.loadImages(UI_ART_DEFS, uiArtAssets);
+    loadTrackedImages(UI_ART_DEFS, uiArtAssets);
 }
 
 function loadTileArt() {
-    rendererTools.loadImages(TILE_ART_DEFS, tileArtAssets);
+    loadTrackedImages(TILE_ART_DEFS, tileArtAssets);
+}
+
+function loadThemeTileSheets() {
+    loadTrackedImages(THEME_TILE_SHEET_DEFS || {}, themeTileSheetAssets, (key, image) => {
+        if (!image?.naturalWidth || !image?.naturalHeight) {
+            delete themeTileSheetMeta[key];
+            return;
+        }
+        const columns = 6;
+        const frameSize = image.naturalWidth / columns;
+        const rows = Math.max(1, Math.round(image.naturalHeight / frameSize));
+        themeTileSheetMeta[key] = {
+            columns,
+            rows,
+            frameSize,
+            baseRows: rows >= 6 ? 5 : Math.max(1, rows),
+            blendRow: rows >= 6 ? 5 : Math.max(0, rows - 1),
+            sourceInset: Math.round(frameSize * 0.03),
+            drawScale: 1.06
+        };
+        draw();
+    });
 }
 
 function drawForestTexture(board) {
@@ -2763,6 +2965,9 @@ function drawCell(cell) {
     const disguised = visibleObject !== cell.object;
 
     drawCellBackground(cell, x, y, size, hidden, softLit);
+    if (!hidden && cell.lessonSafe) {
+        drawLessonSafeMarker(x, y, size);
+    }
     if (!hidden) {
         drawThreatPreview(cell, x, y, size);
     }
@@ -2787,6 +2992,7 @@ function drawCell(cell) {
         drawSprite(visibleObject, x, y, size, cell);
         ctx.restore();
         if (!softLit && !disguised && isEnemyObject(cell.object)) {
+            drawEnemyFacingGuard(cell, x, y, size);
             drawEnemyHealthPips(cell, x, y, size);
             drawEnemyTypeBadge(cell.object, x, y, size);
         }
@@ -2833,6 +3039,20 @@ function drawThreatPreview(cell, x, y, size) {
         ctx.fill();
     }
     ctx.stroke();
+    ctx.restore();
+}
+
+function drawLessonSafeMarker(x, y, size) {
+    const pulse = (Math.sin(performance.now() / 180) + 1) / 2;
+    ctx.save();
+    drawHexPath(x, y, size - 10);
+    ctx.fillStyle = `rgba(82, 210, 166, ${0.08 + pulse * 0.06})`;
+    ctx.strokeStyle = `rgba(126, 230, 165, ${0.58 + pulse * 0.24})`;
+    ctx.lineWidth = 4;
+    ctx.setLineDash([5, 6]);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
     ctx.restore();
 }
 
@@ -3024,6 +3244,7 @@ function hasSpecialTurnThreat(object) {
     return enemySystem.hasBehavior(object, 'spawnEnemyAura')
         || enemySystem.hasBehavior(object, 'spawnTerrainAura')
         || enemySystem.hasBehavior(object, 'markCellsAura')
+        || enemySystem.hasBehavior(object, 'chargeLane')
         || enemySystem.hasBehavior(object, 'burrowAmbush')
         || enemySystem.hasBehavior(object, 'weakPointWindow')
         || enemySystem.hasBehavior(object, 'refogAura')
@@ -3105,6 +3326,140 @@ function drawCellBackground(cell, x, y, size, hidden, softLit = false) {
     ctx.globalAlpha = 1;
 }
 
+function drawThemeEnvironmentLayer(board) {
+    const sheet = getThemeTileSheet();
+    if (!sheet) return;
+    const environmentCells = getVisibleEnvironmentCells(board);
+    ctx.save();
+    environmentCells.forEach((cell) => {
+        const { x, y, size } = hexToPixel(cell.q, cell.r);
+        drawThemeEnvironmentCell(cell, x, y, size, sheet, 0.18);
+    });
+    const environmentMap = new Map(environmentCells.map((cell) => [cellKey(cell.q, cell.r), cell]));
+    environmentCells.forEach((cell) => {
+        const { x, y, size } = hexToPixel(cell.q, cell.r);
+        drawThemeEnvironmentBlendEdges(cell, x, y, size, sheet, environmentMap);
+    });
+    ctx.restore();
+}
+
+function getVisibleEnvironmentCells(board) {
+    const playable = new Set(game.cells.map((cell) => cellKey(cell.q, cell.r)));
+    const camera = getCameraWorldPosition();
+    const radiusQ = Math.ceil(board.width / (board.size * Math.sqrt(3))) + 7;
+    const radiusR = Math.ceil(board.height / (board.size * 1.5)) + 7;
+    const centerQ = Math.round(camera.q);
+    const centerR = Math.round(camera.r);
+    const cells = [];
+
+    for (let q = centerQ - radiusQ; q <= centerQ + radiusQ; q++) {
+        for (let r = centerR - radiusR; r <= centerR + radiusR; r++) {
+            const point = hexToPixel(q, r);
+            if (
+                point.x < -point.size * 2
+                || point.x > board.width + point.size * 2
+                || point.y < -point.size * 2
+                || point.y > board.height + point.size * 2
+            ) {
+                continue;
+            }
+            if (playable.has(cellKey(q, r))) continue;
+            cells.push({
+                q,
+                r,
+                themeTileRow: getEnvironmentTileRow(q, r),
+                themeTileVariant: getThemeTileVariant(q, r)
+            });
+        }
+    }
+
+    return cells;
+}
+
+function getEnvironmentTileRow(q, r) {
+    const meta = getThemeTileSheet()?.meta;
+    const baseRows = meta?.baseRows || 5;
+    const largePatch = Math.floor(seededNoise(Math.floor(q / 4) * 97 + Math.floor(r / 4) * 131 + game.runSeed, 23) * baseRows);
+    const smallPatch = seededNoise(q * 17 + r * 31 + game.runSeed, 29) < 0.14 ? 1 : 0;
+    return (largePatch + smallPatch) % baseRows;
+}
+
+function drawThemeEnvironmentCell(cell, x, y, size, sheet, alpha = 0.18) {
+    const { image, meta } = sheet;
+    const row = Math.max(0, Math.min(meta.baseRows - 1, cell.themeTileRow ?? getThemeTileRow(cell.q, cell.r, cell.roomIndex)));
+    const column = Math.max(0, Math.min(meta.columns - 1, cell.themeTileVariant ?? getThemeTileVariant(cell.q, cell.r)));
+    ctx.save();
+    drawHexPath(x, y, size * 0.94);
+    ctx.clip();
+    rendererTools.drawSheetTile(ctx, image, meta, x, y, size * 0.98, row, column, alpha);
+    ctx.restore();
+}
+
+function drawThemeEnvironmentBlendEdges(cell, x, y, size, sheet, environment) {
+    const { meta, image } = sheet;
+    if (meta.rows < 6) return;
+    const currentRow = cell.themeTileRow ?? getEnvironmentTileRow(cell.q, cell.r);
+    HEX_DIRECTIONS.forEach((direction, index) => {
+        const neighbor = environment.get(cellKey(cell.q + direction.q, cell.r + direction.r));
+        if (!neighbor || neighbor.themeTileRow == null || neighbor.themeTileRow === currentRow) return;
+        if (cellKey(cell.q, cell.r) > cellKey(neighbor.q, neighbor.r)) return;
+        drawThemeBlendEdge(image, meta, x, y, size * 0.98, index);
+    });
+}
+
+function drawThemeBlendEdge(image, meta, x, y, size, directionIndex) {
+    const direction = HEX_DIRECTIONS[directionIndex];
+    if (!direction) return;
+    const neighborPoint = hexToPixel(game.player.q + direction.q, game.player.r + direction.r);
+    const centerPoint = hexToPixel(game.player.q, game.player.r);
+    const offsetX = neighborPoint.x - centerPoint.x;
+    const offsetY = neighborPoint.y - centerPoint.y;
+    const angle = Math.atan2(offsetY, offsetX);
+    const corners = getHexCorners(x, y, size - 2);
+    const ranked = corners
+        .map((corner) => ({
+            corner,
+            distance: Math.abs(Math.atan2(Math.sin(corner.angle - angle), Math.cos(corner.angle - angle)))
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 2)
+        .map((entry) => entry.corner);
+    if (ranked.length < 2) return;
+    const band = 0.045;
+    const innerA = {
+        x: ranked[0].x + (x - ranked[0].x) * band,
+        y: ranked[0].y + (y - ranked[0].y) * band
+    };
+    const innerB = {
+        x: ranked[1].x + (x - ranked[1].x) * band,
+        y: ranked[1].y + (y - ranked[1].y) * band
+    };
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(ranked[0].x, ranked[0].y);
+    ctx.lineTo(ranked[1].x, ranked[1].y);
+    ctx.lineTo(innerB.x, innerB.y);
+    ctx.lineTo(innerA.x, innerA.y);
+    ctx.closePath();
+    ctx.clip();
+    rendererTools.drawSheetTile(ctx, image, meta, x, y, size, meta.blendRow, directionIndex % meta.columns, 0.06);
+    ctx.restore();
+}
+
+function getHexCorners(x, y, size) {
+    const corners = [];
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i - Math.PI / 6;
+        corners.push({
+            x: x + size * Math.cos(angle),
+            y: y + size * Math.sin(angle),
+            angle
+        });
+    }
+    return corners;
+}
+
 function drawAttackEffects() {
     const now = performance.now();
     game.attackEffects = game.attackEffects.filter((effect) => now - effect.startedAt < effect.duration);
@@ -3136,6 +3491,35 @@ function drawAttackEffects() {
         }
         ctx.restore();
     });
+}
+
+function drawEnemyFacingGuard(cell, x, y, size) {
+    if (!enemySystem?.hasBehavior(cell.object, 'armoredFacing') || cell.facingDir == null) return;
+    const direction = HEX_DIRECTIONS[cell.facingDir];
+    if (!direction) return;
+    const neighbor = hexToPixel(cell.q + direction.q, cell.r + direction.r);
+    const angle = Math.atan2(neighbor.y - y, neighbor.x - x);
+    const pulse = cell.guardFlashUntil && performance.now() < cell.guardFlashUntil
+        ? (Math.sin(performance.now() / 60) + 1) / 2
+        : 0;
+    const radius = size * 0.63;
+    const guardX = x + Math.cos(angle) * radius;
+    const guardY = y + Math.sin(angle) * radius;
+
+    ctx.save();
+    ctx.translate(guardX, guardY);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.fillStyle = `rgba(255, 226, 132, ${0.72 + pulse * 0.2})`;
+    ctx.strokeStyle = `rgba(74, 39, 17, ${0.9 + pulse * 0.1})`;
+    ctx.lineWidth = 2.2 + pulse * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.18);
+    ctx.lineTo(size * 0.2, size * 0.08);
+    ctx.quadraticCurveTo(0, size * 0.22, -size * 0.2, size * 0.08);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
 }
 
 function addAttackEffect(fromQ, fromR, toQ, toR, sourceObject = '', kind = '') {
@@ -3251,7 +3635,6 @@ function drawHexPath(x, y, size) {
 function loadSprites() {
     const entries = Object.entries(SPRITE_DEFS);
     const loadableEntries = entries.filter(([, definition]) => definition.src);
-    let loaded = 0;
 
     if (!loadableEntries.length) {
         spritesReady = true;
@@ -3259,24 +3642,19 @@ function loadSprites() {
     }
 
     loadableEntries.forEach(([key, definition]) => {
+        const finish = registerAssetLoad();
         const image = new Image();
         image.onload = () => {
             spriteAssets[key] = createTransparentSpriteCanvas(image);
-            loaded += 1;
-            if (loaded === loadableEntries.length) {
-                spriteFrames = buildSpriteFrames();
-                spritesReady = true;
-                draw();
-            }
+            spriteFrames = buildSpriteFrames();
+            finish();
+            draw();
         };
         image.onerror = () => {
             spriteAssets[key] = null;
-            loaded += 1;
-            if (loaded === loadableEntries.length) {
-                spriteFrames = buildSpriteFrames();
-                spritesReady = true;
-                draw();
-            }
+            spriteFrames = buildSpriteFrames();
+            finish();
+            draw();
         };
         image.src = definition.src;
     });
@@ -4077,6 +4455,16 @@ function getInspectStats(cell, object) {
         stats.push({ icon: '♥', label: `${hp}/${maxHp}`, tone: 'danger', kind: 'health', hudRow: HUD_ICON_ROWS.health });
         stats.push({ icon: '✦', label: `${enemy.attack}`, tone: 'danger', kind: 'attack', hudRow: HUD_ICON_ROWS.danger });
         stats.push({ icon: '⌁', label: `${enemy.range}`, tone: 'route', kind: 'range', hudRow: HUD_ICON_ROWS.sting });
+        if (enemySystem.hasBehavior(object, 'armoredFacing')) {
+            stats.push({ icon: '▰', label: currentLanguage === 'es-419' ? 'Frente' : 'Front', tone: 'cost', kind: 'guard', hudRow: HUD_ICON_ROWS.shield });
+            const flankBonus = enemySystem.getBehavior(object, 'armoredFacing')?.flankBonus || 0;
+            if (flankBonus > 0) {
+                stats.push({ icon: '+', label: currentLanguage === 'es-419' ? `Flanco +${flankBonus}` : `Flank +${flankBonus}`, tone: 'good', kind: 'attack', hudRow: HUD_ICON_ROWS.sting });
+            }
+        }
+        if (enemySystem.hasBehavior(object, 'chargeLane')) {
+            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Carril' : 'Lane', tone: 'danger', kind: 'danger', hudRow: HUD_ICON_ROWS.danger });
+        }
         if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemy')) {
             stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: HUD_ICON_ROWS.danger });
         }
@@ -4094,11 +4482,14 @@ function getInspectStats(cell, object) {
             kind: 'move',
             hudRow: HUD_ICON_ROWS.stamina
         });
-        if (preview.totalDamage > 0) {
-            stats.push({ icon: '−', label: `${preview.totalDamage}`, tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
+        if (preview.risk?.totalDamage > 0) {
+            stats.push({ icon: '−', label: `${preview.risk.totalDamage}`, tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
         }
-        if (preview.waterSpent > 0) {
-            stats.push({ icon: '◇', label: `${preview.waterSpent}`, tone: 'cost', kind: 'water', hudRow: HUD_ICON_ROWS.water });
+        if (preview.risk?.totalBlocked > 0) {
+            stats.push({ icon: '⬟', label: `${preview.risk.totalBlocked}`, tone: 'route', kind: 'shield', hudRow: HUD_ICON_ROWS.shield });
+        }
+        if (preview.risk?.waterSpent > 0) {
+            stats.push({ icon: '◇', label: `${preview.risk.waterSpent}`, tone: 'cost', kind: 'water', hudRow: HUD_ICON_ROWS.water });
         }
         if (preview.deathCell) {
             stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Letal' : 'Lethal', tone: 'danger', kind: 'lethal', hudRow: HUD_ICON_ROWS.danger });
@@ -4189,7 +4580,18 @@ function getCellInfo(cell) {
                 `${t('ui', 'hp')} ${hp}/${maxHp} | ${t('ui', 'attack')} ${enemy.attack} | ${t('ui', 'range')} ${enemy.range}`,
                 enemy.behavior,
                 enemy.lesson,
-                `${currentLanguage === 'es-419' ? 'Estado' : 'Status'}: ${status}`
+                ...(enemySystem.hasBehavior(cell.object, 'armoredFacing')
+                    ? [currentLanguage === 'es-419'
+                        ? 'Guardia frontal: el indicador dorado muestra el lado que bloquea.'
+                        : 'Front guard: the gold marker shows the side that blocks stings.']
+                    : []),
+                ...(enemySystem.hasBehavior(cell.object, 'chargeLane')
+                    ? [currentLanguage === 'es-419'
+                        ? 'Carril de carga: las celdas marcadas explotan si te quedas ahi.'
+                        : 'Charge lane: marked cells will detonate if you stay there.']
+                    : []),
+                `${currentLanguage === 'es-419' ? 'Estado' : 'Status'}: ${status}`,
+                ...getRouteExplanationLines(cell)
             ]
         };
     }
@@ -4201,7 +4603,8 @@ function getCellInfo(cell) {
             object.name,
             getObjectRole(cell.object),
             object.description,
-            getActionPreview(cell)
+            getActionPreview(cell),
+            ...getRouteExplanationLines(cell)
         ].filter(Boolean)
     };
 }
@@ -4278,6 +4681,77 @@ function getActionPreview(cell) {
     if (object === 'entry') return currentLanguage === 'es-419' ? 'Accion: la entrada ya esta cerrada.' : 'Action: the entry is sealed.';
     if (isFreeWalkoverObject(object)) return t('actions', 'move');
     return t('actions', 'collect');
+}
+
+function getRouteExplanationLines(cell) {
+    if (!cell || game.mode !== 'dungeon') return [];
+    const preview = getPathPreview(cell);
+    if (!preview?.path?.length) return [];
+    const reachable = Math.min(preview.path.length, getRouteMoveBudget());
+    const fullLength = preview.fullLength || preview.path.length;
+    const lines = [];
+    const routeLabel = currentLanguage === 'es-419' ? 'Ruta' : 'Route';
+    const nowLabel = currentLanguage === 'es-419' ? 'este turno' : 'this turn';
+    lines.push(currentLanguage === 'es-419'
+        ? `${routeLabel}: cuesta ${fullLength} movimiento; alcanzas ${reachable}/${fullLength} ${nowLabel}.`
+        : `${routeLabel}: costs ${fullLength} movement; reach ${reachable}/${fullLength} ${nowLabel}.`);
+
+    if (preview.blockedTarget) {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Parada: bloqueo. Llega al lado y paga o interactua.'
+            : 'Stop: blocker. Move beside it, then pay or interact.');
+    } else if (preview.deathCell) {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Peligro: esta ruta puede terminar la partida.'
+            : 'Danger: this route can end the run.');
+    } else if (!preview.complete || reachable < fullLength) {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Parada: se agota tu movimiento antes del objetivo.'
+            : 'Stop: movement runs out before the target.');
+    } else {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Resultado: puedes llegar ahora.'
+            : 'Result: reachable now.');
+    }
+
+    const risk = preview.risk || {};
+    const consequences = [];
+    if (risk.totalDamage > 0) {
+        consequences.push(currentLanguage === 'es-419'
+            ? `${risk.totalDamage} dano`
+            : `${risk.totalDamage} damage`);
+    }
+    if (risk.totalBlocked > 0) {
+        consequences.push(currentLanguage === 'es-419'
+            ? `${risk.totalBlocked} bloqueado por escudo`
+            : `${risk.totalBlocked} blocked by shield`);
+    }
+    if (risk.waterSpent > 0) {
+        consequences.push(currentLanguage === 'es-419'
+            ? `${risk.waterSpent} agua`
+            : `${risk.waterSpent} water`);
+    }
+    if (consequences.length) {
+        lines.push(currentLanguage === 'es-419'
+            ? `Costo previsto: ${consequences.join(', ')}.`
+            : `Expected cost: ${consequences.join(', ')}.`);
+    }
+
+    if (cell.object === 'waxDoor') {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Leccion: guarda 1 polen para abrir puertas de cera.'
+            : 'Lesson: save 1 pollen to open wax doors.');
+    } else if (isEnemyObject(cell.object)) {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Leccion: revisa el alcance y busca una celda segura antes de picar.'
+            : 'Lesson: check range and find a safe cell before stinging.');
+    } else if (cell.object === 'lampCell') {
+        lines.push(currentLanguage === 'es-419'
+            ? 'Leccion: las lamparas iluminan vecinos sin revelar todo.'
+            : 'Lesson: lamps light neighbors without revealing everything.');
+    }
+
+    return lines.slice(0, 4);
 }
 
 function drawHeartIcon(x, y, size, color) {
@@ -4518,6 +4992,9 @@ function moveTo(cell) {
     game.message = interaction.message;
     addLog(OBJECTS[targetObject].name, interaction.message);
     addStatPopups(cell.q, cell.r, interaction.deltas);
+    if (interaction.blocked) {
+        addWarningPopup(cell.q, cell.r, currentLanguage === 'es-419' ? 'Frente bloqueado' : 'Front blocked');
+    }
     if (isEnemyObject(targetObject) && !interaction.consume) {
         game.player.q = previousPosition.q;
         game.player.r = previousPosition.r;
@@ -4579,6 +5056,9 @@ function attackEnemyCell(cell) {
     game.message = interaction.message;
     addLog(OBJECTS[targetObject].name, interaction.message);
     addStatPopups(cell.q, cell.r, interaction.deltas);
+    if (interaction.blocked) {
+        addWarningPopup(cell.q, cell.r, currentLanguage === 'es-419' ? 'Frente bloqueado' : 'Front blocked');
+    }
     if (interaction.consume) {
         game.objectiveProgress.kills += 1;
         awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
@@ -4845,13 +5325,29 @@ function resolveInteraction(object, cell) {
                 consume: false
             };
         }
+        if (isAttackBlockedByFacing(cell)) {
+            cell.guardFlashUntil = performance.now() + 850;
+            return {
+                message: currentLanguage === 'es-419'
+                    ? `${enemy.name} bloquea con su frente. Flanquea desde el lado o la espalda.`
+                    : `${enemy.name} blocks with its front. Flank from the side or back.`,
+                deltas: [],
+                consume: false,
+                blocked: true
+            };
+        }
         if (game.roomFirstStingAvailable) game.roomFirstStingAvailable = false;
         game.player.attackAnimationUntil = performance.now() + 520;
         const usesDoubleSting = (object === 'bat' || object === 'sleepingBat') && game.player.stingCharges > 0;
-        const hitPower = usesDoubleSting ? 2 : 1;
+        const facingBehavior = enemySystem.getBehavior(object, 'armoredFacing');
+        const flankBonus = facingBehavior?.flankBonus || 0;
+        const hitPower = (usesDoubleSting ? 2 : 1) + flankBonus;
         cell.hits = (cell.hits || 0) + hitPower;
         cell.nextAttackAt = 0;
         cell.nextAuraAt = 0;
+        if (enemySystem.hasBehavior(object, 'armoredFacing')) {
+            cell.guardFlashUntil = performance.now() + 500;
+        }
         if (usesDoubleSting) {
             game.player.stingCharges -= 1;
         }
@@ -4863,11 +5359,16 @@ function resolveInteraction(object, cell) {
         }
         return {
             message: !killed
-                ? `${enemy.name} hit ${cell.hits}/${maxHp}. It still blocks the way.`
+                ? `${enemy.name} hit ${cell.hits}/${maxHp}${flankBonus ? ' with a flanking sting' : ''}. It still blocks the way.`
                 : usesDoubleSting
                 ? `Double sting defeated the ${enemy.name.toLowerCase()}.`
+                : flankBonus
+                ? `Flanking sting defeated the ${enemy.name.toLowerCase()}.`
                 : `${enemy.name} defeated.`,
-            deltas: usesDoubleSting ? [{ stat: 'stingCharges', amount: -1 }] : [],
+            deltas: [
+                ...(usesDoubleSting ? [{ stat: 'stingCharges', amount: -1 }] : []),
+                ...(flankBonus ? [{ stat: 'attack', amount: flankBonus }] : [])
+            ],
             consume: killed
         };
     }
@@ -5868,8 +6369,14 @@ function getCellActionState(cell) {
         }
         return { available: false, reason: t('ui', 'blockedNotAdjacent'), symbol: 'i', color: '#b8c2aa' };
     }
-    if (!cell.revealed) {
-        return { available: false, reason: t('ui', 'blockedHidden'), symbol: '?', color: '#b8c2aa' };
+    if (!cell.revealed && !cell.litByLamp) {
+        const canStepIntoMist = cell.object === 'empty' || isFreeWalkoverObject(cell.object);
+        return {
+            available: canStepIntoMist,
+            reason: canStepIntoMist ? '' : t('ui', 'blockedHidden'),
+            symbol: '?',
+            color: canStepIntoMist ? '#d6c889' : '#b8c2aa'
+        };
     }
     const object = cell.object;
     if (isEnemyObject(object)) {
@@ -5920,6 +6427,7 @@ function getCursorForCell(cell) {
 }
 
 window.HW_TEST_API = {
+    areAssetsReady: () => assetLoader.ready,
     getState: () => ({
         mode: game.mode,
         isTestScenario: game.isTestScenario,
@@ -5955,6 +6463,25 @@ window.HW_TEST_API = {
         acc[cell.object] = (acc[cell.object] || 0) + 1;
         return acc;
     }, {}),
+    getThemeTileDebug: () => {
+        const board = layout();
+        const environmentCells = getVisibleEnvironmentCells(board);
+        const environmentMap = new Map(environmentCells.map((cell) => [cellKey(cell.q, cell.r), cell]));
+        const playableKeys = new Set(game.cells.map((cell) => cellKey(cell.q, cell.r)));
+        return {
+            themeId: getCurrentTheme()?.id || null,
+            loadedSheets: Object.keys(themeTileSheetAssets).filter((key) => themeTileSheetAssets[key]),
+            meta: JSON.parse(JSON.stringify(themeTileSheetMeta)),
+            environmentCells: environmentCells.length,
+            playableCells: game.cells.length,
+            overlapsPlayable: environmentCells.filter((cell) => playableKeys.has(cellKey(cell.q, cell.r))).length,
+            rows: [...new Set(environmentCells.map((cell) => cell.themeTileRow).filter((row) => row != null))],
+            blendEdges: environmentCells.reduce((count, cell) => count + HEX_DIRECTIONS.filter((direction) => {
+                const neighbor = environmentMap.get(cellKey(cell.q + direction.q, cell.r + direction.r));
+                return neighbor && neighbor.themeTileRow != null && neighbor.themeTileRow !== cell.themeTileRow;
+            }).length, 0)
+        };
+    },
     getCells: () => game.cells.map((cell) => ({ ...cell })),
     setDungeonTheme: (themeId) => {
         if (!DUNGEON_THEMES?.[themeId]) return false;
@@ -5965,6 +6492,7 @@ window.HW_TEST_API = {
     },
     equipItem: (equipmentId) => equipItem(equipmentId),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
+    isEnemyObject: (object) => isEnemyObject(object),
     getCellData: (q, r) => {
         const cell = getCell(q, r);
         return cell ? { ...cell } : null;
@@ -5975,6 +6503,8 @@ window.HW_TEST_API = {
         cell.object = object;
         cell.revealed = revealed;
         cell.litByLamp = false;
+        cell.facingDir = null;
+        initializeEnemyFacing(cell);
         cell.visited = false;
         updateLampLightFields();
         draw();
@@ -5988,10 +6518,27 @@ window.HW_TEST_API = {
         syncLegacyStamina();
         draw();
     },
+    setPlayerPosition: (q, r) => {
+        const cell = getCell(q, r);
+        if (!cell) return false;
+        game.player.q = q;
+        game.player.r = r;
+        cell.visited = true;
+        revealAroundPlayer();
+        draw();
+        return true;
+    },
     moveToCell: (q, r) => {
         const cell = getCell(q, r);
         if (!cell) return false;
         moveTo(cell);
+        return true;
+    },
+    generateRoomAtDepth: (depth) => {
+        const nextDepth = Number(depth);
+        if (!Number.isFinite(nextDepth) || nextDepth < 1 || nextDepth > FINAL_ROOM) return false;
+        game.roomDepth = Math.floor(nextDepth);
+        generateRoom('test');
         return true;
     },
     inspectCell: (q, r) => {
@@ -6001,6 +6548,15 @@ window.HW_TEST_API = {
         game.inspectPinned = true;
         draw();
         return true;
+    },
+    triggerEnemyTelegraph: (q, r) => {
+        const cell = getCell(q, r);
+        if (!cell || !isEnemyObject(cell.object)) return false;
+        const enemy = getEnemyDef(cell.object);
+        const triggered = enemySystem.handleTimedThreat(cell, enemy, performance.now());
+        updateLampLightFields();
+        draw();
+        return triggered;
     },
     openMarketAt: (q, r) => {
         const cell = getCell(q, r);
@@ -6022,6 +6578,24 @@ window.HW_TEST_API = {
             r: game.pathPreview.path[game.pathPreview.path.length - 1].r
         } : null
     } : null,
+    getPathPreviewFor: (q, r) => {
+        const cell = getCell(q, r);
+        const preview = cell ? getPathPreview(cell) : null;
+        return preview ? {
+            complete: preview.complete,
+            length: preview.path.length,
+            reachableLength: preview.reachableLength,
+            fullLength: preview.fullLength,
+            lethal: Boolean(preview.deathCell),
+            risk: preview.risk,
+            deathCell: preview.deathCell,
+            blockedTarget: preview.blockedTarget,
+            end: preview.path.length ? {
+                q: preview.path[preview.path.length - 1].q,
+                r: preview.path[preview.path.length - 1].r
+            } : null
+        } : null;
+    },
     generateBossRoom: () => generateBossRoom(),
     endRun: (reason = 'final-exit') => endRun(reason)
 };

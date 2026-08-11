@@ -15,6 +15,12 @@ const TILE_ART_DEFS = {
     enemyBorder: 'assets/tiles/hex-enemy-border.png'
 };
 
+const THEME_TILE_SHEET_DEFS = {
+    forest: 'assets/tiles/themes/forest-cells.png',
+    cave: 'assets/tiles/themes/cave-cells.png',
+    waspHive: 'assets/tiles/themes/wasp-hive-cells.png'
+};
+
 const HUD_ICON_ROWS = {
     health: 0,
     shield: 1,
@@ -36,6 +42,7 @@ const HUD_ICON_ROWS = {
 window.HW_ART = {
     UI_ART_DEFS,
     TILE_ART_DEFS,
+    THEME_TILE_SHEET_DEFS,
     HUD_ICON_ROWS
 };
 })();
