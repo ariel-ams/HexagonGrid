@@ -187,12 +187,12 @@ window.HW_ROADMAP_STATE = {
                         "Added content manifest checklist.",
                         "Added smoke checks for localization, sprites, unlocks, themes, equipment, test scenarios, inspect stats, run summary, and cell interactions.",
                         "Added generated Test page scenarios for game objects.",
-                        "Added automatic roadmap-state updates from a CLI helper."
+                        "Added automatic roadmap-state updates from a CLI helper.",
+                        "Removed completed roadmap updater work from the pending list."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
-                        "Move reusable item-effect rules into clearer registries.",
-                        "Add automatic roadmap-state updates from sprint logs."
+                        "Move reusable item-effect rules into clearer registries."
                     ],
                     "evidence": [
                         "CONTENT_MANIFEST_CHECKLIST.md",

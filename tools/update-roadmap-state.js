@@ -16,6 +16,7 @@ Options:
   --current               Set this node as currentTaskId
   --done <text>           Append a done entry
   --left <text>           Append a left entry
+  --remove-left <text>    Remove an exact left entry after it is completed
   --evidence <text>       Append an evidence entry
   --date <YYYY-MM-DD>     Set updatedAt, defaults to today
   --help                  Show this help
@@ -27,6 +28,7 @@ function parseArgs(argv) {
     const options = {
         done: [],
         left: [],
+        removeLeft: [],
         evidence: []
     };
 
@@ -48,6 +50,7 @@ function parseArgs(argv) {
         else if (arg === '--status') options.status = next;
         else if (arg === '--done') options.done.push(next);
         else if (arg === '--left') options.left.push(next);
+        else if (arg === '--remove-left') options.removeLeft.push(next);
         else if (arg === '--evidence') options.evidence.push(next);
         else if (arg === '--date') options.date = next;
         else throw new Error(`Unknown option ${arg}`);
@@ -82,6 +85,15 @@ function appendUnique(list, entries) {
     });
 }
 
+function removeExact(list, entries) {
+    entries.forEach((entry) => {
+        const text = entry.trim();
+        if (!text) return;
+        const index = list.indexOf(text);
+        if (index >= 0) list.splice(index, 1);
+    });
+}
+
 function formatState(roadmap) {
     return `window.HW_ROADMAP_STATE = ${JSON.stringify(roadmap, null, 4)};\n`;
 }
@@ -108,6 +120,7 @@ function main() {
     if (options.status) node.status = options.status;
     appendUnique(node.done, options.done);
     appendUnique(node.left, options.left);
+    removeExact(node.left, options.removeLeft);
     appendUnique(node.evidence, options.evidence);
     if (options.current) roadmap.currentTaskId = node.id;
     roadmap.updatedAt = options.date || today();

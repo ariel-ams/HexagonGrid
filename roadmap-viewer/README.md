@@ -27,10 +27,10 @@ Future sprint work should update `roadmap-state.js` when a node changes status, 
 Use the updater for small sprint-state changes:
 
 ```powershell
-npm run roadmap:update -- --node content-scaling --status active --current --done "Added a focused verification slice." --evidence "npm test"
+npm run roadmap:update -- --node content-scaling --status active --current --done "Added a focused verification slice." --remove-left "Add automatic roadmap-state updates from sprint logs." --evidence "npm test"
 ```
 
-The updater appends unique `done`, `left`, and `evidence` entries, updates `updatedAt`, and can set `currentTaskId`.
+The updater appends unique `done`, `left`, and `evidence` entries, removes exact `left` entries with `--remove-left`, updates `updatedAt`, and can set `currentTaskId`.
 
 ## Status Values
 

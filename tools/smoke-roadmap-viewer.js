@@ -76,6 +76,7 @@ childProcess.execFileSync(
         '--status', 'active',
         '--current',
         '--done', 'Smoke-tested roadmap updater.',
+        '--remove-left', 'Add automatic roadmap-state updates from sprint logs.',
         '--evidence', 'tools/update-roadmap-state.js',
         '--date', '2099-01-01'
     ],
@@ -94,6 +95,7 @@ assert(updatedRoadmap.updatedAt === '2099-01-01', 'Roadmap updater should update
 assert(updatedRoadmap.currentTaskId === 'content-scaling', 'Roadmap updater should set currentTaskId');
 assert(updatedNode.status === 'active', 'Roadmap updater should set node status');
 assert(updatedNode.done.includes('Smoke-tested roadmap updater.'), 'Roadmap updater should append done entries');
+assert(!updatedNode.left.includes('Add automatic roadmap-state updates from sprint logs.'), 'Roadmap updater should remove completed left entries');
 assert(updatedNode.evidence.includes('tools/update-roadmap-state.js'), 'Roadmap updater should append evidence entries');
 fs.unlinkSync(tempStatePath);
 
