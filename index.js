@@ -341,7 +341,6 @@ const DISCOVERY_CALLOUT_OBJECTS = new Set([
 const game = {
     cells: [],
     logs: [],
-    roomStack: [],
     roomDepth: 1,
     entryCell: null,
     exitCell: null,
@@ -1110,7 +1109,6 @@ function createGrid() {
 
 function startRunState() {
     game.logs = [];
-    game.roomStack = [];
     game.roomDepth = 1;
     game.runStartedAt = performance.now();
     game.ended = false;
@@ -4817,96 +4815,6 @@ function moveTo(cell) {
         return;
     }
 
-    if (targetObject === 'exit') {
-        game.autoPath = [];
-        consumeAction('exit');
-        captureRoomEndMetrics();
-        game.objectiveProgress.exitReached = true;
-        updateObjectiveProgress();
-        awardXp(XP_REWARDS.room + game.roomDepth * 6, currentLanguage === 'es-419' ? 'Sala completada' : 'Room complete');
-        game.roomStack.push(createRoomSnapshot());
-        if (game.claimedRelicRooms.includes(game.roomDepth)) {
-            game.roomDepth += 1;
-            generateRoom('exit');
-        } else {
-            game.claimedRelicRooms.push(game.roomDepth);
-            openRelicChoice();
-        }
-        return;
-    }
-
-    if (targetObject === 'finalExit') {
-        game.autoPath = [];
-        consumeAction('finalExit');
-        generateBossRoom();
-        return;
-    }
-
-    if (targetObject === 'entry') {
-        game.autoPath = [];
-        consumeAction('entry');
-        loadPreviousRoom();
-        return;
-    }
-
-    if (targetObject === 'vine') {
-        consumeAction('hazard');
-        applyDamage(VINE_DAMAGE, cell.q, cell.r, 'Vines');
-        addLog('Vines', 'Thorny vines scraped the bee.');
-        if (game.ended) return;
-        revealAroundPlayer();
-        recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
-        endPlayerTurn('hazard');
-        draw();
-        return;
-    }
-
-    if (targetObject === 'burningCell') {
-        consumeAction('hazard');
-        if (game.player.water > 0) {
-            game.player.water -= 1;
-            addStatPopups(cell.q, cell.r, [{ stat: 'water', amount: -1 }]);
-            addLog('Burning Cell', 'Spent 1 water to put out the fire.');
-            cell.object = 'empty';
-        } else {
-            applyDamage(1, cell.q, cell.r, 'Burning Cell');
-            addLog('Burning Cell', 'The crawling fire burned the bee.');
-            if (game.ended) return;
-        }
-        revealAroundPlayer();
-        recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
-        endPlayerTurn('hazard');
-        draw();
-        return;
-    }
-
-    if (cellInteractions.handleWalkoverObject(targetObject, {
-        cell,
-        game,
-        currentLanguage,
-        revealAround,
-        addLog,
-        recordReplayEvent,
-        updateObjectiveProgress,
-        endPlayerTurn,
-        draw
-    })) {
-        return;
-    }
-
-    if (targetObject === 'npc') {
-        game.autoPath = [];
-        if (!consumeAction('trade')) {
-            showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu acción este turno.' : 'You already used your action this turn.');
-            return;
-        }
-        openTraderMarket(cell);
-        revealAroundPlayer();
-        recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r });
-        draw();
-        return;
-    }
-
     const interaction = resolveInteraction(targetObject, cell);
     if (cell.isBoss && game.roomDepth >= FINAL_ROOM) {
         interaction.consume = true;
@@ -5317,47 +5225,6 @@ function isWaterDrained(q, r) {
         cell.object === 'waterLeech'
         && hexDistance(cell.q, cell.r, q, r) <= (getEnemyDef('waterLeech')?.range || 2)
     ));
-}
-
-function createRoomSnapshot() {
-    return {
-        depth: game.roomDepth,
-        cells: game.cells.map((cell) => ({ ...cell })),
-        currentRoomCells: game.currentRoomCells.map((cell) => ({ ...cell })),
-        caveMetadata: game.caveMetadata ? JSON.parse(JSON.stringify(game.caveMetadata)) : null,
-        entryCell: { ...game.entryCell },
-        exitCell: { ...game.exitCell },
-        playerQ: game.exitCell.q,
-        playerR: game.exitCell.r
-    };
-}
-
-function loadPreviousRoom() {
-    const previousRoom = game.roomStack.pop();
-    if (!previousRoom) {
-        game.message = 'This is the first chamber. The entry hums quietly.';
-        addLog('Entry', game.message);
-        draw();
-        return;
-    }
-
-    game.roomDepth = previousRoom.depth;
-    game.cells = previousRoom.cells.map((cell) => ({ ...cell }));
-    game.currentRoomCells = previousRoom.currentRoomCells
-        ? previousRoom.currentRoomCells.map((cell) => ({ ...cell }))
-        : game.cells.map(({ q, r, roomIndex, kind }) => ({ q, r, roomIndex, kind }));
-    game.caveMetadata = previousRoom.caveMetadata ? JSON.parse(JSON.stringify(previousRoom.caveMetadata)) : null;
-    game.entryCell = { ...previousRoom.entryCell };
-    game.exitCell = { ...previousRoom.exitCell };
-    game.statPopups = [];
-    game.player.q = previousRoom.playerQ;
-    game.player.r = previousRoom.playerR;
-    const playerCell = getCell(game.player.q, game.player.r);
-    if (playerCell) playerCell.visited = true;
-    revealAroundPlayer();
-    game.message = `Returned to chamber ${game.roomDepth}.`;
-    addLog('Entry', game.message);
-    draw();
 }
 
 function moveBats() {

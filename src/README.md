@@ -25,6 +25,7 @@ Current gameplay model
 - Clicking a far cell walks as far as the current movement points allow.
 - Pickups, doors, exits, trading, attacks, and hazards consume the action unless a future rule marks them free.
 - When an action-consuming cell is reached during auto-walk, the queued path stops. This prevents the bee from collecting one item and immediately failing on the next item with "action already used."
+- Special movement cells such as doors, exits, lamps, vines, burning cells, and trader beetles are dispatched through registered handlers in `systems/cell-interactions.js`; normal collectables fall through to the data-driven item system.
 - After the player spends the turn, enemies respond, hazards/telegraphs tick, fog reveals, and movement/action refill for the next turn.
 
 Inspect and learning UI
