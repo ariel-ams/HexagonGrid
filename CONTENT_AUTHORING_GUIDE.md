@@ -235,6 +235,14 @@ Current hooks:
 - `apply(game)`: when selected.
 - `onRoomStart(game)`: after a new room is generated.
 
+The data smoke test validates relic metadata:
+
+- Every relic id must be unique.
+- `name` and `description` must be readable text.
+- `minDepth` must be a positive integer.
+- `rarity` must be `common`, `rare`, `epic`, or `legendary`.
+- Function properties are limited to supported hooks so typo hooks do not silently fail.
+
 More hooks can be added through `runRelicHook(hookName, ...args)` in `index.js`. Good future hooks:
 
 - `onDamage`
@@ -343,7 +351,7 @@ The data smoke test keeps future gear data ready for implementation:
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, and equipment metadata mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, invalid relic metadata, and equipment metadata mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

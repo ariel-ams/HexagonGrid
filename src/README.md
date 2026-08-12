@@ -50,6 +50,7 @@ Adding content
 - If an item effect has a payload, keep it typed: resources must be known resource ids, numeric amounts/radii/durations must be valid, and `transformCell.object` must exist in `OBJECTS`.
 - If an enemy declares a new `behaviors[].type`, add it to `ENEMY_BEHAVIOR_TYPES` in `systems/enemies.js` and implement the behavior in the relevant enemy/tactical turn system; the data smoke test fails unsupported behavior types.
 - If an enemy behavior references another object, keep the payload typed: spawned enemies must exist in `ENEMY_DEFS`, while terrain, marked cells, charge-lane cells, and disguise targets must exist in `OBJECTS`.
+- If relics change, keep ids unique, depth/rarity valid, and hook names supported; `smoke-data` fails typo hooks before the reward screen uses them.
 - If wearable gear changes, keep slot ids, equipment ids, rarity, and future effect payloads valid; `smoke-data` treats this as the gear contract until loot is implemented.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.
 
@@ -57,7 +58,7 @@ Future passes should keep shrinking `../index.js` by moving tactical combat, ins
 
 Smoke checks
 
-- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, content data, supported item effect handlers and payloads, supported enemy behavior types and payload references, wearable gear metadata, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
+- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, content data, supported item effect handlers and payloads, supported enemy behavior types and payload references, relic metadata, wearable gear metadata, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
 - `node tools/smoke-browser.js` launches the browser, verifies the Test page renders and starts every generated object scenario, checks effect inspect stat metadata, starts a run, verifies auto-walk stops on stacked action objects, checks inspect stat chips, and checks market card structure.
 - `node tools/smoke-ui-layout.js` verifies the combat HUD stays inside the viewport, life/movement orbs stay on opposite sides, the inspect panel does not overlap them, and end-run stats render in grouped sections on desktop and mobile viewports.
 - `npm test` runs all smoke checks in sequence.

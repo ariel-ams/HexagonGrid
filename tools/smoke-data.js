@@ -36,6 +36,8 @@ runBrowserScript('src/systems/enemies.js');
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
 const resourceIds = new Set(['pollen', 'water', 'honey', 'stingCharges']);
+const relicRarities = new Set(['common', 'rare', 'epic', 'legendary']);
+const relicHooks = new Set(['apply', 'onRoomStart']);
 const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
 const equipmentEffectTypes = new Set([
     'futureAttackRange',
@@ -231,6 +233,20 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
     .filter(([, definition]) => definition.src)
     .forEach(([, definition]) => assertFile(definition.src));
+
+const relicIds = new Set();
+HW_CONTENT.RELICS.forEach((relic) => {
+    assert(relic.id && !relicIds.has(relic.id), `Relic ${relic.id || '(missing id)'} needs a unique id`);
+    relicIds.add(relic.id);
+    assert(relic.name && relic.description, `Relic ${relic.id} needs name and description`);
+    assert(Number.isInteger(relic.minDepth) && relic.minDepth >= 1, `Relic ${relic.id} needs a positive integer minDepth`);
+    assert(relicRarities.has(relic.rarity), `Relic ${relic.id} uses unknown rarity ${relic.rarity}`);
+    Object.entries(relic).forEach(([key, value]) => {
+        if (typeof value === 'function') {
+            assert(relicHooks.has(key), `Relic ${relic.id} uses unsupported hook ${key}`);
+        }
+    });
+});
 
 function createRunSummary(language) {
     return sandbox.window.HW_RUN_SUMMARY.createRunSummarySystem({
