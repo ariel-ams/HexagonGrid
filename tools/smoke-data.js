@@ -28,6 +28,7 @@ function assertFile(relativePath) {
 runBrowserScript('src/data/content.js');
 runBrowserScript('src/data/art.js');
 runBrowserScript('src/data/progression.js');
+runBrowserScript('src/systems/run-summary.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
@@ -43,6 +44,7 @@ assert(HW_PROGRESSION?.XP_REWARDS?.room > 0, 'Room XP reward must be positive');
 assert(HW_PROGRESSION?.DUNGEON_THEMES?.forest, 'Expected dungeon theme definitions');
 assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment slots');
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
+assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
@@ -136,5 +138,55 @@ Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
 Object.entries(HW_CONTENT.SPRITE_DEFS)
     .filter(([, definition]) => definition.src)
     .forEach(([, definition]) => assertFile(definition.src));
+
+function createRunSummary(language) {
+    return sandbox.window.HW_RUN_SUMMARY.createRunSummarySystem({
+        getLanguage: () => language
+    });
+}
+
+function assertIncludes(value, expected, message) {
+    assert(value.includes(expected), `${message}: expected "${value}" to include "${expected}"`);
+}
+
+const defaultMetrics = { damageBySource: {}, attacksMade: 4, turns: 8, repeatedAttackRetreatPatterns: 0 };
+const defaultPlayer = { pollen: 0, water: 0, honey: 0 };
+const defaultRunStats = { kills: 2 };
+const englishSummary = createRunSummary('en');
+assertIncludes(englishSummary.getDeathTip('Bat Bite'), 'Bats punish', 'English bat death tip should be specific');
+assertIncludes(englishSummary.getDeathTip('Wasp Aura'), 'Wasp pressure', 'English wasp death tip should be specific');
+assertIncludes(englishSummary.getRunRecommendation({
+    reason: 'death',
+    metrics: { ...defaultMetrics, damageBySource: { 'Wasp Aura': 2 } },
+    player: defaultPlayer,
+    runStats: defaultRunStats
+}), 'wasp rings', 'English wasp recommendation should be specific');
+assertIncludes(englishSummary.getRunRecommendation({
+    reason: 'death',
+    metrics: { ...defaultMetrics, damageBySource: { 'Burning Cell': 2 } },
+    player: defaultPlayer,
+    runStats: defaultRunStats
+}), 'Reserve water', 'English burning recommendation should be specific');
+assertIncludes(englishSummary.getRunRecommendation({
+    reason: 'boss-defeated',
+    metrics: defaultMetrics,
+    player: { pollen: 2, water: 2, honey: 1 },
+    runStats: defaultRunStats
+}), 'many resources', 'English unspent resource recommendation should be specific');
+assertIncludes(englishSummary.getRunRecommendation({
+    reason: 'boss-defeated',
+    metrics: { ...defaultMetrics, repeatedAttackRetreatPatterns: 2 },
+    player: defaultPlayer,
+    runStats: defaultRunStats
+}), 'Hit-and-run', 'English anti-kite recommendation should be specific');
+
+const spanishSummary = createRunSummary('es-419');
+assertIncludes(spanishSummary.getDeathTip('Vines'), 'enredaderas', 'Spanish vine death tip should be localized');
+assertIncludes(spanishSummary.getRunRecommendation({
+    reason: 'death',
+    metrics: { ...defaultMetrics, damageBySource: { Bat: 2 } },
+    player: defaultPlayer,
+    runStats: defaultRunStats
+}), 'murcielagos', 'Spanish bat recommendation should be localized');
 
 console.log('Data smoke checks passed');
