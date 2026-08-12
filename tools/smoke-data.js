@@ -432,6 +432,8 @@ const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadou
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');
 assert(emptyChoiceDetails.slotDef?.name, 'Equipment choice details should include the slot display name');
+assert(emptyChoiceDetails.effects.length === emptyChoiceDetails.equipment.effects.length, 'Equipment choice details should include candidate effect summaries');
+assert(emptyChoiceDetails.effects.every((effect) => effect.isFuture && !effect.isActive), 'Starter equipment choice effect summaries should mark future effects');
 assert(emptyChoiceDetails.isEmptySlot && !emptyChoiceDetails.isReplacement && !emptyChoiceDetails.isEquipped, 'Equipment choice details should flag empty slots');
 const rewardChoiceDetails = equipmentSystem.createEquipmentRewardChoiceDetails({
     playerLevel: 1,
@@ -492,6 +494,15 @@ const weightedEquipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSyste
             rarity: 'common',
             minLevel: 2,
             effects: [{ type: 'futureMovePoint', amount: 1 }]
+        },
+        activeJacket: {
+            id: 'activeJacket',
+            slot: 'jacket',
+            name: 'Active Jacket',
+            description: 'Synthetic active gear.',
+            rarity: 'common',
+            minLevel: 1,
+            effects: [{ type: 'maxShield', amount: 1 }]
         }
     }
 });
@@ -508,9 +519,13 @@ const weightedRewardChoiceDetails = weightedEquipmentSystem.createEquipmentRewar
     playerLevel: 1,
     loadout: { helmet: 'commonHelmet' },
     count: 1,
-    rng: () => 0
+    rng: () => 0.7
 })[0];
 assert(weightedRewardChoiceDetails?.current?.id === 'commonHelmet', 'Equipment reward choice details should include replacement metadata');
+const activeEffectSummary = weightedEquipmentSystem.createEquipmentEffectSummaries({
+    effects: [{ type: 'maxShield', amount: 1 }]
+})[0];
+assert(activeEffectSummary.isActive && !activeEffectSummary.isFuture, 'Equipment effect summaries should mark active effects');
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
     helmet: 'waxScoutHelmet',

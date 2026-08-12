@@ -54,6 +54,15 @@ function getEquipmentRewardWeight(equipment) {
 function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     const slotDefs = new Map(equipmentSlots.map((slot) => [slot.id, slot]));
 
+    function createEquipmentEffectSummaries(equipment) {
+        return (equipment?.effects || []).map((effect) => ({
+            type: effect.type,
+            amount: effect.amount,
+            isActive: Boolean(EQUIPMENT_EFFECT_HANDLERS[effect.type]),
+            isFuture: !EQUIPMENT_EFFECT_HANDLERS[effect.type]
+        }));
+    }
+
     function createStartingEquipment() {
         return Object.fromEntries(equipmentSlots.map((slot) => [slot.id, null]));
     }
@@ -124,7 +133,9 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             equipment,
             slot: equipment.slot,
             slotDef: slotDefs.get(equipment.slot) || null,
+            effects: createEquipmentEffectSummaries(equipment),
             current,
+            currentEffects: createEquipmentEffectSummaries(current),
             currentId,
             isEmptySlot: !current,
             isEquipped: currentId === equipment.id,
@@ -164,6 +175,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     return {
         applyLoadout,
+        createEquipmentEffectSummaries,
         createEquipmentRewardChoiceDetails,
         createEquipmentRewardChoices,
         createStarterEquipment,
