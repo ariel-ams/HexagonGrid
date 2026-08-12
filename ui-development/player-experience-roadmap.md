@@ -139,7 +139,7 @@ Acceptance checks:
 
 ## Backlog For Later
 
-- Equipment loot loop: helmet, jacket, abdomen guard, sting, wings. Starter loadouts now exist, are equipped for new runs, carry level metadata, can be filtered by player level, can generate small weighted unequipped reward-choice sets, and can bundle each reward with replacement, slot display, rarity, reward weight, and effect summary details; next work is loot acquisition and UI choices.
+- Equipment loot loop: helmet, jacket, abdomen guard, sting, wings. Starter loadouts now exist, are equipped for new runs, carry level metadata, can be filtered by player level, can report whether gear rewards are available for a player/loadout, can generate small weighted unequipped reward-choice sets, and can bundle each reward with replacement, slot display, rarity, reward weight, and effect summary details; next work is loot acquisition and UI choices.
 - Persistent progression: lifetime resources unlock cosmetics, encyclopedia entries, or starting relic choices.
 - More readable relic economy with better card hierarchy and lower choice overload.
 - Audio polish: boss music, object-specific pickup/attack cues, reduced overlap on track starts.

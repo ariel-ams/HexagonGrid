@@ -96,6 +96,12 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             ));
     }
 
+    function hasEquipmentRewardsAvailable({ playerLevel = 1, loadout = {} } = {}) {
+        const equippedIds = new Set(Object.values(loadout || {}).filter(Boolean));
+        return getAvailableEquipment(playerLevel)
+            .some((equipment) => !equippedIds.has(equipment.id) && getEquipmentRewardWeight(equipment) > 0);
+    }
+
     function createEquipmentRewardChoices({
         playerLevel = 1,
         loadout = {},
@@ -186,6 +192,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         getAvailableEquipment,
         getEquipmentChoiceDetails,
         getEquippedItems,
+        hasEquipmentRewardsAvailable,
         equipItem
     };
 }

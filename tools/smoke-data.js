@@ -423,6 +423,7 @@ const rewardChoices = equipmentSystem.createEquipmentRewardChoices({
     count: 3,
     rng: () => 0
 });
+assert(equipmentSystem.hasEquipmentRewardsAvailable({ playerLevel: 1, loadout: emptyLoadout }), 'Equipment rewards should be available for an empty level 1 loadout');
 assert(rewardChoices.length === Math.min(3, equipmentSystem.getAvailableEquipment(1).length), 'Equipment reward choices should offer up to three available items');
 assert(new Set(rewardChoices.map((equipment) => equipment.id)).size === rewardChoices.length, 'Equipment reward choices should not repeat items');
 rewardChoices.forEach((equipment) => {
@@ -456,6 +457,7 @@ const replacementChoices = equipmentSystem.createEquipmentRewardChoices({
 replacementChoices.forEach((equipment) => {
     assert(!equippedIds.has(equipment.id), `Equipment reward choices should not offer already equipped item ${equipment.id}`);
 });
+assert(!equipmentSystem.hasEquipmentRewardsAvailable({ playerLevel: 1, loadout: starterLoadout }), 'Equipment rewards should report unavailable when every level 1 item is equipped');
 const equippedChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(starterLoadout, starterLoadout.helmet);
 assert(equippedChoiceDetails?.isEquipped && !equippedChoiceDetails.isReplacement, 'Equipment choice details should flag already equipped gear');
 assert(equipmentSystem.getEquipmentChoiceDetails(starterLoadout, 'missingGear') === null, 'Equipment choice details should return null for unknown gear');
