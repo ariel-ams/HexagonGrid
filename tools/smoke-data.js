@@ -155,6 +155,10 @@ Object.entries(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS).forEach(([te
             ...(template.requiredEnemies || []),
             ...(template.synergyEnemies || [])
         ];
+        requiredContent.forEach((objectId) => {
+            const unlockLevel = HW_PROGRESSION.OBJECT_UNLOCK_LEVELS[objectId] || 1;
+            assert(unlockLevel <= template.minLevel, `Room template ${templateId} unlocks at level ${template.minLevel} before required content ${objectId} at level ${unlockLevel}`);
+        });
         const compatibleTheme = Object.values(HW_PROGRESSION.DUNGEON_THEMES)
             .find((theme) => requiredContent.every((objectId) => isTemplateObjectAllowedByTheme(theme, objectId)));
         assert(compatibleTheme, `Random room template ${templateId} has no compatible dungeon theme for its required content`);

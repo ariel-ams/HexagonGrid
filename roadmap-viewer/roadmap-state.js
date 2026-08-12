@@ -201,7 +201,8 @@ window.HW_ROADMAP_STATE = {
                         "Added schema validation for authored room-template metadata keys, booleans, and reference arrays.",
                         "Added smoke coverage so random room templates must fit at least one dungeon theme.",
                         "Filtered random room-template selection by active dungeon theme and validated each theme has a compatible random lesson.",
-                        "Added browser smoke coverage for active-theme room-template selection and stabilized positional-combat setup against irregular rooms."
+                        "Added browser smoke coverage for active-theme room-template selection and stabilized positional-combat setup against irregular rooms.",
+                        "Added room-template unlock-level smoke coverage and corrected mixedGate required enemy metadata."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

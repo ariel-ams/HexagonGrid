@@ -59,7 +59,7 @@ const ROOM_TEMPLATE_DEFS = {
         minLevel: 3,
         random: true,
         requiredObjects: ['waxDoor'],
-        requiredEnemies: ['enemy', 'guardWasp']
+        requiredEnemies: ['enemy']
     },
     fireWater: {
         minLevel: 3,
