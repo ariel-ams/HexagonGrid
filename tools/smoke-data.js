@@ -388,6 +388,7 @@ HW_CONTENT.RELICS.forEach((relic) => {
     assert(relic.id && !relicIds.has(relic.id), `Relic ${relic.id || '(missing id)'} needs a unique id`);
     relicIds.add(relic.id);
     assert(relic.name && relic.description, `Relic ${relic.id} needs name and description`);
+    assertLocalizedTuple('relics', relic.id);
     assert(Number.isInteger(relic.minDepth) && relic.minDepth >= 1, `Relic ${relic.id} needs a positive integer minDepth`);
     assert(relicRarities.has(relic.rarity), `Relic ${relic.id} uses unknown rarity ${relic.rarity}`);
     Object.entries(relic).forEach(([key, value]) => {
