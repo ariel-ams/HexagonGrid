@@ -4464,30 +4464,7 @@ function getInspectStats(cell, object) {
     }
 
     const preview = getPathPreview(cell);
-    if (preview?.path?.length) {
-        const reachable = Math.min(preview.path.length, getRouteMoveBudget());
-        stats.push({
-            icon: '›',
-            label: `${reachable}/${preview.path.length}`,
-            tone: preview.complete ? 'route' : 'cost',
-            kind: 'move',
-            hudRow: HUD_ICON_ROWS.stamina
-        });
-        if (preview.risk?.totalDamage > 0) {
-            stats.push({ icon: '−', label: `${preview.risk.totalDamage}`, tone: 'danger', kind: 'damage', hudRow: HUD_ICON_ROWS.danger });
-        }
-        if (preview.risk?.totalBlocked > 0) {
-            stats.push({ icon: '⬟', label: `${preview.risk.totalBlocked}`, tone: 'route', kind: 'shield', hudRow: HUD_ICON_ROWS.shield });
-        }
-        if (preview.risk?.waterSpent > 0) {
-            stats.push({ icon: '◇', label: `${preview.risk.waterSpent}`, tone: 'cost', kind: 'water', hudRow: HUD_ICON_ROWS.water });
-        }
-        if (preview.deathCell) {
-            stats.push({ icon: 'X', label: currentLanguage === 'es-419' ? 'Letal' : 'Lethal', tone: 'danger', kind: 'lethal', hudRow: HUD_ICON_ROWS.danger });
-        } else if (!preview.complete || preview.blockedTarget) {
-            stats.push({ icon: '!', label: currentLanguage === 'es-419' ? 'Bloqueado' : 'Blocked', tone: 'cost', kind: 'blocked', hudRow: HUD_ICON_ROWS.danger });
-        }
-    }
+    inspectStatsSystem.getRouteStats(preview, getRouteMoveBudget()).forEach((stat) => stats.push(stat));
 
     return stats.slice(0, 8);
 }

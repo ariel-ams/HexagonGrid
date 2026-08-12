@@ -11,7 +11,7 @@ Before adding or reviewing content, copy the relevant section from `CONTENT_MANI
 - `src/data/content.js`: content tables for translations, relics, sprites, enemies, objects, spawn weights.
 - `src/systems/items.js`: data-driven item effects.
 - `src/systems/enemies.js`: data-driven enemy behaviors.
-- `src/systems/inspect-stats.js`: maps enemy stats, object effects, and terrain costs into inspect panel stat chips.
+- `src/systems/inspect-stats.js`: maps enemy stats, object effects, terrain costs, and route risk into inspect panel stat chips.
 - `src/systems/dance.js`: final dance move generation, scoring, drawing, and dance replay events.
 - `src/systems/audio.js`: music/audio tracks, cue start times, volume ducking, replay audio sync helpers.
 - `src/systems/hud.js`: compact icon HUD rendering and tooltip/pulse behavior.
@@ -81,6 +81,7 @@ Item effects are resolved by `src/systems/items.js`. Supported effect examples i
 
 If an item needs a new effect, add a new branch to `applyEffect()` in `src/systems/items.js`.
 If the effect should be visible in the inspect panel, add its chip metadata to `src/systems/inspect-stats.js`.
+If route risk needs a new chip, add the metadata to `getRouteStats()` in `src/systems/inspect-stats.js`.
 
 ## Adding a New Enemy
 

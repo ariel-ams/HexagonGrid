@@ -68,6 +68,36 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
         return stats;
     }
 
+    function getRouteStats(preview, moveBudget) {
+        const stats = [];
+        if (!preview?.path?.length) return stats;
+
+        const reachable = Math.min(preview.path.length, moveBudget);
+        stats.push({
+            icon: '>',
+            label: `${reachable}/${preview.path.length}`,
+            tone: preview.complete ? 'route' : 'cost',
+            kind: 'move',
+            hudRow: hudRows.stamina
+        });
+        if (preview.risk?.totalDamage > 0) {
+            stats.push({ icon: '-', label: `${preview.risk.totalDamage}`, tone: 'danger', kind: 'damage', hudRow: hudRows.danger });
+        }
+        if (preview.risk?.totalBlocked > 0) {
+            stats.push({ icon: 'S', label: `${preview.risk.totalBlocked}`, tone: 'route', kind: 'shield', hudRow: hudRows.shield });
+        }
+        if (preview.risk?.waterSpent > 0) {
+            stats.push({ icon: '~', label: `${preview.risk.waterSpent}`, tone: 'cost', kind: 'water', hudRow: hudRows.water });
+        }
+        if (preview.deathCell) {
+            stats.push({ icon: 'X', label: isSpanish() ? 'Letal' : 'Lethal', tone: 'danger', kind: 'lethal', hudRow: hudRows.danger });
+        } else if (!preview.complete || preview.blockedTarget) {
+            stats.push({ icon: '!', label: isSpanish() ? 'Bloqueado' : 'Blocked', tone: 'cost', kind: 'blocked', hudRow: hudRows.danger });
+        }
+
+        return stats;
+    }
+
     function addTerrainStats(stats, objectId) {
         if (objectId === 'vine') {
             stats.push({ icon: '-', label: `${vineDamage}`, tone: 'danger', kind: 'damage', hudRow: hudRows.danger });
@@ -89,7 +119,8 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
 
     return {
         getEnemyStats,
-        getObjectEffectStats
+        getObjectEffectStats,
+        getRouteStats
     };
 }
 
