@@ -40,6 +40,8 @@ const languageIds = ['en', 'es-419'];
 const resourceIds = new Set(['pollen', 'water', 'honey', 'stingCharges']);
 const relicRarities = new Set(['common', 'rare', 'epic', 'legendary']);
 const relicHooks = new Set(['apply', 'onRoomStart']);
+const finalRoomDepth = 5;
+const relicChoiceCount = 3;
 const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
 const equipmentEffectTypes = new Set([
     'futureAttackRange',
@@ -397,6 +399,15 @@ HW_CONTENT.RELICS.forEach((relic) => {
         }
     });
 });
+
+for (let rewardDepth = 1; rewardDepth < finalRoomDepth; rewardDepth += 1) {
+    const availableAtDepth = HW_CONTENT.RELICS.filter((relic) => relic.minDepth <= rewardDepth).length;
+    const priorRelicChoices = rewardDepth - 1;
+    assert(
+        availableAtDepth - priorRelicChoices >= relicChoiceCount,
+        `Relic reward at depth ${rewardDepth} needs at least ${relicChoiceCount} choices after prior picks`
+    );
+}
 
 function createRunSummary(language) {
     return sandbox.window.HW_RUN_SUMMARY.createRunSummarySystem({

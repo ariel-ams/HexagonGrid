@@ -214,7 +214,8 @@ window.HW_ROADMAP_STATE = {
                         "Added data smoke validation for sprite sheet rows and animation frame timing.",
                         "Added data smoke coverage for object usage paths across generation, themes, templates, and behavior payloads.",
                         "Added data smoke validation for enemy fallback colors.",
-                        "Added data smoke coverage for relic localization."
+                        "Added data smoke coverage for relic localization.",
+                        "Added data smoke coverage for relic reward-depth choice availability."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
