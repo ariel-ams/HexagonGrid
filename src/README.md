@@ -70,7 +70,7 @@ Room lesson templates
 
 - Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
 - Room objectives, template selection, exit reveal, and gate placement live in `systems/room-templates.js`; `index.js` should only orchestrate when those passes run.
-- `ROOM_TEMPLATE_DEFS` records each authored lesson's minimum player level plus required objects/enemies. Keep it in sync when adding new templates or synergy lessons.
+- `ROOM_TEMPLATE_DEFS` records each authored lesson's minimum player level, random-selection eligibility, and required objects/enemies. Keep it in sync when adding new templates or synergy lessons.
 - Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.
 - The Stag Beetle now uses `chargeLane` to turn armored combat into a lane-dodge puzzle: it marks cells in its facing direction, then those marked cells detonate if the bee stays in the lane.
 - Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.

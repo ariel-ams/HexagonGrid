@@ -196,7 +196,8 @@ window.HW_ROADMAP_STATE = {
                         "Added wearable gear metadata validation for slots, ids, rarity, and future effects.",
                         "Added relic metadata validation for ids, depths, rarity, and supported hooks.",
                         "Added room-profile and spawn-weight validation for generation references and usable weighted enemies.",
-                        "Centralized authored room-template metadata and added smoke coverage for objective/template references."
+                        "Centralized authored room-template metadata and added smoke coverage for objective/template references.",
+                        "Moved random room-template selection onto ROOM_TEMPLATE_DEFS so authored lesson metadata is the source of truth."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

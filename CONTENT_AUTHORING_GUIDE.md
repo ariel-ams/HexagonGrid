@@ -293,7 +293,7 @@ Room generation starts in `generateRoom()`:
 
 Use lesson passes for authored mechanics. Keep random generation broad, then place intentional constraints after.
 
-Authored templates also need metadata in `ROOM_TEMPLATE_DEFS` in `src/systems/room-templates.js`. Add the template's `minLevel`, `requiredObjects`, `requiredEnemies`, or `synergyEnemies` there so `node tools/smoke-data.js` catches missing object/enemy references before a browser run.
+Authored templates also need metadata in `ROOM_TEMPLATE_DEFS` in `src/systems/room-templates.js`. Add the template's `minLevel`, `requiredObjects`, `requiredEnemies`, or `synergyEnemies` there so `node tools/smoke-data.js` catches missing object/enemy references before a browser run. Set `random: true` when the template should enter the normal post-tutorial room pool.
 
 Examples:
 

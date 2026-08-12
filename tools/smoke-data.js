@@ -125,6 +125,14 @@ sandbox.window.HW_ROOM_TEMPLATES.ROOM_OBJECTIVES.forEach((objective) => {
 
 Object.entries(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS).forEach(([templateId, template]) => {
     assert(Number.isInteger(template.minLevel) && template.minLevel >= 1, `Room template ${templateId} needs a positive integer minLevel`);
+    if (template.random) {
+        const hasRequiredContent = Boolean(
+            template.requiredObjects?.length
+            || template.requiredEnemies?.length
+            || template.synergyEnemies?.length
+        );
+        assert(hasRequiredContent, `Random room template ${templateId} needs required or synergy content metadata`);
+    }
     template.requiredObjects?.forEach((objectId) => {
         assert(HW_CONTENT.OBJECTS[objectId], `Room template ${templateId} references missing object ${objectId}`);
     });

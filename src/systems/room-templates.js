@@ -57,31 +57,38 @@ const ROOM_TEMPLATE_DEFS = {
     },
     mixedGate: {
         minLevel: 3,
+        random: true,
         requiredObjects: ['waxDoor'],
         requiredEnemies: ['enemy', 'guardWasp']
     },
     fireWater: {
         minLevel: 3,
+        random: true,
         requiredObjects: ['burningCell', 'water']
     },
     revealRoute: {
         minLevel: 3,
+        random: true,
         requiredObjects: ['compassPollen', 'wall']
     },
     hiveQueen: {
         minLevel: 5,
+        random: true,
         synergyEnemies: ['waspHive', 'queenSignaler']
     },
     fireLeech: {
         minLevel: 4,
+        random: true,
         synergyEnemies: ['crawlingFire', 'waterLeech']
     },
     sentinelThief: {
         minLevel: 5,
+        random: true,
         synergyEnemies: ['waxSentinel', 'pollenThiefMoth']
     },
     fogBurrow: {
         minLevel: 5,
+        random: true,
         synergyEnemies: ['fogShepherd', 'burrowBeetle']
     }
 };
@@ -124,15 +131,10 @@ function createRoomTemplateSystem(context) {
         if (game.roomDepth === 1) return 'introSupplies';
         if (game.roomDepth === 2) return 'waxDoorPollen';
         if (game.roomDepth === 3) return 'enemyGate';
-        const candidates = [
-            'mixedGate',
-            'fireWater',
-            'revealRoute',
-            'hiveQueen',
-            'fireLeech',
-            'sentinelThief',
-            'fogBurrow'
-        ].filter((template) => isRoomTemplateUnlocked(template));
+        const candidates = Object.entries(ROOM_TEMPLATE_DEFS)
+            .filter(([, template]) => template.random)
+            .map(([template]) => template)
+            .filter((template) => isRoomTemplateUnlocked(template));
         return randomFrom(candidates.length ? candidates : ['mixedGate']);
     }
 
