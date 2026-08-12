@@ -65,7 +65,7 @@ glowPollen: {
 }
 ```
 
-Item effects are resolved by `src/systems/items.js`. Supported effect examples include:
+Item effects are resolved by the `ITEM_EFFECT_HANDLERS` registry in `src/systems/items.js`. Supported effect examples include:
 
 - `gainResource`
 - `gainShield`
@@ -80,7 +80,7 @@ Item effects are resolved by `src/systems/items.js`. Supported effect examples i
 - `royalNectar`
 - `tradeCooldown`
 
-If an item needs a new effect, add a new branch to `applyEffect()` in `src/systems/items.js`.
+If an item needs a new effect, add a new handler to `ITEM_EFFECT_HANDLERS` in `src/systems/items.js`.
 If the effect should be visible in the inspect panel, add its chip metadata to `src/systems/inspect-stats.js`.
 If route risk needs a new chip, add the metadata to `getRouteStats()` in `src/systems/inspect-stats.js`.
 If the object is not a normal collectable, add or update its interaction rule in `src/systems/cell-interactions.js` so the inspect panel, action preview, and cursor all describe the same action.
@@ -321,7 +321,7 @@ The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is th
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, and equipment slot mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, and equipment slot mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

@@ -2,7 +2,7 @@ Honeycomb Wayfinder source layout
 
 - `data/content.js`: localized text, object data, enemy data, relic data, sprite definitions, HUD icon rows, spawn weights, room pacing, and default balance values.
 - `systems/hud.js`: compact board HUD rendering, icon fallbacks, hover helper popups, and pulse tracking.
-- `systems/items.js`: data-driven item effects such as resource gains, healing, reveal effects, timer pauses, and cell transforms.
+- `systems/items.js`: data-driven item effects such as resource gains, healing, reveal effects, timer pauses, and cell transforms, with an exported effect-handler registry for content smoke coverage.
 - `systems/enemies.js`: enemy behavior handlers such as auras, refogging, stealing, fleeing, spawning, fire spread, and telegraphed attacks.
 - `systems/choice-ui.js`: shared markup for camp, trader, relic, and object-test choices.
 - `systems/inspect-ui.js`: DOM rendering for the persistent inspect panel and its stat chips.
@@ -46,13 +46,14 @@ Adding content
 - Every new game object must also be reachable from the Test page. Add the object to `OBJECTS` and its behavior data first; the test list is generated from those definitions.
 - If the object needs a special setup to demonstrate its mechanic clearly, add that support in `seedTestSupportCells()` and `getTestScenarioMessage()` in `../index.js`.
 - If the object needs a special role, action label, cursor symbol/color, collect-on-move exception, or free-walkover rule, add that metadata to `systems/cell-interactions.js`.
+- If the object declares a new `effects[].type`, add a matching handler to `ITEM_EFFECT_HANDLERS` in `systems/items.js`; the data smoke test fails unsupported effect types.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.
 
 Future passes should keep shrinking `../index.js` by moving tactical combat, inspect-panel formatting, market/camp flows, boss scripting, and remaining end-screen assembly into focused systems.
 
 Smoke checks
 
-- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, content data, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
+- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, content data, supported item effect handlers, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
 - `node tools/smoke-browser.js` launches the browser, verifies the Test page renders and starts every generated object scenario, checks effect inspect stat metadata, starts a run, verifies auto-walk stops on stacked action objects, checks inspect stat chips, and checks market card structure.
 - `node tools/smoke-ui-layout.js` verifies the combat HUD stays inside the viewport, life/movement orbs stay on opposite sides, the inspect panel does not overlap them, and end-run stats render in grouped sections on desktop and mobile viewports.
 - `npm test` runs all smoke checks in sequence.

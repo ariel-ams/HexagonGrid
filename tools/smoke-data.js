@@ -30,6 +30,7 @@ runBrowserScript('src/data/art.js');
 runBrowserScript('src/data/progression.js');
 runBrowserScript('src/systems/run-summary.js');
 runBrowserScript('src/systems/cell-interactions.js');
+runBrowserScript('src/systems/items.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
@@ -47,6 +48,7 @@ assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment sl
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
+assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
@@ -105,6 +107,9 @@ function assertLocalizedTuple(section, id, expectedLength = 2) {
 Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
     assert(object.name && object.description, `Object ${objectId} needs name and description`);
     assert(/^#[0-9a-f]{6}$/i.test(object.color), `Object ${objectId} needs a hex color`);
+    object.effects?.forEach((effect) => {
+        assert(sandbox.window.HW_ITEMS.hasItemEffectHandler(effect.type), `Object ${objectId} uses unsupported item effect ${effect.type}`);
+    });
     if (objectId !== 'empty') {
         assert(HW_PROGRESSION.OBJECT_UNLOCK_LEVELS[objectId], `Object ${objectId} needs an unlock level`);
         if (!HW_CONTENT.ENEMY_DEFS[objectId]) assertLocalizedTuple('objects', objectId);

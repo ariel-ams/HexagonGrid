@@ -188,7 +188,8 @@ window.HW_ROADMAP_STATE = {
                         "Added smoke checks for localization, sprites, unlocks, themes, equipment, test scenarios, inspect stats, run summary, and cell interactions.",
                         "Added generated Test page scenarios for game objects.",
                         "Added automatic roadmap-state updates from a CLI helper.",
-                        "Removed completed roadmap updater work from the pending list."
+                        "Removed completed roadmap updater work from the pending list.",
+                        "Added item-effect handler registry coverage for content data."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -199,7 +200,9 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-data.js",
                         "tools/smoke-browser.js",
                         "tools/update-roadmap-state.js",
-                        "npm run test:roadmap"
+                        "npm run test:roadmap",
+                        "src/systems/items.js",
+                        "npm test"
                     ]
                 },
                 {
