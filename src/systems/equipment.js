@@ -38,6 +38,16 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         return Object.fromEntries(equipmentSlots.map((slot) => [slot.id, null]));
     }
 
+    function createStarterEquipment() {
+        const loadout = createStartingEquipment();
+        Object.values(equipmentDefs).forEach((equipment) => {
+            if (equipment.rarity === 'starter' && loadout[equipment.slot] == null) {
+                loadout[equipment.slot] = equipment.id;
+            }
+        });
+        return loadout;
+    }
+
     function getEquippedItems(loadout) {
         return Object.values(loadout || {})
             .filter(Boolean)
@@ -70,6 +80,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     return {
         applyLoadout,
+        createStarterEquipment,
         createStartingEquipment,
         getEquippedItems,
         equipItem

@@ -394,6 +394,11 @@ HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     assert(Object.hasOwn(emptyLoadout, slot.id), `Starting equipment is missing slot ${slot.id}`);
     assert(emptyLoadout[slot.id] === null, `Starting equipment slot ${slot.id} should start empty`);
 });
+const starterLoadout = equipmentSystem.createStarterEquipment();
+HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
+    const starterEquipment = starterEquipmentBySlot.get(slot.id)[0];
+    assert(starterLoadout[slot.id] === starterEquipment, `Starter equipment should equip ${starterEquipment} in ${slot.id}`);
+});
 Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
     const equipped = equipmentSystem.equipItem(emptyLoadout, equipment.id);
     assert(equipped?.loadout?.[equipment.slot] === equipment.id, `Equipment system should equip ${equipment.id} into ${equipment.slot}`);

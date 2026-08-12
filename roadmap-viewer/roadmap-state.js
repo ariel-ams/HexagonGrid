@@ -252,7 +252,8 @@ window.HW_ROADMAP_STATE = {
                     "owner": "Codex + Artist",
                     "objective": "Let the bee equip helmet, jacket, abdomen guard, sting, and wings for longer-term builds.",
                     "done": [
-                        "Equipment slots and definitions exist."
+                        "Equipment slots and definitions exist.",
+                        "Added equipment-system support for starter loadout generation."
                     ],
                     "left": [
                         "Design loot acquisition.",
@@ -261,7 +262,10 @@ window.HW_ROADMAP_STATE = {
                     ],
                     "evidence": [
                         "src/data/content.js",
-                        "ART_SPRITE_REQUESTS.md"
+                        "ART_SPRITE_REQUESTS.md",
+                        "src/systems/equipment.js",
+                        "tools/smoke-data.js",
+                        "npm test"
                     ]
                 },
                 {
