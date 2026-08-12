@@ -55,6 +55,17 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             .filter(Boolean);
     }
 
+    function getAvailableEquipment(playerLevel = 1) {
+        const level = Math.max(1, Math.floor(Number(playerLevel) || 1));
+        return Object.values(equipmentDefs)
+            .filter((equipment) => (equipment.minLevel || 1) <= level)
+            .sort((a, b) => (
+                (a.minLevel || 1) - (b.minLevel || 1)
+                || a.slot.localeCompare(b.slot)
+                || a.id.localeCompare(b.id)
+            ));
+    }
+
     function equipItem(loadout, equipmentId) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
@@ -82,6 +93,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         applyLoadout,
         createStarterEquipment,
         createStartingEquipment,
+        getAvailableEquipment,
         getEquippedItems,
         equipItem
     };

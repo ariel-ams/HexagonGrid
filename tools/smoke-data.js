@@ -407,6 +407,12 @@ Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
     const equipped = equipmentSystem.equipItem(emptyLoadout, equipment.id);
     assert(equipped?.loadout?.[equipment.slot] === equipment.id, `Equipment system should equip ${equipment.id} into ${equipment.slot}`);
     assert(equipmentSystem.getEquippedItems(equipped.loadout).some((item) => item.id === equipment.id), `Equipment system should list ${equipment.id} as equipped`);
+    const availableAtUnlock = equipmentSystem.getAvailableEquipment(equipment.minLevel);
+    assert(availableAtUnlock.some((item) => item.id === equipment.id), `Equipment system should unlock ${equipment.id} at level ${equipment.minLevel}`);
+    if (equipment.minLevel > 1) {
+        const availableBeforeUnlock = equipmentSystem.getAvailableEquipment(equipment.minLevel - 1);
+        assert(!availableBeforeUnlock.some((item) => item.id === equipment.id), `Equipment system should keep ${equipment.id} locked before level ${equipment.minLevel}`);
+    }
 });
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
