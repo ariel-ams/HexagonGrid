@@ -354,7 +354,7 @@ Current slots are:
 - `sting`
 - `wings`
 
-The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
+The run state stores `game.equipment`, new runs equip the starter loadout from `src/systems/equipment.js`, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
 
 The data smoke test keeps future gear data ready for implementation:
 

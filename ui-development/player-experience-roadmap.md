@@ -139,7 +139,7 @@ Acceptance checks:
 
 ## Backlog For Later
 
-- Equipment loot loop: helmet, jacket, abdomen guard, sting, wings.
+- Equipment loot loop: helmet, jacket, abdomen guard, sting, wings. Starter loadouts now exist and are equipped for new runs; next work is loot acquisition and UI choices.
 - Persistent progression: lifetime resources unlock cosmetics, encyclopedia entries, or starting relic choices.
 - More readable relic economy with better card hierarchy and lower choice overload.
 - Audio polish: boss music, object-specific pickup/attack cues, reduced overlap on track starts.

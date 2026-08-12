@@ -253,7 +253,8 @@ window.HW_ROADMAP_STATE = {
                     "objective": "Let the bee equip helmet, jacket, abdomen guard, sting, and wings for longer-term builds.",
                     "done": [
                         "Equipment slots and definitions exist.",
-                        "Added equipment-system support for starter loadout generation."
+                        "Added equipment-system support for starter loadout generation.",
+                        "New runs now equip the starter wearable loadout."
                     ],
                     "left": [
                         "Design loot acquisition.",
@@ -265,7 +266,9 @@ window.HW_ROADMAP_STATE = {
                         "ART_SPRITE_REQUESTS.md",
                         "src/systems/equipment.js",
                         "tools/smoke-data.js",
-                        "npm test"
+                        "npm test",
+                        "index.js",
+                        "tools/smoke-browser.js"
                     ]
                 },
                 {

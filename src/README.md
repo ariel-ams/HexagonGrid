@@ -53,6 +53,7 @@ Adding content
 - If an enemy behavior references another object, keep the payload typed: spawned enemies must exist in `ENEMY_DEFS`, while terrain, marked cells, charge-lane cells, and disguise targets must exist in `OBJECTS`.
 - If relics change, keep ids unique, depth/rarity valid, and hook names supported; `smoke-data` fails typo hooks before the reward screen uses them.
 - If wearable gear changes, keep slot ids unique, provide exactly one starter item per slot, and keep equipment ids, rarity, registered effect payloads, empty/starter loadouts, and loadout behavior valid; `smoke-data` treats this as the gear contract until loot is implemented.
+- New runs use the starter equipment loadout, so starter gear must remain safe for first-run balance until the loot UI exists.
 - If room profiles or spawn weights change, keep references valid and make sure weighted enemies are usable by at least one eligible room profile; runtime generation still filters by player unlock level.
 - If authored room templates change, update `ROOM_TEMPLATE_DEFS` with the lesson's supported metadata keys and required objects/enemies so data smoke can catch schema typos, broken references, required content that unlocks after the template, random templates that do not fit any dungeon theme, and themes with no compatible random lesson before browser tests.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.

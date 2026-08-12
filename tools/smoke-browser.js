@@ -84,6 +84,12 @@ async function main() {
     assert((firstRoomPacing.counts.water || 0) >= 1, 'Onboarding room should include water.');
     assert((firstRoomPacing.counts.lampCell || 0) >= 1, 'Onboarding room should include a lamp cell.');
     assert((firstRoomPacing.counts.upgrade || 0) >= 1, 'Onboarding room should include shield upgrade.');
+    const startingEquipment = await page.evaluate(() => window.HW_TEST_API.getEquipment());
+    assert(startingEquipment.helmet === 'waxScoutHelmet', 'New runs should equip the starter helmet.');
+    assert(startingEquipment.jacket === 'leafJacket', 'New runs should equip the starter jacket.');
+    assert(startingEquipment.abdomen === 'nectarPouch', 'New runs should equip the starter abdomen guard.');
+    assert(startingEquipment.sting === 'barbedSting', 'New runs should equip the starter sting.');
+    assert(startingEquipment.wings === 'scoutWings', 'New runs should equip the starter wings.');
 
     const routeResult = await page.evaluate(async () => {
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

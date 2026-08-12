@@ -1785,7 +1785,7 @@ function createObjectiveProgress() {
 }
 
 function createStartingEquipment() {
-    return equipmentSystem.createStartingEquipment();
+    return equipmentSystem.createStarterEquipment();
 }
 
 function getEquippedItems() {
@@ -6075,6 +6075,7 @@ window.HW_TEST_API = {
         return getPlayerLevel();
     },
     equipItem: (equipmentId) => equipItem(equipmentId),
+    getEquipment: () => ({ ...game.equipment }),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
     isEnemyObject: (object) => isEnemyObject(object),
     getCellData: (q, r) => {
