@@ -216,7 +216,8 @@ window.HW_ROADMAP_STATE = {
                         "Added data smoke validation for enemy fallback colors.",
                         "Added data smoke coverage for relic localization.",
                         "Added data smoke coverage for relic reward-depth choice availability.",
-                        "Added data smoke coverage for wearable slot uniqueness."
+                        "Added data smoke coverage for wearable slot uniqueness.",
+                        "Added data smoke coverage for exactly one starter wearable per slot."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

@@ -366,6 +366,7 @@ Object.entries(HW_CONTENT.SPRITE_DEFS).forEach(([spriteId, definition]) => {
 });
 
 const slotIds = new Set(HW_CONTENT.EQUIPMENT_SLOTS.map((slot) => slot.id));
+const starterEquipmentBySlot = new Map(HW_CONTENT.EQUIPMENT_SLOTS.map((slot) => [slot.id, []]));
 assert(slotIds.size === HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equipment slot ids must be unique');
 HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     assert(slot.id && slot.name && slot.description, `Equipment slot ${slot.id || '(missing id)'} needs id, name, and description`);
@@ -380,6 +381,12 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
         assert(equipmentEffectTypes.has(effect.type), `Equipment ${equipment.id} uses unsupported future effect ${effect.type}`);
         assertPositiveNumber(effect.amount, `Equipment ${equipment.id} ${effect.type} amount must be positive`);
     });
+    if (equipment.rarity === 'starter') {
+        starterEquipmentBySlot.get(equipment.slot).push(equipment.id);
+    }
+});
+starterEquipmentBySlot.forEach((starterEquipment, slotId) => {
+    assert(starterEquipment.length === 1, `Equipment slot ${slotId} needs exactly one starter item`);
 });
 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
