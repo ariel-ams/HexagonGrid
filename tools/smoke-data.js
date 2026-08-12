@@ -484,4 +484,48 @@ function assertEnemyInspectExpectations(language, labelKey) {
 assertEnemyInspectExpectations('en', 'en');
 assertEnemyInspectExpectations('es-419', 'es');
 
+const itemEffectInspectExpectations = {
+    revealAround: {
+        kind: 'reveal',
+        en: (effect) => `Radius ${effect.radius}`,
+        es: (effect) => `Radio ${effect.radius}`
+    },
+    pauseEnemyTimers: {
+        kind: 'pause',
+        en: (effect) => `${Math.round(effect.durationMs / 1000)}s`,
+        es: (effect) => `${Math.round(effect.durationMs / 1000)}s`
+    },
+    revealEnemies: { kind: 'reveal', en: 'Reveal', es: 'Revela' },
+    revealExitHint: { kind: 'reveal', en: 'Reveal', es: 'Revela' },
+    revealExitRoute: { kind: 'reveal', en: 'Reveal', es: 'Revela' },
+    slowNearbyEnemies: { kind: 'slow', en: 'Slow', es: 'Lento' },
+    transformCell: { kind: 'terrain', en: 'Trap', es: 'Trampa' }
+};
+
+function expectedLabel(expected, labelKey, effect) {
+    const label = expected[labelKey];
+    return typeof label === 'function' ? label(effect) : label;
+}
+
+function assertItemEffectInspectExpectations(language, labelKey) {
+    const inspectStats = createInspectStats(language);
+    Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
+        const stats = inspectStats.getObjectEffectStats(objectId, HW_CONTENT.OBJECTS);
+        object.effects?.forEach((effect) => {
+            const expected = itemEffectInspectExpectations[effect.type];
+            if (!expected) return;
+            const label = expectedLabel(expected, labelKey, effect);
+            const hasExpectedStat = stats.some((stat) => (
+                stat.label === label
+                && (expected.kind == null || stat.kind === expected.kind)
+                && (expected.tone == null || stat.tone === expected.tone)
+            ));
+            assert(hasExpectedStat, `${language} object ${objectId} ${effect.type} should expose inspect stat ${label}`);
+        });
+    });
+}
+
+assertItemEffectInspectExpectations('en', 'en');
+assertItemEffectInspectExpectations('es-419', 'es');
+
 console.log('Data smoke checks passed');

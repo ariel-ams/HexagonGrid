@@ -207,7 +207,8 @@ window.HW_ROADMAP_STATE = {
                         "Fixed spawn-enemy inspect stat detection and added smoke coverage for spawner learning chips.",
                         "Expanded enemy inspect behavior chips for steal, drain, fog, terrain, marked cells, and weak-point planning cues.",
                         "Generalized data smoke coverage so supported tactical enemy behaviors must expose inspect learning chips.",
-                        "Extended tactical enemy inspect-chip smoke coverage to Latin American Spanish labels."
+                        "Extended tactical enemy inspect-chip smoke coverage to Latin American Spanish labels.",
+                        "Added bilingual inspect-chip coverage for planning-focused item effects such as slow and trap creation."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

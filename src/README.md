@@ -36,7 +36,7 @@ Inspect and learning UI
 - Hovering a revealed cell updates the panel on desktop. Tapping or clicking pins/replaces the panel on touch or desktop.
 - Floating popups are reserved for fast feedback: damage, healing, shield block, resource gain, blocked action, and rhythm feedback.
 - The inspect panel should show the object name, type, explanation, route information, and compact stat chips for effects such as `+1 pollen`, `-1 damage`, `HP`, `ATK`, `range`, cost, or lethal route warnings.
-- Visibility, enemy, object, item, hazard, and route-risk stat chips are mapped in `systems/inspect-stats.js`. Enemy behavior chips should call out key planning pressure such as spawning, stealing, draining, refogging, terrain spread, marked cells, armor, and weak-point windows.
+- Visibility, enemy, object, item, hazard, and route-risk stat chips are mapped in `systems/inspect-stats.js`. Enemy behavior chips should call out key planning pressure such as spawning, stealing, draining, refogging, terrain spread, marked cells, armor, and weak-point windows. Object effect chips should call out actionable utility such as reveal radius, pauses, slowing enemies, and trap creation in both supported languages.
 - Route explanations in the inspect panel include movement cost, reachable steps this turn, stop reasons, expected damage/shield/water cost, and short lesson text for early teaching objects such as wax doors, enemies, and lamp cells.
 
 Adding content

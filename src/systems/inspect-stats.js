@@ -35,6 +35,10 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
                 stats.push({ icon: 'II', label: `${Math.round(effect.durationMs / 1000)}s`, tone: 'route', kind: 'pause', hudRow: hudRows.pause });
             } else if (effect.type === 'revealEnemies' || effect.type === 'revealExitHint' || effect.type === 'revealExitRoute') {
                 stats.push({ icon: 'O', label: isSpanish() ? 'Revela' : 'Reveal', tone: 'route', kind: 'reveal', hudRow: hudRows.objective });
+            } else if (effect.type === 'slowNearbyEnemies') {
+                stats.push({ icon: 'II', label: isSpanish() ? 'Lento' : 'Slow', tone: 'route', kind: 'slow', hudRow: hudRows.pause });
+            } else if (effect.type === 'transformCell') {
+                stats.push({ icon: 'O', label: isSpanish() ? 'Trampa' : 'Trap', tone: 'cost', kind: 'terrain', hudRow: hudRows.objective });
             }
         });
 

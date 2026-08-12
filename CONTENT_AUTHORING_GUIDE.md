@@ -83,7 +83,7 @@ Item effects are resolved by the `ITEM_EFFECT_HANDLERS` registry in `src/systems
 - `tradeCooldown`
 
 If an item needs a new effect, add a new handler to `ITEM_EFFECT_HANDLERS` in `src/systems/items.js`.
-If the effect should be visible in the inspect panel, add its chip metadata to `src/systems/inspect-stats.js`.
+If the effect should be visible in the inspect panel, add its chip metadata to `src/systems/inspect-stats.js` for both English and Latin American Spanish. Utility effects that change planning, such as reveal, pause, slow, or trap creation, should have compact chips.
 If route risk needs a new chip, add the metadata to `getRouteStats()` in `src/systems/inspect-stats.js`.
 If the object is not a normal collectable, add or update its interaction rule in `src/systems/cell-interactions.js` so the inspect panel, action preview, and cursor all describe the same action.
 
@@ -365,7 +365,7 @@ The data smoke test keeps future gear data ready for implementation:
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic metadata, and equipment metadata mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic metadata, and equipment metadata mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.
