@@ -4447,14 +4447,12 @@ function renderInspectPanel() {
 
 function getInspectStats(cell, object) {
     const stats = [];
-    if (!cell.revealed && !cell.litByLamp && game.mode !== 'dance') {
-        stats.push({ icon: '?', label: currentLanguage === 'es-419' ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden', hudRow: HUD_ICON_ROWS.objective });
+    const visibilityStats = inspectStatsSystem.getVisibilityStats(cell, game.mode === 'dance');
+    if (visibilityStats.some((stat) => stat.kind === 'hidden')) {
+        visibilityStats.forEach((stat) => stats.push(stat));
         return stats;
     }
-
-    if (!cell.revealed && cell.litByLamp && game.mode !== 'dance') {
-        stats.push({ icon: '◎', label: currentLanguage === 'es-419' ? 'Iluminada' : 'Lit', tone: 'route', kind: 'reveal', hudRow: HUD_ICON_ROWS.objective });
-    }
+    visibilityStats.forEach((stat) => stats.push(stat));
 
     if (isEnemyObject(object)) {
         const enemy = getEnemyDef(object);

@@ -98,6 +98,16 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
         return stats;
     }
 
+    function getVisibilityStats(cell, isDanceMode) {
+        if (!cell.revealed && !cell.litByLamp && !isDanceMode) {
+            return [{ icon: '?', label: isSpanish() ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden', hudRow: hudRows.objective }];
+        }
+        if (!cell.revealed && cell.litByLamp && !isDanceMode) {
+            return [{ icon: 'O', label: isSpanish() ? 'Iluminada' : 'Lit', tone: 'route', kind: 'reveal', hudRow: hudRows.objective }];
+        }
+        return [];
+    }
+
     function addTerrainStats(stats, objectId) {
         if (objectId === 'vine') {
             stats.push({ icon: '-', label: `${vineDamage}`, tone: 'danger', kind: 'damage', hudRow: hudRows.danger });
@@ -120,7 +130,8 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
     return {
         getEnemyStats,
         getObjectEffectStats,
-        getRouteStats
+        getRouteStats,
+        getVisibilityStats
     };
 }
 
