@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-12",
-    "currentTaskId": "content-scaling",
+    "currentTaskId": "architecture",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -37,7 +37,8 @@ window.HW_ROADMAP_STATE = {
                     "done": [
                         "Extracted tactical flow/combat helpers.",
                         "Extracted room templates, generation, rendering, replay, HUD, inspect, items, enemies, and market systems.",
-                        "Removed stale room-template pass-through wrappers."
+                        "Removed stale room-template pass-through wrappers.",
+                        "Extracted wearable loadout helpers into src/systems/equipment.js."
                     ],
                     "left": [
                         "Move remaining end-screen assembly.",
@@ -46,7 +47,9 @@ window.HW_ROADMAP_STATE = {
                     ],
                     "evidence": [
                         "src/README.md",
-                        "src/systems/"
+                        "src/systems/",
+                        "src/systems/equipment.js",
+                        "npm test"
                     ]
                 }
             ]

@@ -141,6 +141,10 @@ const progressionSystem = window.HW_PROGRESSION_SYSTEM.createProgressionSystem({
     baseXpToLevel: BASE_XP_TO_LEVEL
 });
 progression = progressionSystem.load();
+const equipmentSystem = window.HW_EQUIPMENT.createEquipmentSystem({
+    equipmentSlots: EQUIPMENT_SLOTS,
+    equipmentDefs: EQUIPMENT_DEFS
+});
 
 const uiArtAssets = {};
 const tileArtAssets = {};
@@ -1781,20 +1785,17 @@ function createObjectiveProgress() {
 }
 
 function createStartingEquipment() {
-    return Object.fromEntries(EQUIPMENT_SLOTS.map((slot) => [slot.id, null]));
+    return equipmentSystem.createStartingEquipment();
 }
 
 function getEquippedItems() {
-    return Object.values(game.equipment || {})
-        .filter(Boolean)
-        .map((id) => EQUIPMENT_DEFS[id])
-        .filter(Boolean);
+    return equipmentSystem.getEquippedItems(game.equipment);
 }
 
 function equipItem(equipmentId) {
-    const equipment = EQUIPMENT_DEFS[equipmentId];
-    if (!equipment) return false;
-    game.equipment[equipment.slot] = equipmentId;
+    const equipped = equipmentSystem.equipItem(game.equipment, equipmentId);
+    if (!equipped) return false;
+    game.equipment = equipped.loadout;
     applyEquipmentLoadout(game.player);
     renderMessage();
     draw();

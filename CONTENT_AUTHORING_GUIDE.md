@@ -16,6 +16,7 @@ Before adding or reviewing content, copy the relevant section from `CONTENT_MANI
 - `src/systems/dance.js`: final dance move generation, scoring, drawing, and dance replay events.
 - `src/systems/audio.js`: music/audio tracks, cue start times, volume ducking, replay audio sync helpers.
 - `src/systems/hud.js`: compact icon HUD rendering and tooltip/pulse behavior.
+- `src/systems/equipment.js`: wearable loadout defaults, equipped-item lookup, and slot replacement helpers.
 
 ## Adding a Sprite or Animation
 
@@ -363,13 +364,14 @@ The data smoke test keeps future gear data ready for implementation:
 - `slot` must be one of the ids in `EQUIPMENT_SLOTS`.
 - `rarity` must be `starter`, `common`, `rare`, `epic`, or `legendary`.
 - Every slot must have exactly one `starter` item so future loadout and loot screens have a stable default.
+- The equipment system must be able to create an empty loadout and equip each item into its declared slot.
 - Current future-effect placeholders must use one of `futureRevealHint`, `futureHazardBlock`, `futureRoomHoney`, `futureAttackRange`, or `futureMovePoint`, with a positive `amount`.
 
 ## Testing Checklist
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, missing object-to-sprite metadata, invalid sprite sheet rows or frame timing, missing asset files, objects with no spawn/theme/template/behavior usage path, invalid enemy/object fallback colors, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, terrain, visibility, and route-risk states, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic localization, metadata, or reward-depth coverage, and equipment metadata, slot-id, or starter-loadout mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, missing object-to-sprite metadata, invalid sprite sheet rows or frame timing, missing asset files, objects with no spawn/theme/template/behavior usage path, invalid enemy/object fallback colors, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, terrain, visibility, and route-risk states, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic localization, metadata, or reward-depth coverage, and equipment metadata, slot-id, starter-loadout, or loadout-system mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

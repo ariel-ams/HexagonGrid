@@ -29,7 +29,7 @@ This file gives future agents enough project context to work independently witho
 - `src/data/content.js`: localized copy, objects, enemies, sprites, relics.
 - `src/data/progression.js`: player levels, room profiles, dungeon themes, unlocks.
 - `src/data/art.js`: UI art, tile art, theme sheet metadata, HUD icon rows.
-- `src/systems/*`: extracted systems for audio, HUD, inspect UI, pathfinding, tactical combat, dungeon generation, enemies, items, market/camp, replay, and rendering helpers.
+- `src/systems/*`: extracted systems for audio, HUD, inspect UI, pathfinding, tactical combat, dungeon generation, enemies, items, equipment, market/camp, replay, and rendering helpers.
 - `roadmap-viewer/*`: static React Flow roadmap graph. Update `roadmap-viewer/roadmap-state.js` when active roadmap work changes, completes, or gains new evidence.
 - `tools/update-roadmap-state.js`: CLI helper for focused roadmap graph updates. Prefer `npm run roadmap:update -- --node <id> ...` over hand-editing sprint status.
 

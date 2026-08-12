@@ -29,6 +29,7 @@ runBrowserScript('src/data/content.js');
 runBrowserScript('src/data/art.js');
 runBrowserScript('src/data/progression.js');
 runBrowserScript('src/systems/run-summary.js');
+runBrowserScript('src/systems/equipment.js');
 runBrowserScript('src/systems/cell-interactions.js');
 runBrowserScript('src/systems/items.js');
 runBrowserScript('src/systems/enemies.js');
@@ -71,6 +72,7 @@ assert(HW_PROGRESSION?.DUNGEON_THEMES?.forest, 'Expected dungeon theme definitio
 assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment slots');
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
+assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
 assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behavior handler metadata');
@@ -387,6 +389,21 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
 });
 starterEquipmentBySlot.forEach((starterEquipment, slotId) => {
     assert(starterEquipment.length === 1, `Equipment slot ${slotId} needs exactly one starter item`);
+});
+
+const equipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
+    equipmentSlots: HW_CONTENT.EQUIPMENT_SLOTS,
+    equipmentDefs: HW_CONTENT.EQUIPMENT_DEFS
+});
+const emptyLoadout = equipmentSystem.createStartingEquipment();
+HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
+    assert(Object.hasOwn(emptyLoadout, slot.id), `Starting equipment is missing slot ${slot.id}`);
+    assert(emptyLoadout[slot.id] === null, `Starting equipment slot ${slot.id} should start empty`);
+});
+Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
+    const equipped = equipmentSystem.equipItem(emptyLoadout, equipment.id);
+    assert(equipped?.loadout?.[equipment.slot] === equipment.id, `Equipment system should equip ${equipment.id} into ${equipment.slot}`);
+    assert(equipmentSystem.getEquippedItems(equipped.loadout).some((item) => item.id === equipment.id), `Equipment system should list ${equipment.id} as equipped`);
 });
 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
