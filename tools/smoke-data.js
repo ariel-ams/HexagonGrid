@@ -339,6 +339,7 @@ Object.entries(HW_CONTENT.ENEMY_DEFS).forEach(([enemyId, enemy]) => {
     assert(HW_CONTENT.OBJECTS[enemyId], `Enemy ${enemyId} needs a matching OBJECTS entry`);
     assertLocalizedTuple('enemies', enemyId, 3);
     assert(enemy.name && enemy.behavior && enemy.lesson, `Enemy ${enemyId} needs name, behavior, and lesson text`);
+    assert(/^#[0-9a-f]{6}$/i.test(enemy.color), `Enemy ${enemyId} needs a hex color`);
     assert(Number.isFinite(enemy.hp) && enemy.hp > 0, `Enemy ${enemyId} needs positive hp`);
     assert(Number.isFinite(enemy.attack) && enemy.attack >= 0, `Enemy ${enemyId} needs non-negative attack`);
     assert(Number.isFinite(enemy.range) && enemy.range >= 0, `Enemy ${enemyId} needs non-negative range`);

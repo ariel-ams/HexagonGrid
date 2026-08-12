@@ -212,7 +212,8 @@ window.HW_ROADMAP_STATE = {
                         "Added data smoke coverage for visibility, terrain, and route-risk inspect chips.",
                         "Added data smoke coverage for object-to-sprite metadata.",
                         "Added data smoke validation for sprite sheet rows and animation frame timing.",
-                        "Added data smoke coverage for object usage paths across generation, themes, templates, and behavior payloads."
+                        "Added data smoke coverage for object usage paths across generation, themes, templates, and behavior payloads.",
+                        "Added data smoke validation for enemy fallback colors."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
