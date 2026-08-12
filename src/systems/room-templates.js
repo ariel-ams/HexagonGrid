@@ -113,6 +113,11 @@ function createRoomTemplateSystem(context) {
         addObjectivePopup();
     }
 
+    function revealExitCell() {
+        const exit = game.exitCell ? getCell(game.exitCell.q, game.exitCell.r) : null;
+        if (exit) exit.revealed = true;
+    }
+
     function applyFirstRunOnboardingTemplate() {
         if (game.roomDepth !== 1 || getPlayerLevel() > 1 || !game.entryCell || !game.exitCell) return;
         const route = findRoomPathBetween(game.entryCell, game.exitCell);
@@ -454,6 +459,7 @@ function createRoomTemplateSystem(context) {
         chooseRoomTemplate,
         updateObjectiveProgress,
         getRoomObjectiveText,
+        revealExitCell,
         applyFirstRunOnboardingTemplate,
         placeFirstRoomTeachingPickups,
         placeRoomLessonGate,

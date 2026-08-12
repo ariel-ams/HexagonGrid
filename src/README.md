@@ -15,6 +15,7 @@ Honeycomb Wayfinder source layout
 - `systems/dungeon-generation.js`: cave room generation, room graph layout, entry/exit placement, and cell creation.
 - `systems/renderer.js`: canvas rendering helpers for dungeon cells, tiles, path previews, sprites, fog, and effects.
 - `systems/replay.js`: local replay event recording and playback state helpers.
+- `systems/room-templates.js`: room objectives, first-run lesson templates, exit reveal, and objective/gate placement rules.
 - `../index.js`: current orchestration layer for input, game state, tactical turns, UI screens, and system dispatch.
 
 Current gameplay model
@@ -59,6 +60,7 @@ Smoke checks
 Room lesson templates
 
 - Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
+- Room objectives, template selection, exit reveal, and gate placement live in `systems/room-templates.js`; `index.js` should only orchestrate when those passes run.
 - Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.
 - The Stag Beetle now uses `chargeLane` to turn armored combat into a lane-dodge puzzle: it marks cells in its facing direction, then those marked cells detonate if the bee stays in the lane.
 - Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.

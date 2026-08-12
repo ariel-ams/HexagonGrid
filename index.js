@@ -260,44 +260,6 @@ const audioSettings = loadAudioSettings();
 audioSystem.setMusicVolume(audioSettings.music);
 audioSystem.setEffectsVolume(audioSettings.effects);
 
-const ROOM_OBJECTIVES = [
-    {
-        id: 'findExit',
-        minDepth: 1,
-        label: { en: 'Reach the exit', 'es-419': 'Llega a la salida' },
-        hint: { en: 'The exit is visible. Plan a route and step onto it.', 'es-419': 'La salida está visible. Planea una ruta y pisa esa celda.' },
-        isComplete: () => game.objectiveProgress.exitReached
-    },
-    {
-        id: 'collectTwo',
-        minDepth: 1,
-        label: { en: 'Collect 2 supplies', 'es-419': 'Junta 2 suministros' },
-        hint: { en: 'Pollen and water fuel camp choices.', 'es-419': 'El polen y el agua activan opciones de campamento.' },
-        isComplete: () => game.objectiveProgress.supplies >= 2
-    },
-    {
-        id: 'keepShield',
-        minDepth: 2,
-        label: { en: 'Reach the exit with shield', 'es-419': 'Llega a la salida con escudo' },
-        hint: { en: 'Shield blocks the next mistake.', 'es-419': 'El escudo bloquea el próximo error.' },
-        isComplete: () => game.objectiveProgress.exitReached && game.player.upgrades > 0
-    },
-    {
-        id: 'avoidDamage',
-        minDepth: 2,
-        label: { en: 'Avoid damage this room', 'es-419': 'Evita daño en esta sala' },
-        hint: { en: 'Leave danger rings before timers fill.', 'es-419': 'Sal de los anillos de peligro antes de que se llenen.' },
-        isComplete: () => game.objectiveProgress.exitReached && !game.objectiveProgress.tookDamage
-    },
-    {
-        id: 'defeatEnemy',
-        minDepth: 3,
-        label: { en: 'Defeat 1 enemy', 'es-419': 'Derrota 1 enemigo' },
-        hint: { en: 'Sting, retreat, then sting again if needed.', 'es-419': 'Pica, retrocede y vuelve a picar si hace falta.' },
-        isComplete: () => game.objectiveProgress.kills >= 1
-    }
-];
-
 const DISCOVERY_CALLOUT_OBJECTS = new Set([
     'enemy',
     'bat',
@@ -1866,18 +1828,6 @@ function chooseRoomTemplate() {
     return roomTemplateSystem.chooseRoomTemplate();
 }
 
-function isRoomTemplateUnlocked(template) {
-    return getPlayerLevel() >= ({
-        mixedGate: 3,
-        fireWater: 3,
-        revealRoute: 3,
-        hiveQueen: 5,
-        fireLeech: 4,
-        sentinelThief: 5,
-        fogBurrow: 5
-    }[template] || 1);
-}
-
 function getRoomObjectiveText() {
     return roomTemplateSystem.getRoomObjectiveText();
 }
@@ -1947,103 +1897,11 @@ function placeRoomLessonGate(template = 'mixedGate') {
 }
 
 function revealExitCell() {
-    const exit = game.exitCell ? getCell(game.exitCell.q, game.exitCell.r) : null;
-    if (exit) {
-        exit.revealed = true;
-    }
-}
-
-function placeWaxDoorExitGate() {
-    const neighbors = getExitNeighborCells()
-        .filter(isGateCandidateCell)
-        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
-    const gate = neighbors[0];
-    if (!gate) return;
-    gate.object = 'waxDoor';
-    game.roomSpawnCounts.hazards += 1;
-    neighbors.slice(1, 4).forEach((cell) => {
-        if (isGateCandidateCell(cell)) cell.object = 'wall';
-    });
-}
-
-function placeEnemyExitGate(enemyObject = 'enemy') {
-    const neighbors = getExitNeighborCells()
-        .filter(isGateCandidateCell)
-        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
-    const guard = neighbors[0];
-    if (!guard) return;
-    guard.object = enemyObject;
-    guard.nextAuraAt = 0;
-    guard.nextAttackAt = 0;
-    guard.hits = 0;
-    game.roomSpawnCounts.enemies += 1;
-    neighbors.slice(1, 3).forEach((cell) => {
-        if (isGateCandidateCell(cell)) cell.object = 'wall';
-    });
-}
-
-function placeMixedExitGate() {
-    const profile = getRoomProfile();
-    const enemy = profile.allowedEnemies.includes('guardWasp') && getObjectUnlockLevel('guardWasp') <= getPlayerLevel()
-        ? 'guardWasp'
-        : 'enemy';
-    const neighbors = getExitNeighborCells()
-        .filter(isGateCandidateCell)
-        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
-    const guard = neighbors[0];
-    if (guard) {
-        guard.object = enemy;
-        guard.nextAuraAt = 0;
-        guard.nextAttackAt = 0;
-        guard.hits = 0;
-        game.roomSpawnCounts.enemies += 1;
-    }
-    const door = neighbors[1];
-    if (door) {
-        door.object = 'waxDoor';
-        game.roomSpawnCounts.hazards += 1;
-        placeResourceNearPlayer('pollen');
-    }
-    neighbors.slice(2, 4).forEach((cell) => {
-        if (isGateCandidateCell(cell)) cell.object = 'wall';
-    });
-}
-
-function placeFireWaterExitGate() {
-    const neighbors = getExitNeighborCells()
-        .filter(isGateCandidateCell)
-        .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r));
-    neighbors.slice(0, 2).forEach((cell) => {
-        cell.object = 'burningCell';
-        game.roomSpawnCounts.hazards += 1;
-    });
-    neighbors.slice(2, 4).forEach((cell) => {
-        if (isGateCandidateCell(cell)) cell.object = 'wall';
-    });
-}
-
-function placeRevealRouteLesson() {
-    placeResourceNearPlayer('compassPollen');
-    const routeCells = game.cells
-        .filter((cell) => cell.object === 'empty'
-            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) > 3
-            && hexDistance(cell.q, cell.r, game.exitCell.q, game.exitCell.r) > 2)
-        .sort((a, b) => hexDistance(a.q, a.r, game.exitCell.q, game.exitCell.r) - hexDistance(b.q, b.r, game.exitCell.q, game.exitCell.r));
-    routeCells.slice(0, 2).forEach((cell) => {
-        cell.object = 'wall';
-    });
+    roomTemplateSystem.revealExitCell();
 }
 
 function placeEnemySynergy(template) {
     roomTemplateSystem.placeEnemySynergy(template);
-}
-
-function isGateCandidateCell(cell) {
-    return Boolean(cell
-        && cell.object !== 'entry'
-        && cell.object !== 'exit'
-        && cell.object !== 'finalExit'
-        && !(cell.q === game.player.q && cell.r === game.player.r));
 }
 
 function getExitNeighborCells() {
@@ -2051,20 +1909,6 @@ function getExitNeighborCells() {
     return HEX_DIRECTIONS
         .map((direction) => getCell(game.exitCell.q + direction.q, game.exitCell.r + direction.r))
         .filter(Boolean);
-}
-
-function placeResourceNearPlayer(object) {
-    const target = game.cells
-        .filter((cell) => (
-            cell.object === 'empty'
-            && hexDistance(cell.q, cell.r, game.player.q, game.player.r) <= 3
-            && !(cell.q === game.player.q && cell.r === game.player.r)
-        ))
-        .sort((a, b) => (
-            hexDistance(a.q, a.r, game.player.q, game.player.r)
-            - hexDistance(b.q, b.r, game.player.q, game.player.r)
-        ))[0];
-    if (target) target.object = object;
 }
 
 function placeBats() {
