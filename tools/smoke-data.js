@@ -299,6 +299,8 @@ Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
     if (objectId !== 'empty') {
         assert(HW_PROGRESSION.OBJECT_UNLOCK_LEVELS[objectId], `Object ${objectId} needs an unlock level`);
         if (!HW_CONTENT.ENEMY_DEFS[objectId]) assertLocalizedTuple('objects', objectId);
+        const spriteId = HW_CONTENT.ENEMY_DEFS[objectId]?.sprite || objectId;
+        assert(HW_CONTENT.SPRITE_DEFS[spriteId], `Object ${objectId} references missing sprite metadata ${spriteId}`);
     }
 });
 
