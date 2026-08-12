@@ -54,6 +54,8 @@ Edit `src/data/content.js`.
 5. Add it to `DISCOVERY_OBJECT_WEIGHTS` if it should appear as a special generated item.
 6. Add it to room profile `allowedDiscovery` or `allowedUtility` in `ROOM_PROFILES`.
 
+Generation references are checked by `node tools/smoke-data.js`: discovery weights must point to objects, room profile item weights must point to objects or supported generation tokens, and profile allowed lists must point to existing objects or enemies. Runtime generation still filters by player unlock level.
+
 Example:
 
 ```js
@@ -104,6 +106,8 @@ Edit `src/data/content.js`.
 5. Add an unlock level in `OBJECT_UNLOCK_LEVELS`.
 6. Add spawn weight in `ENEMY_SPAWN_WEIGHTS`.
 7. Add it to one or more `ROOM_PROFILES.allowedEnemies`.
+
+Enemy spawn weights are checked by `node tools/smoke-data.js`: the enemy id must exist, `minDepth` must be a positive integer, `weight` must be positive, and at least one eligible room profile must allow that enemy.
 
 Example:
 
@@ -320,7 +324,7 @@ The main menu Options panel can force a theme or leave it on `Random`. Room gene
 
 When adding a new theme, make sure it has at least one valid enemy for mid/late profiles and enough basic supplies (`pollen`, `water`, `upgrade`, and `stingUpgrade`) unless the theme deliberately changes the economy.
 
-The data smoke test verifies that theme object references have unlock levels, board background files exist, core supplies are present, and each theme has at least one eligible enemy in mid/late room profiles.
+The data smoke test verifies that room profile references exist, spawn weights point to usable content, theme object references have unlock levels, board background files exist, core supplies are present, and each theme has at least one eligible enemy in mid/late room profiles.
 
 ## Adding Wearable Gear
 
@@ -351,7 +355,7 @@ The data smoke test keeps future gear data ready for implementation:
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, invalid relic metadata, and equipment metadata mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme/spawn references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, invalid relic metadata, and equipment metadata mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

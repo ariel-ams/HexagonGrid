@@ -46,6 +46,7 @@ const equipmentEffectTypes = new Set([
     'futureRevealHint',
     'futureRoomHoney'
 ]);
+const roomWeightTokens = new Set(['discovery']);
 
 assert(HW_CONTENT?.OBJECTS, 'HW_CONTENT.OBJECTS was not registered');
 assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
@@ -77,9 +78,34 @@ HW_PROGRESSION.ROOM_PROFILES.forEach((profile, index) => {
     assert(profile.depth === index + 1, `Room profile depth mismatch at index ${index}`);
     assert(profile.targetCells > 0, `Room ${profile.depth} must have targetCells`);
     assert(profile.itemWeights?.length, `Room ${profile.depth} must have itemWeights`);
+    assert(Array.isArray(profile.allowedEnemies), `Room ${profile.depth} needs allowedEnemies`);
+    assert(Array.isArray(profile.allowedDiscovery), `Room ${profile.depth} needs allowedDiscovery`);
+    assert(Array.isArray(profile.allowedUtility), `Room ${profile.depth} needs allowedUtility`);
+    profile.allowedEnemies.forEach((enemyId) => {
+        assert(HW_CONTENT.ENEMY_DEFS[enemyId], `Room ${profile.depth} allowedEnemies references missing enemy ${enemyId}`);
+    });
+    [...profile.allowedDiscovery, ...profile.allowedUtility].forEach((objectId) => {
+        assert(HW_CONTENT.OBJECTS[objectId], `Room ${profile.depth} allowed item list references missing object ${objectId}`);
+    });
     profile.itemWeights.forEach((entry) => {
         assert(entry.weight > 0, `Room ${profile.depth} has non-positive weight for ${entry.object}`);
+        assert(HW_CONTENT.OBJECTS[entry.object] || roomWeightTokens.has(entry.object), `Room ${profile.depth} itemWeights references missing object/token ${entry.object}`);
     });
+});
+
+HW_CONTENT.DISCOVERY_OBJECT_WEIGHTS.forEach((entry) => {
+    assert(HW_CONTENT.OBJECTS[entry.object], `Discovery weights reference missing object ${entry.object}`);
+    assert(entry.weight > 0, `Discovery weights have non-positive weight for ${entry.object}`);
+});
+
+HW_CONTENT.ENEMY_SPAWN_WEIGHTS.forEach((entry) => {
+    assert(HW_CONTENT.ENEMY_DEFS[entry.object], `Enemy spawn weights reference missing enemy ${entry.object}`);
+    assert(Number.isInteger(entry.minDepth) && entry.minDepth >= 1, `Enemy spawn weight ${entry.object} needs positive integer minDepth`);
+    assert(entry.weight > 0, `Enemy spawn weights have non-positive weight for ${entry.object}`);
+    const appearsInEligibleProfile = HW_PROGRESSION.ROOM_PROFILES.some((profile) => (
+        profile.depth >= entry.minDepth && profile.allowedEnemies.includes(entry.object)
+    ));
+    assert(appearsInEligibleProfile, `Enemy spawn weight ${entry.object} is not allowed by any eligible room profile`);
 });
 
 Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {

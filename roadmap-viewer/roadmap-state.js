@@ -194,7 +194,8 @@ window.HW_ROADMAP_STATE = {
                         "Added enemy-behavior payload reference coverage.",
                         "Added item-effect payload validation for resources, numbers, trade costs, and transform targets.",
                         "Added wearable gear metadata validation for slots, ids, rarity, and future effects.",
-                        "Added relic metadata validation for ids, depths, rarity, and supported hooks."
+                        "Added relic metadata validation for ids, depths, rarity, and supported hooks.",
+                        "Added room-profile and spawn-weight validation for generation references and usable weighted enemies."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
