@@ -1,5 +1,7 @@
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const childProcess = require('node:child_process');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
@@ -25,6 +27,7 @@ assert(html.includes('roadmap-state.js'), 'Roadmap viewer should load roadmap st
 assert(html.includes('dist/roadmap-viewer.bundle.js'), 'Roadmap viewer should load the local React Flow bundle');
 assert(html.includes('dist/roadmap-viewer.bundle.css'), 'Roadmap viewer should load the local React Flow bundle styles');
 assert(html.includes('statusFilters'), 'Roadmap viewer should expose status filter controls');
+assert(fs.existsSync(path.join(root, 'tools', 'update-roadmap-state.js')), 'Roadmap updater script should exist');
 assert(fs.existsSync(path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.js')), 'Roadmap viewer JS bundle should be built');
 assert(fs.existsSync(path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.css')), 'Roadmap viewer CSS bundle should be built');
 assert(viewerJs.includes("from '@xyflow/react'"), 'Roadmap viewer source should import @xyflow/react locally');
@@ -62,5 +65,36 @@ roadmap.lanes.forEach((lane) => {
 
 assert(currentNode, `Current task ${roadmap.currentTaskId} should match a roadmap node`);
 assert(currentNode.status === 'active' || currentNode.status === 'in_progress', 'Current task should be active or in progress');
+
+const tempStatePath = path.join(os.tmpdir(), `roadmap-state-${Date.now()}.js`);
+fs.copyFileSync(path.join(root, 'roadmap-viewer', 'roadmap-state.js'), tempStatePath);
+childProcess.execFileSync(
+    process.execPath,
+    [
+        path.join(root, 'tools', 'update-roadmap-state.js'),
+        '--node', 'content-scaling',
+        '--status', 'active',
+        '--current',
+        '--done', 'Smoke-tested roadmap updater.',
+        '--evidence', 'tools/update-roadmap-state.js',
+        '--date', '2099-01-01'
+    ],
+    {
+        cwd: root,
+        env: { ...process.env, ROADMAP_STATE_PATH: tempStatePath },
+        stdio: 'pipe'
+    }
+);
+
+const updaterSandbox = { window: {} };
+vm.runInNewContext(fs.readFileSync(tempStatePath, 'utf8'), updaterSandbox, { filename: tempStatePath });
+const updatedRoadmap = updaterSandbox.window.HW_ROADMAP_STATE;
+const updatedNode = updatedRoadmap.lanes.flatMap((lane) => lane.nodes).find((node) => node.id === 'content-scaling');
+assert(updatedRoadmap.updatedAt === '2099-01-01', 'Roadmap updater should update the graph date');
+assert(updatedRoadmap.currentTaskId === 'content-scaling', 'Roadmap updater should set currentTaskId');
+assert(updatedNode.status === 'active', 'Roadmap updater should set node status');
+assert(updatedNode.done.includes('Smoke-tested roadmap updater.'), 'Roadmap updater should append done entries');
+assert(updatedNode.evidence.includes('tools/update-roadmap-state.js'), 'Roadmap updater should append evidence entries');
+fs.unlinkSync(tempStatePath);
 
 console.log('Roadmap viewer smoke checks passed');

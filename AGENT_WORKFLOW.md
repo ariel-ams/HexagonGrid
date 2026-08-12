@@ -31,6 +31,7 @@ This file gives future agents enough project context to work independently witho
 - `src/data/art.js`: UI art, tile art, theme sheet metadata, HUD icon rows.
 - `src/systems/*`: extracted systems for audio, HUD, inspect UI, pathfinding, tactical combat, dungeon generation, enemies, items, market/camp, replay, and rendering helpers.
 - `roadmap-viewer/*`: static React Flow roadmap graph. Update `roadmap-viewer/roadmap-state.js` when active roadmap work changes, completes, or gains new evidence.
+- `tools/update-roadmap-state.js`: CLI helper for focused roadmap graph updates. Prefer `npm run roadmap:update -- --node <id> ...` over hand-editing sprint status.
 
 ## Product Priorities
 
@@ -68,6 +69,7 @@ Use `Iterate` when a visual/manual check could not be run or when a known readab
 - Roadmap viewer smoke: `node tools/smoke-roadmap-viewer.js`
 - Roadmap viewer browser smoke: `node tools/smoke-roadmap-browser.js`
 - Roadmap-only suite: `npm run test:roadmap`
+- Roadmap state updater: `npm run roadmap:update -- --node <id> --status <status> --current --evidence "npm test"`
 
 On this Windows workspace, Node/Playwright may need elevated execution if sandboxing blocks access to the user path. If a sandbox failure occurs, rerun the same command with the proper approval request rather than changing the command.
 
