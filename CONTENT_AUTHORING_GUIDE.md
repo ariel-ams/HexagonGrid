@@ -365,7 +365,7 @@ The data smoke test keeps future gear data ready for implementation:
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, missing object-to-sprite metadata, invalid sprite sheet rows or frame timing, missing asset files, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, terrain, visibility, and route-risk states, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic metadata, and equipment metadata mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, missing object-to-sprite metadata, invalid sprite sheet rows or frame timing, missing asset files, objects with no spawn/theme/template/behavior usage path, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, terrain, visibility, and route-risk states, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic metadata, and equipment metadata mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

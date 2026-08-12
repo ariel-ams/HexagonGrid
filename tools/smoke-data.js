@@ -289,6 +289,34 @@ function isTemplateObjectAllowedByTheme(theme, objectId) {
     return theme.items.includes(objectId);
 }
 
+const internalObjectIds = new Set(['empty', 'entry', 'exit', 'finalExit']);
+const objectUsageSources = new Map(Object.keys(HW_CONTENT.OBJECTS).map((objectId) => [objectId, []]));
+
+function addObjectUsage(objectId, source) {
+    if (objectUsageSources.has(objectId)) objectUsageSources.get(objectId).push(source);
+}
+
+HW_PROGRESSION.ROOM_PROFILES.forEach((profile) => {
+    profile.allowedDiscovery.forEach((objectId) => addObjectUsage(objectId, 'room allowedDiscovery'));
+    profile.allowedUtility.forEach((objectId) => addObjectUsage(objectId, 'room allowedUtility'));
+    profile.allowedEnemies.forEach((objectId) => addObjectUsage(objectId, 'room allowedEnemies'));
+    profile.itemWeights.forEach((entry) => addObjectUsage(entry.object, 'room itemWeights'));
+});
+HW_CONTENT.DISCOVERY_OBJECT_WEIGHTS.forEach((entry) => addObjectUsage(entry.object, 'discovery weights'));
+HW_CONTENT.ENEMY_SPAWN_WEIGHTS.forEach((entry) => addObjectUsage(entry.object, 'enemy spawn weights'));
+Object.values(HW_PROGRESSION.DUNGEON_THEMES).forEach((theme) => {
+    theme.enemies.forEach((objectId) => addObjectUsage(objectId, 'theme enemies'));
+    theme.items.forEach((objectId) => addObjectUsage(objectId, 'theme items'));
+    theme.hazards.forEach((objectId) => addObjectUsage(objectId, 'theme hazards'));
+});
+Object.values(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS).forEach((template) => {
+    [...(template.requiredObjects || []), ...(template.requiredEnemies || []), ...(template.synergyEnemies || [])]
+        .forEach((objectId) => addObjectUsage(objectId, 'room template'));
+});
+Object.values(HW_CONTENT.ENEMY_DEFS).forEach((enemy) => {
+    enemy.behaviors?.forEach((behavior) => addObjectUsage(behavior.object, 'enemy behavior payload'));
+});
+
 Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
     assert(object.name && object.description, `Object ${objectId} needs name and description`);
     assert(/^#[0-9a-f]{6}$/i.test(object.color), `Object ${objectId} needs a hex color`);
@@ -301,6 +329,9 @@ Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
         if (!HW_CONTENT.ENEMY_DEFS[objectId]) assertLocalizedTuple('objects', objectId);
         const spriteId = HW_CONTENT.ENEMY_DEFS[objectId]?.sprite || objectId;
         assert(HW_CONTENT.SPRITE_DEFS[spriteId], `Object ${objectId} references missing sprite metadata ${spriteId}`);
+        if (!internalObjectIds.has(objectId)) {
+            assert(objectUsageSources.get(objectId)?.length > 0, `Object ${objectId} has no spawn, theme, template, or behavior usage path`);
+        }
     }
 });
 

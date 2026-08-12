@@ -211,7 +211,8 @@ window.HW_ROADMAP_STATE = {
                         "Added bilingual inspect-chip coverage for planning-focused item effects such as slow and trap creation.",
                         "Added data smoke coverage for visibility, terrain, and route-risk inspect chips.",
                         "Added data smoke coverage for object-to-sprite metadata.",
-                        "Added data smoke validation for sprite sheet rows and animation frame timing."
+                        "Added data smoke validation for sprite sheet rows and animation frame timing.",
+                        "Added data smoke coverage for object usage paths across generation, themes, templates, and behavior payloads."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
