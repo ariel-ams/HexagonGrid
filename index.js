@@ -1424,8 +1424,8 @@ function generateRoom(reason) {
     game.inspectedCell = null;
     game.inspectPinned = false;
     game.roomProfile = getRoomProfile();
-    game.roomObjective = chooseRoomObjective();
-    game.roomTemplate = chooseRoomTemplate();
+    game.roomObjective = roomTemplateSystem.chooseRoomObjective();
+    game.roomTemplate = roomTemplateSystem.chooseRoomTemplate();
     game.objectiveProgress = createObjectiveProgress();
     game.freeWaxDoorAvailable = false;
     game.foragerPouchCollected = { pollen: false, water: false };
@@ -1466,11 +1466,11 @@ function generateRoom(reason) {
         });
     });
 
-    applyFirstRunOnboardingTemplate();
-    placeFirstRoomTeachingPickups();
-    placeRoomLessonGate(game.roomTemplate);
-    placeEnemySynergy(game.roomTemplate);
-    revealExitCell();
+    roomTemplateSystem.applyFirstRunOnboardingTemplate();
+    roomTemplateSystem.placeFirstRoomTeachingPickups();
+    roomTemplateSystem.placeRoomLessonGate(game.roomTemplate);
+    roomTemplateSystem.placeEnemySynergy(game.roomTemplate);
+    roomTemplateSystem.revealExitCell();
     placeTeachingEnemy();
     placeBats();
     updateLampLightFields();
@@ -1488,7 +1488,7 @@ function generateRoom(reason) {
         addLog(t('logs', 'exit'), formatText('messages', 'enteredChamber', { room: game.roomDepth }));
     }
     if (game.roomObjective) {
-        addLog(currentLanguage === 'es-419' ? 'Objetivo' : 'Objective', getRoomObjectiveText());
+        addLog(currentLanguage === 'es-419' ? 'Objetivo' : 'Objective', roomTemplateSystem.getRoomObjectiveText());
     }
     recordReplayEvent('roomStart', { reason, depth: game.roomDepth });
     draw();
@@ -1820,18 +1820,6 @@ function applyEquipmentLoadout(player) {
     });
 }
 
-function chooseRoomObjective() {
-    return roomTemplateSystem.chooseRoomObjective();
-}
-
-function chooseRoomTemplate() {
-    return roomTemplateSystem.chooseRoomTemplate();
-}
-
-function getRoomObjectiveText() {
-    return roomTemplateSystem.getRoomObjectiveText();
-}
-
 function updateObjectiveProgress() {
     roomTemplateSystem.updateObjectiveProgress();
 }
@@ -1882,26 +1870,6 @@ function placeTeachingEnemy() {
     const cell = randomFrom(candidates);
     cell.object = 'enemy';
     game.roomSpawnCounts.enemies += 1;
-}
-
-function applyFirstRunOnboardingTemplate() {
-    roomTemplateSystem.applyFirstRunOnboardingTemplate();
-}
-
-function placeFirstRoomTeachingPickups() {
-    roomTemplateSystem.placeFirstRoomTeachingPickups();
-}
-
-function placeRoomLessonGate(template = 'mixedGate') {
-    roomTemplateSystem.placeRoomLessonGate(template);
-}
-
-function revealExitCell() {
-    roomTemplateSystem.revealExitCell();
-}
-
-function placeEnemySynergy(template) {
-    roomTemplateSystem.placeEnemySynergy(template);
 }
 
 function getExitNeighborCells() {
@@ -2079,7 +2047,7 @@ function revealExitHint() {
 }
 
 function revealExitGate() {
-    revealExitCell();
+    roomTemplateSystem.revealExitCell();
     getExitNeighborCells().forEach((cell) => {
         cell.revealed = true;
     });
@@ -5810,7 +5778,7 @@ function renderStatsHud(statsText) {
     }
     const firstRoom = game.roomDepth === 1;
     const items = [
-        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), hudIcon: HUD_ICON_ROWS.objective, fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
+        { id: 'objective', value: game.roomObjective?.isComplete() ? 'OK' : '...', title: roomTemplateSystem.getRoomObjectiveText() || (currentLanguage === 'es-419' ? 'Objetivo de sala' : 'Room objective'), hudIcon: HUD_ICON_ROWS.objective, fallback: 'OBJ', color: '#9ee7ff', tone: game.roomObjective?.isComplete() ? '' : 'warning' }
     ];
     if (!firstRoom || game.player.pollen > 0) {
         items.splice(1, 0, { id: 'pollen', value: game.player.pollen, title: `${statsText.pollen[0]}: ${statsText.pollen[1]}`, hudIcon: HUD_ICON_ROWS.pollen, sprite: 'pollen', fallback: 'P', color: '#f7d45c' });
