@@ -197,7 +197,8 @@ window.HW_ROADMAP_STATE = {
                         "Added relic metadata validation for ids, depths, rarity, and supported hooks.",
                         "Added room-profile and spawn-weight validation for generation references and usable weighted enemies.",
                         "Centralized authored room-template metadata and added smoke coverage for objective/template references.",
-                        "Moved random room-template selection onto ROOM_TEMPLATE_DEFS so authored lesson metadata is the source of truth."
+                        "Moved random room-template selection onto ROOM_TEMPLATE_DEFS so authored lesson metadata is the source of truth.",
+                        "Added schema validation for authored room-template metadata keys, booleans, and reference arrays."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

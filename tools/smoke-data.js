@@ -48,6 +48,13 @@ const equipmentEffectTypes = new Set([
     'futureRoomHoney'
 ]);
 const roomWeightTokens = new Set(['discovery']);
+const roomTemplateKeys = new Set([
+    'minLevel',
+    'random',
+    'requiredObjects',
+    'requiredEnemies',
+    'synergyEnemies'
+]);
 
 assert(HW_CONTENT?.OBJECTS, 'HW_CONTENT.OBJECTS was not registered');
 assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
@@ -124,7 +131,18 @@ sandbox.window.HW_ROOM_TEMPLATES.ROOM_OBJECTIVES.forEach((objective) => {
 });
 
 Object.entries(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS).forEach(([templateId, template]) => {
+    Object.keys(template).forEach((key) => {
+        assert(roomTemplateKeys.has(key), `Room template ${templateId} uses unsupported metadata key ${key}`);
+    });
     assert(Number.isInteger(template.minLevel) && template.minLevel >= 1, `Room template ${templateId} needs a positive integer minLevel`);
+    if (template.random != null) {
+        assert(typeof template.random === 'boolean', `Room template ${templateId} random must be boolean`);
+    }
+    ['requiredObjects', 'requiredEnemies', 'synergyEnemies'].forEach((listName) => {
+        if (template[listName] != null) {
+            assert(Array.isArray(template[listName]), `Room template ${templateId} ${listName} must be an array`);
+        }
+    });
     if (template.random) {
         const hasRequiredContent = Boolean(
             template.requiredObjects?.length
