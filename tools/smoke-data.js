@@ -372,6 +372,10 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
     assert(slotIds.has(equipment.slot), `Equipment ${equipment.id} uses unknown slot ${equipment.slot}`);
     assert(equipment.name && equipment.description, `Equipment ${equipment.id} needs name and description`);
     assert(equipmentRarities.has(equipment.rarity), `Equipment ${equipment.id} uses unknown rarity ${equipment.rarity}`);
+    assert(Number.isInteger(equipment.minLevel) && equipment.minLevel >= 1, `Equipment ${equipment.id} needs a positive integer minLevel`);
+    if (equipment.rarity === 'starter') {
+        assert(equipment.minLevel === 1, `Starter equipment ${equipment.id} must unlock at level 1`);
+    }
     assert(Array.isArray(equipment.effects) && equipment.effects.length > 0, `Equipment ${equipment.id} needs at least one future effect`);
     equipment.effects.forEach((effect) => {
         assert(sandbox.window.HW_EQUIPMENT.hasEquipmentEffectHandler(effect.type), `Equipment ${equipment.id} uses unsupported effect ${effect.type}`);

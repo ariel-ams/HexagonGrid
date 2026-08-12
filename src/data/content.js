@@ -1164,6 +1164,7 @@ const EQUIPMENT_DEFS = {
         slot: 'helmet',
         name: 'Wax Scout Helmet',
         rarity: 'starter',
+        minLevel: 1,
         description: 'Future loot: reveals one extra cell near the exit at room start.',
         effects: [{ type: 'futureRevealHint', amount: 1 }]
     },
@@ -1172,6 +1173,7 @@ const EQUIPMENT_DEFS = {
         slot: 'jacket',
         name: 'Leaf Jacket',
         rarity: 'starter',
+        minLevel: 1,
         description: 'Future loot: softens the first hazard damage in each room.',
         effects: [{ type: 'futureHazardBlock', amount: 1 }]
     },
@@ -1180,6 +1182,7 @@ const EQUIPMENT_DEFS = {
         slot: 'abdomen',
         name: 'Nectar Pouch',
         rarity: 'starter',
+        minLevel: 1,
         description: 'Future loot: carries bonus honey between rooms.',
         effects: [{ type: 'futureRoomHoney', amount: 1 }]
     },
@@ -1188,6 +1191,7 @@ const EQUIPMENT_DEFS = {
         slot: 'sting',
         name: 'Barbed Sting',
         rarity: 'starter',
+        minLevel: 1,
         description: 'Future loot: improves tactical attack reach or first-hit damage.',
         effects: [{ type: 'futureAttackRange', amount: 1 }]
     },
@@ -1196,6 +1200,7 @@ const EQUIPMENT_DEFS = {
         slot: 'wings',
         name: 'Scout Wings',
         rarity: 'starter',
+        minLevel: 1,
         description: 'Future loot: improves movement route control.',
         effects: [{ type: 'futureMovePoint', amount: 1 }]
     }
