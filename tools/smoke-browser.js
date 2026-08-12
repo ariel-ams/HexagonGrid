@@ -200,18 +200,33 @@ async function main() {
     const positionalCombat = await page.evaluate(async () => {
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         const api = window.HW_TEST_API;
-        api.setPlayerPosition(0, 0);
-        api.setCellObject(1, 0, 'thornBeetle', true);
-        api.setTacticalState({ movePoints: 2, maxMovePoints: 2, actionAvailable: true });
-        api.moveToCell(1, 0);
-        await wait(450);
-        const frontBlocked = api.getCellData(1, 0);
+        const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
+        const cells = api.getCells();
+        const setup = cells.map((target) => {
+            const front = dirs
+                .map((direction) => window.getCell(target.q - direction.q, target.r - direction.r))
+                .find(Boolean);
+            const flank = dirs
+                .map((direction) => window.getCell(target.q + direction.q, target.r + direction.r))
+                .find((cell) => cell && (!front || cell.q !== front.q || cell.r !== front.r));
+            return front && flank ? { target, front, flank } : null;
+        }).find(Boolean);
+        if (!setup) throw new Error('No positional combat setup cells available.');
 
-        api.setPlayerPosition(1, -1);
+        api.setCellObject(setup.front.q, setup.front.r, 'empty', true);
+        api.setCellObject(setup.flank.q, setup.flank.r, 'empty', true);
+        api.setPlayerPosition(setup.front.q, setup.front.r);
+        api.setCellObject(setup.target.q, setup.target.r, 'thornBeetle', true);
         api.setTacticalState({ movePoints: 2, maxMovePoints: 2, actionAvailable: true });
-        api.moveToCell(1, 0);
+        api.moveToCell(setup.target.q, setup.target.r);
         await wait(450);
-        const flanked = api.getCellData(1, 0);
+        const frontBlocked = api.getCellData(setup.target.q, setup.target.r);
+
+        api.setPlayerPosition(setup.flank.q, setup.flank.r);
+        api.setTacticalState({ movePoints: 2, maxMovePoints: 2, actionAvailable: true });
+        api.moveToCell(setup.target.q, setup.target.r);
+        await wait(450);
+        const flanked = api.getCellData(setup.target.q, setup.target.r);
 
         return {
             frontHits: frontBlocked.hits || 0,
@@ -311,6 +326,43 @@ async function main() {
     assert(lessonRooms.guardHasReadableSpace, 'Room 3 guard should expose at least one readable nearby route cell.');
     assert(lessonRooms.lessonSafeCount >= 1, 'Room 3 should mark at least one safe flank lesson cell.');
     assert(lessonRooms.lessonSafeNearGuard, 'Room 3 safe lesson cell should sit beside the armored guard.');
+
+    const themedTemplates = await page.evaluate(() => {
+        const api = window.HW_TEST_API;
+        const defs = window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS;
+        const themes = window.HW_PROGRESSION.DUNGEON_THEMES;
+        const hazardObjects = new Set(['vine', 'burningCell', 'stickyTrap', 'waxDoor', 'burrowWarningCell', 'bomberMarkedCell']);
+        const universalObjects = new Set(['empty', 'entry', 'exit', 'finalExit', 'wall']);
+        const isAllowed = (theme, object) => {
+            if (universalObjects.has(object)) return true;
+            if (window.HW_CONTENT.ENEMY_DEFS[object]) return theme.enemies.includes(object);
+            if (hazardObjects.has(object)) return theme.hazards.includes(object);
+            return theme.items.includes(object);
+        };
+
+        api.setProgressionLevel(5);
+        return Object.keys(themes).map((themeId) => {
+            api.setDungeonTheme(themeId);
+            api.generateRoomAtDepth(4);
+            const state = api.getState();
+            const template = defs[state.roomTemplate] || {};
+            const requiredContent = [
+                ...(template.requiredObjects || []),
+                ...(template.requiredEnemies || []),
+                ...(template.synergyEnemies || [])
+            ];
+            return {
+                themeId,
+                templateId: state.roomTemplate,
+                requiredContent,
+                compatible: requiredContent.every((object) => isAllowed(themes[themeId], object))
+            };
+        });
+    });
+    themedTemplates.forEach((entry) => {
+        assert(entry.templateId, `Theme ${entry.themeId} should generate a room template.`);
+        assert(entry.compatible, `Theme ${entry.themeId} generated incompatible template ${entry.templateId} requiring ${entry.requiredContent.join(', ')}.`);
+    });
 
     await page.evaluate(() => {
         const api = window.HW_TEST_API;

@@ -6083,6 +6083,14 @@ window.HW_TEST_API = {
         draw();
         return true;
     },
+    setProgressionLevel: (level) => {
+        const nextLevel = Math.max(1, Math.floor(Number(level) || 1));
+        progression.level = nextLevel;
+        progression.xp = 0;
+        saveProgression();
+        renderStats();
+        return getPlayerLevel();
+    },
     equipItem: (equipmentId) => equipItem(equipmentId),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
     isEnemyObject: (object) => isEnemyObject(object),

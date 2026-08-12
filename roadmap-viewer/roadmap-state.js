@@ -200,7 +200,8 @@ window.HW_ROADMAP_STATE = {
                         "Moved random room-template selection onto ROOM_TEMPLATE_DEFS so authored lesson metadata is the source of truth.",
                         "Added schema validation for authored room-template metadata keys, booleans, and reference arrays.",
                         "Added smoke coverage so random room templates must fit at least one dungeon theme.",
-                        "Filtered random room-template selection by active dungeon theme and validated each theme has a compatible random lesson."
+                        "Filtered random room-template selection by active dungeon theme and validated each theme has a compatible random lesson.",
+                        "Added browser smoke coverage for active-theme room-template selection and stabilized positional-combat setup against irregular rooms."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -216,7 +217,8 @@ window.HW_ROADMAP_STATE = {
                         "npm test",
                         "src/systems/enemies.js",
                         "CONTENT_AUTHORING_GUIDE.md",
-                        "src/systems/room-templates.js"
+                        "src/systems/room-templates.js",
+                        "index.js"
                     ]
                 },
                 {
