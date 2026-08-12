@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build:roadmap": "node tools/build-roadmap-viewer.js",
-    "test": "node tools/smoke-data.js && node tools/smoke-roadmap-viewer.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"
+    "test": "node tools/smoke-data.js && node tools/smoke-roadmap-viewer.js && node tools/smoke-roadmap-browser.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"
   },
   "keywords": [],
   "author": "",

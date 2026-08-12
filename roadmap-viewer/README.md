@@ -65,11 +65,19 @@ This keeps the viewer GitHub Pages-friendly and avoids CDN/network access during
 
 ## Checks
 
+The full project check includes the roadmap data and browser render checks:
+
+```powershell
+npm test
+```
+
+Run the data-contract check by itself:
+
 ```powershell
 node tools/smoke-roadmap-viewer.js
 ```
 
-For a visual browser pass that loads React Flow and saves `.codex-video-frames/roadmap-viewer.png`:
+Run the visual browser pass by itself. It loads React Flow and saves `.codex-video-frames/roadmap-viewer.png`:
 
 ```powershell
 node tools/smoke-roadmap-browser.js
