@@ -432,6 +432,9 @@ const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadou
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');
 assert(emptyChoiceDetails.slotDef?.name, 'Equipment choice details should include the slot display name');
+assert(emptyChoiceDetails.rarity === emptyChoiceDetails.equipment.rarity, 'Equipment choice details should include candidate rarity');
+assert(Number.isInteger(emptyChoiceDetails.rarityRank), 'Equipment choice details should include a rarity rank');
+assert(emptyChoiceDetails.rewardWeight > 0, 'Equipment choice details should include a reward weight');
 assert(emptyChoiceDetails.effects.length === emptyChoiceDetails.equipment.effects.length, 'Equipment choice details should include candidate effect summaries');
 assert(emptyChoiceDetails.effects.every((effect) => effect.isFuture && !effect.isActive), 'Starter equipment choice effect summaries should mark future effects');
 assert(emptyChoiceDetails.isEmptySlot && !emptyChoiceDetails.isReplacement && !emptyChoiceDetails.isEquipped, 'Equipment choice details should flag empty slots');
@@ -514,6 +517,7 @@ assert(!weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, c
 const replacementChoiceDetails = weightedEquipmentSystem.getEquipmentChoiceDetails({ helmet: 'commonHelmet' }, 'rareHelmet');
 assert(replacementChoiceDetails?.current?.id === 'commonHelmet', 'Equipment choice details should include the currently equipped item in the same slot');
 assert(replacementChoiceDetails.slotDef?.id === 'helmet', 'Equipment replacement details should include the replaced slot definition');
+assert(replacementChoiceDetails.rarity === 'rare' && replacementChoiceDetails.rewardWeight === sandbox.window.HW_EQUIPMENT.EQUIPMENT_RARITY_WEIGHTS.rare, 'Equipment replacement details should include rarity reward metadata');
 assert(replacementChoiceDetails.isReplacement && !replacementChoiceDetails.isEmptySlot && !replacementChoiceDetails.isEquipped, 'Equipment choice details should flag slot replacements');
 const weightedRewardChoiceDetails = weightedEquipmentSystem.createEquipmentRewardChoiceDetails({
     playerLevel: 1,

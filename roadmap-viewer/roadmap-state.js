@@ -262,7 +262,8 @@ window.HW_ROADMAP_STATE = {
                         "Added equipment reward replacement detail helper.",
                         "Added bundled equipment reward choice details for future UI cards.",
                         "Added slot display metadata to equipment reward details.",
-                        "Added equipment effect summaries to reward details."
+                        "Added equipment effect summaries to reward details.",
+                        "Added rarity and reward-weight metadata to equipment reward details."
                     ],
                     "left": [
                         "Design loot acquisition.",
