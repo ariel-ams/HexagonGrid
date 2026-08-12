@@ -197,6 +197,10 @@ const cellInteractions = window.HW_CELL_INTERACTIONS.createCellInteractionSystem
     objects: OBJECTS
 });
 
+const runSummarySystem = window.HW_RUN_SUMMARY.createRunSummarySystem({
+    getLanguage: () => currentLanguage
+});
+
 let tacticalCombat = null;
 let campMarketController = null;
 let enemyTurns = null;
@@ -5279,7 +5283,7 @@ function applyDamage(amount, q, r, source) {
         game.objectiveProgress.tookDamage = true;
         deltas.push({ stat: 'health', amount: -healthDamage });
         game.lastDamageSource = source;
-        game.deathTip = getDeathTip(source);
+        game.deathTip = runSummarySystem.getDeathTip(source);
         game.metrics.damageBySource[source] = (game.metrics.damageBySource[source] || 0) + healthDamage;
     }
 
@@ -5297,16 +5301,6 @@ function applyDamage(amount, q, r, source) {
     if (game.player.health <= 0) {
         endRun('death');
     }
-}
-
-function getDeathTip(source = '') {
-    const lower = source.toLowerCase();
-    if (lower.includes('bat')) return 'Bats punish standing adjacent. Save Double Sting or move away before the bite timer fills.';
-    if (lower.includes('wasp')) return 'Wasp pressure is about positioning. Avoid ending your turn inside its danger ring.';
-    if (lower.includes('vine')) return 'Vines are permanent taxes. Cross them only when you can afford the health or shield loss.';
-    if (lower.includes('moth')) return 'Moths are support threats. Clear them early before they steal tempo or hide the room.';
-    if (lower.includes('beetle')) return 'Beetles control chokepoints. Do not linger beside one without shield.';
-    return 'Watch the top-right danger timers and leave threatened cells before they fill.';
 }
 
 function isEnemyObject(object) {
@@ -5360,7 +5354,7 @@ function endRun(reason = 'final-exit') {
         [currentLanguage === 'es-419' ? 'Progreso final' : 'Final Progress', reason === 'death' ? '0%' : reason === 'boss-defeated' ? '100%' : `${danceComplete}%`],
         ...(reason === 'death' ? [
             [currentLanguage === 'es-419' ? 'Causa' : 'Cause', game.lastDamageSource || 'Unknown'],
-            [currentLanguage === 'es-419' ? 'Consejo' : 'Tip', game.deathTip || getDeathTip()]
+            [currentLanguage === 'es-419' ? 'Consejo' : 'Tip', game.deathTip || runSummarySystem.getDeathTip()]
         ] : []),
         [currentLanguage === 'es-419' ? 'Polen total' : 'Lifetime Pollen', progression.lifetimePollen],
         [currentLanguage === 'es-419' ? 'Miel total' : 'Lifetime Honey', progression.lifetimeHoney],
@@ -5369,7 +5363,12 @@ function endRun(reason = 'final-exit') {
         [currentLanguage === 'es-419' ? 'Celdas movidas' : 'Cells Moved', game.metrics.cellsMoved],
         [currentLanguage === 'es-419' ? 'Bucles ataque-retirada' : 'Attack-Retreat Loops', game.metrics.repeatedAttackRetreatPatterns],
         [currentLanguage === 'es-419' ? 'Daño por fuente' : 'Damage Sources', formatDamageMetrics()],
-        [currentLanguage === 'es-419' ? 'Recomendación' : 'Recommendation', getRunRecommendation(reason)],
+        [currentLanguage === 'es-419' ? 'Recomendación' : 'Recommendation', runSummarySystem.getRunRecommendation({
+            reason,
+            metrics: game.metrics,
+            player: game.player,
+            runStats: game.runStats
+        })],
         [currentLanguage === 'es-419' ? 'Desbloqueos' : 'Unlocks', getProgressionUnlockText()],
         [currentLanguage === 'es-419' ? 'Semilla' : 'Seed', game.runSeed]
     ];
@@ -5419,45 +5418,6 @@ function formatDamageMetrics() {
         .slice(0, 3)
         .map(([source, amount]) => `${source}: ${amount}`)
         .join(', ');
-}
-
-function getRunRecommendation(reason) {
-    const damageEntries = Object.entries(game.metrics.damageBySource || {}).sort((a, b) => b[1] - a[1]);
-    const topSource = damageEntries[0]?.[0]?.toLowerCase() || '';
-    const unspent = game.player.pollen + game.player.water + game.player.honey;
-    if (reason === 'death' && topSource.includes('wasp')) {
-        return currentLanguage === 'es-419'
-            ? 'Evita terminar turnos dentro de anillos de avispa; usa movimiento para salir antes de atacar otra vez.'
-            : 'Avoid ending turns inside wasp rings; spend movement to leave before attacking again.';
-    }
-    if (reason === 'death' && topSource.includes('bat')) {
-        return currentLanguage === 'es-419'
-            ? 'Guarda Aguijón doble para murciélagos o planea dos golpes con una salida segura.'
-            : 'Save Double Sting for bats or plan two hits with a safe escape cell.';
-    }
-    if (reason === 'death' && topSource.includes('burn')) {
-        return currentLanguage === 'es-419'
-            ? 'Reserva agua para apagar fuego o cambia la ruta cuando el fuego bloquee la salida.'
-            : 'Reserve water for fire cells or reroute when fire blocks the exit.';
-    }
-    if (unspent >= 5) {
-        return currentLanguage === 'es-419'
-            ? 'Terminaste con muchos recursos; compra curación, escudo o mapa en el próximo mercado.'
-            : 'You carried many resources; spend them on healing, shield, or map help at the next market.';
-    }
-    if (game.metrics.attacksMade < game.metrics.turns / 4 && game.runStats.kills < 2) {
-        return currentLanguage === 'es-419'
-            ? 'Estás evitando muchas amenazas; a veces matar el guardia abre una ruta más segura.'
-            : 'You avoided many threats; sometimes killing the guard creates the safer route.';
-    }
-    if (game.metrics.repeatedAttackRetreatPatterns > 1) {
-        return currentLanguage === 'es-419'
-            ? 'Los bucles de golpear y huir activan presión; busca mejorar rango/movimiento antes del jefe.'
-            : 'Hit-and-run loops build pressure; look for range or movement upgrades before the boss.';
-    }
-    return currentLanguage === 'es-419'
-        ? 'Buen ritmo. Sigue inspeccionando celdas para ver costos, daño y rutas letales antes de moverte.'
-        : 'Good pace. Keep inspecting cells to read costs, damage, and lethal routes before moving.';
 }
 
 function getProgressionUnlockText() {

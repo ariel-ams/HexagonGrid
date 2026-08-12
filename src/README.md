@@ -15,6 +15,7 @@ Honeycomb Wayfinder source layout
 - `systems/dungeon-generation.js`: cave room generation, room graph layout, entry/exit placement, and cell creation.
 - `systems/renderer.js`: canvas rendering helpers for dungeon cells, tiles, path previews, sprites, fog, and effects.
 - `systems/replay.js`: local replay event recording and playback state helpers.
+- `systems/run-summary.js`: death tips and end-run tactical recommendation text derived from run metrics.
 - `systems/room-templates.js`: room objectives, first-run lesson templates, exit reveal, and objective/gate placement rules.
 - `../index.js`: current orchestration layer for input, game state, tactical turns, UI screens, and system dispatch.
 
@@ -47,7 +48,7 @@ Adding content
 - If the object needs a special role, action label, cursor symbol/color, collect-on-move exception, or free-walkover rule, add that metadata to `systems/cell-interactions.js`.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.
 
-Future passes should keep shrinking `../index.js` by moving tactical combat, inspect-panel formatting, market/camp flows, and boss scripting into focused systems.
+Future passes should keep shrinking `../index.js` by moving tactical combat, inspect-panel formatting, market/camp flows, boss scripting, and remaining end-screen assembly into focused systems.
 
 Smoke checks
 
