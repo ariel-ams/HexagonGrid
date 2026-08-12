@@ -53,7 +53,7 @@ Adding content
 - If relics change, keep ids unique, depth/rarity valid, and hook names supported; `smoke-data` fails typo hooks before the reward screen uses them.
 - If wearable gear changes, keep slot ids, equipment ids, rarity, and future effect payloads valid; `smoke-data` treats this as the gear contract until loot is implemented.
 - If room profiles or spawn weights change, keep references valid and make sure weighted enemies are usable by at least one eligible room profile; runtime generation still filters by player unlock level.
-- If authored room templates change, update `ROOM_TEMPLATE_DEFS` with the lesson's supported metadata keys and required objects/enemies so data smoke can catch schema typos and broken references before browser tests.
+- If authored room templates change, update `ROOM_TEMPLATE_DEFS` with the lesson's supported metadata keys and required objects/enemies so data smoke can catch schema typos, broken references, and random templates that do not fit any dungeon theme before browser tests.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.
 
 Future passes should keep shrinking `../index.js` by moving tactical combat, inspect-panel formatting, market/camp flows, boss scripting, and remaining end-screen assembly into focused systems.
@@ -70,7 +70,7 @@ Room lesson templates
 
 - Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
 - Room objectives, template selection, exit reveal, and gate placement live in `systems/room-templates.js`; `index.js` should only orchestrate when those passes run.
-- `ROOM_TEMPLATE_DEFS` records each authored lesson's minimum player level, random-selection eligibility, and required objects/enemies. Keep it in sync when adding new templates or synergy lessons; data smoke rejects unsupported keys or malformed reference lists.
+- `ROOM_TEMPLATE_DEFS` records each authored lesson's minimum player level, random-selection eligibility, and required objects/enemies. Keep it in sync when adding new templates or synergy lessons; data smoke rejects unsupported keys, malformed reference lists, and random templates with no compatible dungeon theme.
 - Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.
 - The Stag Beetle now uses `chargeLane` to turn armored combat into a lane-dodge puzzle: it marks cells in its facing direction, then those marked cells detonate if the bee stays in the lane.
 - Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.

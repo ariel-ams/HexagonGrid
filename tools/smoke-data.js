@@ -150,6 +150,14 @@ Object.entries(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS).forEach(([te
             || template.synergyEnemies?.length
         );
         assert(hasRequiredContent, `Random room template ${templateId} needs required or synergy content metadata`);
+        const requiredContent = [
+            ...(template.requiredObjects || []),
+            ...(template.requiredEnemies || []),
+            ...(template.synergyEnemies || [])
+        ];
+        const compatibleTheme = Object.values(HW_PROGRESSION.DUNGEON_THEMES)
+            .find((theme) => requiredContent.every((objectId) => isTemplateObjectAllowedByTheme(theme, objectId)));
+        assert(compatibleTheme, `Random room template ${templateId} has no compatible dungeon theme for its required content`);
     }
     template.requiredObjects?.forEach((objectId) => {
         assert(HW_CONTENT.OBJECTS[objectId], `Room template ${templateId} references missing object ${objectId}`);
@@ -252,6 +260,15 @@ function assertItemEffectPayload(objectId, effect) {
             assertPositiveNumber(effect.attackRange, `Object ${objectId} tradeCooldown attackRange must be positive`);
         }
     }
+}
+
+function isTemplateObjectAllowedByTheme(theme, objectId) {
+    if (['empty', 'entry', 'exit', 'finalExit', 'wall'].includes(objectId)) return true;
+    if (HW_CONTENT.ENEMY_DEFS[objectId]) return theme.enemies.includes(objectId);
+    if (['vine', 'burningCell', 'stickyTrap', 'waxDoor', 'burrowWarningCell', 'bomberMarkedCell'].includes(objectId)) {
+        return theme.hazards.includes(objectId);
+    }
+    return theme.items.includes(objectId);
 }
 
 Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
