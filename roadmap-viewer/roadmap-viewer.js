@@ -30,6 +30,8 @@ const STATUS_LABELS = {
     blocked: 'Blocked'
 };
 
+const FILTER_OPTIONS = ['all', 'active', 'in_progress', 'planned', 'backlog', 'done', 'blocked'];
+
 function flattenRoadmap(roadmap) {
     return roadmap.lanes.flatMap((lane, laneIndex) => (
         lane.nodes.map((node, nodeIndex) => ({
@@ -154,12 +156,58 @@ function updateStaticHeader(roadmap) {
     setText('updatedAt', `Updated ${roadmap.updatedAt}`);
 }
 
+function getStatusCounts(nodes) {
+    return nodes.reduce((counts, node) => {
+        counts[node.status] = (counts[node.status] || 0) + 1;
+        counts.all += 1;
+        return counts;
+    }, { all: 0 });
+}
+
+function getStatusLabel(status) {
+    return status === 'all' ? 'All' : (STATUS_LABELS[status] || status);
+}
+
+function updateStatusSummary(activeStatus, visibleCount, totalCount) {
+    const label = getStatusLabel(activeStatus).toLowerCase();
+    setText('statusSummary', activeStatus === 'all'
+        ? `Showing all ${totalCount} roadmap nodes.`
+        : `Showing ${visibleCount} ${label} node${visibleCount === 1 ? '' : 's'} out of ${totalCount}.`);
+}
+
+function renderStatusFilters({ activeStatus, counts, onSelect }) {
+    const element = document.getElementById('statusFilters');
+    if (!element) return;
+    element.replaceChildren(...FILTER_OPTIONS
+        .filter((status) => status === 'all' || counts[status])
+        .map((status) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'status-filter';
+            button.dataset.statusFilter = status;
+            button.style.setProperty('--filter-color', STATUS_COLORS[status] || '#f3c34a');
+            button.setAttribute('aria-pressed', String(activeStatus === status));
+            button.textContent = `${getStatusLabel(status)} ${counts[status] || 0}`;
+            button.addEventListener('click', () => onSelect(status));
+            return button;
+        }));
+}
+
 function RoadmapApp({ roadmap }) {
     const flow = useReactFlow();
     const allNodes = useMemo(() => flattenRoadmap(roadmap), [roadmap]);
     const currentNode = allNodes.find((node) => node.id === roadmap.currentTaskId) || allNodes[0];
     const [selected, setSelected] = useState(currentNode);
-    const { nodes, edges } = useMemo(() => buildFlowElements(roadmap), [roadmap]);
+    const [activeStatus, setActiveStatus] = useState('all');
+    const statusCounts = useMemo(() => getStatusCounts(allNodes), [allNodes]);
+    const flowElements = useMemo(() => buildFlowElements(roadmap), [roadmap]);
+    const visibleNodeIds = useMemo(() => new Set(allNodes
+        .filter((node) => activeStatus === 'all' || node.status === activeStatus)
+        .map((node) => node.id)), [activeStatus, allNodes]);
+    const nodes = useMemo(() => flowElements.nodes
+        .filter((node) => visibleNodeIds.has(node.id)), [flowElements.nodes, visibleNodeIds]);
+    const edges = useMemo(() => flowElements.edges
+        .filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)), [flowElements.edges, visibleNodeIds]);
     const nodeTypes = useMemo(() => ({ roadmapNode: RoadmapNode }), []);
     const onNodeClick = useCallback((_, node) => setSelected(node.data), []);
     const fitGraph = useCallback(() => {
@@ -175,12 +223,33 @@ function RoadmapApp({ roadmap }) {
     }, [selected]);
 
     useEffect(() => {
+        if (!selected || visibleNodeIds.has(selected.id)) return;
+        const nextSelected = allNodes.find((node) => visibleNodeIds.has(node.id)) || currentNode;
+        setSelected(nextSelected);
+    }, [allNodes, currentNode, selected, visibleNodeIds]);
+
+    useEffect(() => {
+        renderStatusFilters({
+            activeStatus,
+            counts: statusCounts,
+            onSelect: setActiveStatus
+        });
+        updateStatusSummary(activeStatus, nodes.length, allNodes.length);
+    }, [activeStatus, allNodes.length, nodes.length, statusCounts]);
+
+    useEffect(() => {
+        window.requestAnimationFrame(() => flow.fitView({ padding: 0.24, duration: 260 }));
+    }, [activeStatus, flow]);
+
+    useEffect(() => {
         window.HW_ROADMAP_VIEWER = {
             getState: () => roadmap,
             getSelected: () => selected,
+            getActiveStatus: () => activeStatus,
+            getVisibleNodeIds: () => nodes.map((node) => node.id),
             fitGraph
         };
-    }, [fitGraph, roadmap, selected]);
+    }, [activeStatus, fitGraph, nodes, roadmap, selected]);
 
     useEffect(() => {
         const fitButton = document.getElementById('fitButton');

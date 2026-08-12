@@ -32,9 +32,17 @@ async function main() {
 
     const nodeCount = await page.locator('.react-flow__node').count();
     assert(nodeCount >= 6, 'Roadmap viewer should render the roadmap nodes.');
+    assert(await page.locator('#statusFilters [data-status-filter]').count() >= 5, 'Roadmap viewer should render status filter buttons.');
     await page.locator('.react-flow__node').first().click();
     const detailTitle = await page.locator('#detailTitle').textContent();
     assert(detailTitle && detailTitle.trim() !== 'Select a node', 'Selecting a node should update the detail panel.');
+    await page.locator('#statusFilters [data-status-filter="active"]').click();
+    await page.waitForFunction(() => window.HW_ROADMAP_VIEWER?.getActiveStatus?.() === 'active');
+    const activeNodeIds = await page.evaluate(() => window.HW_ROADMAP_VIEWER.getVisibleNodeIds());
+    assert(activeNodeIds.length === 1, 'Active status filter should isolate the current active roadmap node.');
+    assert(await page.locator('#statusSummary').textContent().then((text) => text.includes('active')), 'Status summary should describe the active filter.');
+    await page.locator('#statusFilters [data-status-filter="all"]').click();
+    await page.waitForFunction((expectedCount) => window.HW_ROADMAP_VIEWER?.getVisibleNodeIds?.().length === expectedCount, nodeCount);
     assert(!logs.some((line) => line.startsWith('pageerror:')), `Browser errors found:\n${logs.join('\n')}`);
 
     await page.screenshot({ path: screenshotPath, fullPage: true });

@@ -20,6 +20,7 @@ http://localhost:8080/roadmap-viewer/
 - `roadmap-state.js` is the editable source of truth for graph status.
 - `roadmap-viewer.js` renders that data with React Flow.
 - `roadmap-viewer.css` keeps the viewer visually aligned with the game's dark honeycomb UI.
+- The status filter bar can isolate `active`, `in_progress`, `planned`, `backlog`, `done`, and `blocked` nodes while keeping the detail panel behavior unchanged.
 
 Future sprint work should update `roadmap-state.js` when a node changes status, when the active task changes, or when new evidence is added.
 

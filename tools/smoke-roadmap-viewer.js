@@ -24,12 +24,15 @@ assert(fs.existsSync(viewerDir), 'Roadmap viewer directory should exist');
 assert(html.includes('roadmap-state.js'), 'Roadmap viewer should load roadmap state first');
 assert(html.includes('dist/roadmap-viewer.bundle.js'), 'Roadmap viewer should load the local React Flow bundle');
 assert(html.includes('dist/roadmap-viewer.bundle.css'), 'Roadmap viewer should load the local React Flow bundle styles');
+assert(html.includes('statusFilters'), 'Roadmap viewer should expose status filter controls');
 assert(fs.existsSync(path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.js')), 'Roadmap viewer JS bundle should be built');
 assert(fs.existsSync(path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.css')), 'Roadmap viewer CSS bundle should be built');
 assert(viewerJs.includes("from '@xyflow/react'"), 'Roadmap viewer source should import @xyflow/react locally');
 assert(viewerJs.includes('ReactFlow'), 'Roadmap viewer should render a ReactFlow component');
 assert(viewerJs.includes('onNodeClick'), 'Roadmap viewer should support node selection');
+assert(viewerJs.includes('getActiveStatus'), 'Roadmap viewer should expose active status filter state for browser checks');
 assert(css.includes('.detail-panel'), 'Roadmap viewer should style a detail panel');
+assert(css.includes('.status-filter'), 'Roadmap viewer should style status filter buttons');
 
 const sandbox = { window: {} };
 vm.runInNewContext(stateJs, sandbox, { filename: 'roadmap-viewer/roadmap-state.js' });
