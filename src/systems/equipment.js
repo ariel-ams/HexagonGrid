@@ -66,6 +66,25 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             ));
     }
 
+    function createEquipmentRewardChoices({
+        playerLevel = 1,
+        loadout = {},
+        count = 3,
+        rng = Math.random
+    } = {}) {
+        const equippedIds = new Set(Object.values(loadout || {}).filter(Boolean));
+        const pool = getAvailableEquipment(playerLevel)
+            .filter((equipment) => !equippedIds.has(equipment.id));
+        const choices = [];
+        const choiceCount = Math.max(0, Math.floor(Number(count) || 0));
+        while (choices.length < choiceCount && pool.length > 0) {
+            const roll = Math.max(0, Math.min(0.999999, Number(rng()) || 0));
+            const index = Math.floor(roll * pool.length);
+            choices.push(pool.splice(index, 1)[0]);
+        }
+        return choices;
+    }
+
     function equipItem(loadout, equipmentId) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
@@ -91,6 +110,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     return {
         applyLoadout,
+        createEquipmentRewardChoices,
         createStarterEquipment,
         createStartingEquipment,
         getAvailableEquipment,

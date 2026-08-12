@@ -256,7 +256,8 @@ window.HW_ROADMAP_STATE = {
                         "Added equipment-system support for starter loadout generation.",
                         "New runs now equip the starter wearable loadout.",
                         "Added wearable minLevel metadata for future loot progression.",
-                        "Added equipment availability filtering by player level."
+                        "Added equipment availability filtering by player level.",
+                        "Added deterministic equipment reward-choice candidate helper."
                     ],
                     "left": [
                         "Design loot acquisition.",

@@ -414,6 +414,27 @@ Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
         assert(!availableBeforeUnlock.some((item) => item.id === equipment.id), `Equipment system should keep ${equipment.id} locked before level ${equipment.minLevel}`);
     }
 });
+const rewardChoices = equipmentSystem.createEquipmentRewardChoices({
+    playerLevel: 1,
+    loadout: emptyLoadout,
+    count: 3,
+    rng: () => 0
+});
+assert(rewardChoices.length === Math.min(3, equipmentSystem.getAvailableEquipment(1).length), 'Equipment reward choices should offer up to three available items');
+assert(new Set(rewardChoices.map((equipment) => equipment.id)).size === rewardChoices.length, 'Equipment reward choices should not repeat items');
+rewardChoices.forEach((equipment) => {
+    assert(equipment.minLevel <= 1, `Equipment reward choice ${equipment.id} should respect player level`);
+});
+const equippedIds = new Set(Object.values(starterLoadout).filter(Boolean));
+const replacementChoices = equipmentSystem.createEquipmentRewardChoices({
+    playerLevel: 1,
+    loadout: starterLoadout,
+    count: 3,
+    rng: () => 0
+});
+replacementChoices.forEach((equipment) => {
+    assert(!equippedIds.has(equipment.id), `Equipment reward choices should not offer already equipped item ${equipment.id}`);
+});
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
     helmet: 'waxScoutHelmet',
