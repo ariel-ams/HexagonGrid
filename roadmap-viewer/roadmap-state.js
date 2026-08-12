@@ -274,7 +274,8 @@ window.HW_ROADMAP_STATE = {
                         "Added localized equipment reward-offer packaging for future loot UI.",
                         "Added a level-4 rare equipment reward tier with one piece per slot.",
                         "Added planned asset paths and artist request coverage for wearable gear.",
-                        "Added smoke coverage tying wearable planned asset paths to artist request rows."
+                        "Added smoke coverage tying wearable planned asset paths to artist request rows.",
+                        "Added a wearable content manifest section and smoke coverage for it."
                     ],
                     "left": [
                         "Design loot acquisition.",
@@ -288,7 +289,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-data.js",
                         "npm test",
                         "index.js",
-                        "tools/smoke-browser.js"
+                        "tools/smoke-browser.js",
+                        "CONTENT_MANIFEST_CHECKLIST.md"
                     ]
                 },
                 {

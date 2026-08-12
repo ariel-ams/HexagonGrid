@@ -2,7 +2,7 @@
 
 This guide explains how new content is wired into the game and which files usually need to change. The game is still partly monolithic, but most content data now lives in tables, with systems reading from those tables.
 
-Before adding or reviewing content, copy the relevant section from `CONTENT_MANIFEST_CHECKLIST.md`. That checklist is the quick definition of ready; this guide explains the wiring details behind it.
+Before adding or reviewing content, copy the relevant section from `CONTENT_MANIFEST_CHECKLIST.md`. That checklist is the quick definition of ready; it now includes a wearable-specific section for gear slots, planned art, and reward readiness. This guide explains the wiring details behind it.
 
 ## Main Files
 

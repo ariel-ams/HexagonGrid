@@ -45,6 +45,16 @@ Use this checklist before adding or merging a new enemy, item, hazard, relic, th
 - The relic appears in the chosen relic panel with readable copy.
 - The effect is visible in HUD, inspect, room start, or combat feedback.
 
+## Wearable
+
+- `EQUIPMENT_DEFS[id]` uses one of the fixed slots: `helmet`, `jacket`, `abdomen`, `sting`, or `wings`.
+- English and Latin American Spanish wearable copy exist.
+- `rarity`, `minLevel`, and optional `rewardWeight` match the intended progression tier.
+- `plannedAsset` points to a future transparent PNG under `assets/equipment/`.
+- The wearable id and planned asset path are listed in `ART_SPRITE_REQUESTS.md`.
+- Effects use registered equipment effect types, and future-only effects are clearly labeled as future behavior.
+- Reward helpers can include the wearable without duplicating already equipped gear.
+
 ## Theme
 
 - Theme defines `id`, `name`, `description`, `boardBackground`, `boardOverlay`, `cellTint`, and `borderTint`.

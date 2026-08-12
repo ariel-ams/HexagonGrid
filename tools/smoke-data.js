@@ -46,6 +46,7 @@ const relicChoiceCount = 3;
 const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
 const equipmentEffectTypes = sandbox.window.HW_EQUIPMENT.EQUIPMENT_EFFECT_TYPES || [];
 const artSpriteRequests = fs.readFileSync(path.join(root, 'ART_SPRITE_REQUESTS.md'), 'utf8');
+const contentManifestChecklist = fs.readFileSync(path.join(root, 'CONTENT_MANIFEST_CHECKLIST.md'), 'utf8');
 const roomWeightTokens = new Set(['discovery']);
 const roomTemplateKeys = new Set([
     'minLevel',
@@ -66,6 +67,8 @@ assert(HW_PROGRESSION?.XP_REWARDS?.room > 0, 'Room XP reward must be positive');
 assert(HW_PROGRESSION?.DUNGEON_THEMES?.forest, 'Expected dungeon theme definitions');
 assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment slots');
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
+assert(contentManifestChecklist.includes('## Wearable'), 'Content manifest checklist needs a wearable section');
+assert(contentManifestChecklist.includes('plannedAsset'), 'Wearable checklist should mention plannedAsset coverage');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
 assert(sandbox.window.HW_EQUIPMENT?.hasEquipmentEffectHandler, 'Expected equipment effect metadata');
