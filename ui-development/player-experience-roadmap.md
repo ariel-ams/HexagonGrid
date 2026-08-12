@@ -155,3 +155,12 @@ Borrowing from the `hackerrank-orchestrate-august26` folder, future agents shoul
 - Run the available checks.
 - Capture screenshots for layout-heavy work.
 - Write down unresolved risks instead of hiding them in a final "done" message.
+
+## Visual Roadmap Viewer
+
+The interactive roadmap lives in `roadmap-viewer/` and renders `roadmap-viewer/roadmap-state.js` with React Flow. Use it as the visual companion to this Markdown document:
+
+- update `currentTaskId` when a sprint starts,
+- move node status through `active`, `in_progress`, `planned`, `backlog`, `done`, or `blocked`,
+- add evidence entries for tests, docs, screenshots, commits, or files that prove the node's state,
+- run `node tools/smoke-roadmap-viewer.js` or `npm test` after changing the graph state.

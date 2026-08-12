@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honeycomb Wayfinder Roadmap</title>
+    <link rel="stylesheet" href="./dist/roadmap-viewer.bundle.css">
+    <link rel="stylesheet" href="./roadmap-viewer.css">
+</head>
+<body>
+    <main class="roadmap-shell">
+        <header class="roadmap-header" aria-label="Roadmap summary">
+            <div>
+                <p class="eyebrow">Honeycomb Wayfinder</p>
+                <h1>Roadmap Flow</h1>
+                <p id="roadmapSummary">Loading roadmap state...</p>
+            </div>
+            <nav class="roadmap-actions" aria-label="Roadmap links">
+                <a href="../ui-development/player-experience-roadmap.md">Roadmap.md</a>
+                <a href="../AGENT_WORKFLOW.md">Agent workflow</a>
+                <button id="fitButton" type="button">Fit graph</button>
+            </nav>
+        </header>
+
+        <section class="roadmap-layout" aria-label="Interactive roadmap graph">
+            <div id="roadmapFlow" class="roadmap-flow" aria-label="Roadmap nodes"></div>
+            <aside class="detail-panel" aria-live="polite">
+                <p class="eyebrow">Selected Node</p>
+                <h2 id="detailTitle">Select a node</h2>
+                <p id="detailObjective">Click a roadmap node to see what is done, what is left, and which files provide evidence.</p>
+                <dl class="detail-meta">
+                    <div>
+                        <dt>Status</dt>
+                        <dd id="detailStatus">-</dd>
+                    </div>
+                    <div>
+                        <dt>Owner</dt>
+                        <dd id="detailOwner">-</dd>
+                    </div>
+                </dl>
+                <section>
+                    <h3>Done</h3>
+                    <ul id="detailDone"></ul>
+                </section>
+                <section>
+                    <h3>Left</h3>
+                    <ul id="detailLeft"></ul>
+                </section>
+                <section>
+                    <h3>Evidence</h3>
+                    <ul id="detailEvidence"></ul>
+                </section>
+            </aside>
+        </section>
+
+        <footer class="roadmap-footer">
+            <span id="updatedAt"></span>
+            <span>Update <code>roadmap-viewer/roadmap-state.js</code> during sprint work to keep this graph alive.</span>
+        </footer>
+    </main>
+
+    <script src="./roadmap-state.js"></script>
+    <script src="./dist/roadmap-viewer.bundle.js"></script>
+</body>
+</html>

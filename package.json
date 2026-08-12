@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node tools/smoke-data.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"
+    "build:roadmap": "node tools/build-roadmap-viewer.js",
+    "test": "node tools/smoke-data.js && node tools/smoke-roadmap-viewer.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "playwright": "^1.60.0"
+    "@xyflow/react": "^12.11.3",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.60.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }

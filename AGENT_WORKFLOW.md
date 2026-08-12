@@ -30,6 +30,7 @@ This file gives future agents enough project context to work independently witho
 - `src/data/progression.js`: player levels, room profiles, dungeon themes, unlocks.
 - `src/data/art.js`: UI art, tile art, theme sheet metadata, HUD icon rows.
 - `src/systems/*`: extracted systems for audio, HUD, inspect UI, pathfinding, tactical combat, dungeon generation, enemies, items, market/camp, replay, and rendering helpers.
+- `roadmap-viewer/*`: static React Flow roadmap graph. Update `roadmap-viewer/roadmap-state.js` when active roadmap work changes, completes, or gains new evidence.
 
 ## Product Priorities
 
@@ -64,6 +65,7 @@ Use `Iterate` when a visual/manual check could not be run or when a known readab
 - Data/content checks: `node tools/smoke-data.js`
 - Browser gameplay smoke: `node tools/smoke-browser.js`
 - HUD/layout smoke: `node tools/smoke-ui-layout.js`
+- Roadmap viewer smoke: `node tools/smoke-roadmap-viewer.js`
 
 On this Windows workspace, Node/Playwright may need elevated execution if sandboxing blocks access to the user path. If a sandbox failure occurs, rerun the same command with the proper approval request rather than changing the command.
 
