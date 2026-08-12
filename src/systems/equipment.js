@@ -52,6 +52,8 @@ function getEquipmentRewardWeight(equipment) {
 }
 
 function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
+    const slotDefs = new Map(equipmentSlots.map((slot) => [slot.id, slot]));
+
     function createStartingEquipment() {
         return Object.fromEntries(equipmentSlots.map((slot) => [slot.id, null]));
     }
@@ -121,6 +123,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         return {
             equipment,
             slot: equipment.slot,
+            slotDef: slotDefs.get(equipment.slot) || null,
             current,
             currentId,
             isEmptySlot: !current,
