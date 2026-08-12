@@ -472,6 +472,7 @@ roomTemplateSystem = window.HW_ROOM_TEMPLATES.createRoomTemplateSystem({
     getCell,
     hexDistance,
     isEnemyObject,
+    isObjectAllowedByTheme,
     getPlayerLevel,
     getObjectUnlockLevel,
     getRoomProfile,

@@ -190,6 +190,18 @@ Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {
             });
             assert(eligibleEnemies.length > 0, `Theme ${themeId} has no eligible enemy for room depth ${profile.depth}`);
         });
+
+    const compatibleRandomTemplates = Object.entries(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS)
+        .filter(([, template]) => template.random)
+        .filter(([, template]) => {
+            const requiredContent = [
+                ...(template.requiredObjects || []),
+                ...(template.requiredEnemies || []),
+                ...(template.synergyEnemies || [])
+            ];
+            return requiredContent.every((objectId) => isTemplateObjectAllowedByTheme(theme, objectId));
+        });
+    assert(compatibleRandomTemplates.length > 0, `Theme ${themeId} has no compatible random room template`);
 });
 
 function assertLocalizedTuple(section, id, expectedLength = 2) {

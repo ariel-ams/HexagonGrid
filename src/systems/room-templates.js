@@ -102,6 +102,7 @@ function createRoomTemplateSystem(context) {
         getCell,
         hexDistance,
         isEnemyObject,
+        isObjectAllowedByTheme,
         getPlayerLevel,
         getObjectUnlockLevel,
         getRoomProfile,
@@ -134,12 +135,23 @@ function createRoomTemplateSystem(context) {
         const candidates = Object.entries(ROOM_TEMPLATE_DEFS)
             .filter(([, template]) => template.random)
             .map(([template]) => template)
-            .filter((template) => isRoomTemplateUnlocked(template));
+            .filter((template) => isRoomTemplateUnlocked(template) && isRoomTemplateAllowedByTheme(template));
         return randomFrom(candidates.length ? candidates : ['mixedGate']);
     }
 
     function isRoomTemplateUnlocked(template) {
         return getPlayerLevel() >= (ROOM_TEMPLATE_DEFS[template]?.minLevel || 1);
+    }
+
+    function isRoomTemplateAllowedByTheme(template) {
+        if (typeof isObjectAllowedByTheme !== 'function') return true;
+        const metadata = ROOM_TEMPLATE_DEFS[template];
+        const requiredContent = [
+            ...(metadata?.requiredObjects || []),
+            ...(metadata?.requiredEnemies || []),
+            ...(metadata?.synergyEnemies || [])
+        ];
+        return requiredContent.every((object) => isObjectAllowedByTheme(object));
     }
 
     function updateObjectiveProgress() {
