@@ -53,13 +53,14 @@ Adding content
 - If relics change, keep ids unique, depth/rarity valid, and hook names supported; `smoke-data` fails typo hooks before the reward screen uses them.
 - If wearable gear changes, keep slot ids, equipment ids, rarity, and future effect payloads valid; `smoke-data` treats this as the gear contract until loot is implemented.
 - If room profiles or spawn weights change, keep references valid and make sure weighted enemies are usable by at least one eligible room profile; runtime generation still filters by player unlock level.
+- If authored room templates change, update `ROOM_TEMPLATE_DEFS` with the lesson's required objects/enemies so data smoke can catch broken references before browser tests.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.
 
 Future passes should keep shrinking `../index.js` by moving tactical combat, inspect-panel formatting, market/camp flows, boss scripting, and remaining end-screen assembly into focused systems.
 
 Smoke checks
 
-- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles and spawn references, content data, supported item effect handlers and payloads, supported enemy behavior types and payload references, relic metadata, wearable gear metadata, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
+- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, room objectives/templates, spawn references, content data, supported item effect handlers and payloads, supported enemy behavior types and payload references, relic metadata, wearable gear metadata, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
 - `node tools/smoke-browser.js` launches the browser, verifies the Test page renders and starts every generated object scenario, checks effect inspect stat metadata, starts a run, verifies auto-walk stops on stacked action objects, checks inspect stat chips, and checks market card structure.
 - `node tools/smoke-ui-layout.js` verifies the combat HUD stays inside the viewport, life/movement orbs stay on opposite sides, the inspect panel does not overlap them, and end-run stats render in grouped sections on desktop and mobile viewports.
 - `npm test` runs all smoke checks in sequence.
@@ -69,6 +70,7 @@ Room lesson templates
 
 - Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
 - Room objectives, template selection, exit reveal, and gate placement live in `systems/room-templates.js`; `index.js` should only orchestrate when those passes run.
+- `ROOM_TEMPLATE_DEFS` records each authored lesson's minimum player level plus required objects/enemies. Keep it in sync when adding new templates or synergy lessons.
 - Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.
 - The Stag Beetle now uses `chargeLane` to turn armored combat into a lane-dodge puzzle: it marks cells in its facing direction, then those marked cells detonate if the bee stays in the lane.
 - Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.

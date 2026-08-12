@@ -32,6 +32,7 @@ runBrowserScript('src/systems/run-summary.js');
 runBrowserScript('src/systems/cell-interactions.js');
 runBrowserScript('src/systems/items.js');
 runBrowserScript('src/systems/enemies.js');
+runBrowserScript('src/systems/room-templates.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
@@ -63,6 +64,8 @@ assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summ
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
 assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behavior handler metadata');
+assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_OBJECTIVES, 'Expected room objective metadata');
+assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_TEMPLATE_DEFS, 'Expected room template metadata');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
@@ -106,6 +109,29 @@ HW_CONTENT.ENEMY_SPAWN_WEIGHTS.forEach((entry) => {
         profile.depth >= entry.minDepth && profile.allowedEnemies.includes(entry.object)
     ));
     assert(appearsInEligibleProfile, `Enemy spawn weight ${entry.object} is not allowed by any eligible room profile`);
+});
+
+const roomObjectiveIds = new Set();
+sandbox.window.HW_ROOM_TEMPLATES.ROOM_OBJECTIVES.forEach((objective) => {
+    assert(objective.id && !roomObjectiveIds.has(objective.id), `Room objective ${objective.id || '(missing id)'} needs a unique id`);
+    roomObjectiveIds.add(objective.id);
+    assert(Number.isInteger(objective.minDepth) && objective.minDepth >= 1, `Room objective ${objective.id} needs a positive integer minDepth`);
+    assert(typeof objective.isComplete === 'function', `Room objective ${objective.id} needs an isComplete function`);
+    languageIds.forEach((language) => {
+        assert(objective.label?.[language]?.trim(), `Room objective ${objective.id} needs ${language} label text`);
+        assert(objective.hint?.[language]?.trim(), `Room objective ${objective.id} needs ${language} hint text`);
+    });
+});
+
+Object.entries(sandbox.window.HW_ROOM_TEMPLATES.ROOM_TEMPLATE_DEFS).forEach(([templateId, template]) => {
+    assert(Number.isInteger(template.minLevel) && template.minLevel >= 1, `Room template ${templateId} needs a positive integer minLevel`);
+    template.requiredObjects?.forEach((objectId) => {
+        assert(HW_CONTENT.OBJECTS[objectId], `Room template ${templateId} references missing object ${objectId}`);
+    });
+    [...(template.requiredEnemies || []), ...(template.synergyEnemies || [])].forEach((enemyId) => {
+        assert(HW_CONTENT.ENEMY_DEFS[enemyId], `Room template ${templateId} references missing enemy ${enemyId}`);
+        assert(HW_CONTENT.OBJECTS[enemyId], `Room template ${templateId} enemy ${enemyId} needs a matching object`);
+    });
 });
 
 Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {

@@ -38,6 +38,54 @@ const ROOM_OBJECTIVES = [
     }
 ];
 
+const ROOM_TEMPLATE_DEFS = {
+    onboardingPath: {
+        minLevel: 1,
+        requiredObjects: ['pollen', 'water', 'lampCell', 'upgrade']
+    },
+    introSupplies: {
+        minLevel: 1,
+        requiredObjects: ['pollen', 'water', 'upgrade']
+    },
+    waxDoorPollen: {
+        minLevel: 1,
+        requiredObjects: ['waxDoor', 'pollen']
+    },
+    enemyGate: {
+        minLevel: 1,
+        requiredEnemies: ['thornBeetle']
+    },
+    mixedGate: {
+        minLevel: 3,
+        requiredObjects: ['waxDoor'],
+        requiredEnemies: ['enemy', 'guardWasp']
+    },
+    fireWater: {
+        minLevel: 3,
+        requiredObjects: ['burningCell', 'water']
+    },
+    revealRoute: {
+        minLevel: 3,
+        requiredObjects: ['compassPollen', 'wall']
+    },
+    hiveQueen: {
+        minLevel: 5,
+        synergyEnemies: ['waspHive', 'queenSignaler']
+    },
+    fireLeech: {
+        minLevel: 4,
+        synergyEnemies: ['crawlingFire', 'waterLeech']
+    },
+    sentinelThief: {
+        minLevel: 5,
+        synergyEnemies: ['waxSentinel', 'pollenThiefMoth']
+    },
+    fogBurrow: {
+        minLevel: 5,
+        synergyEnemies: ['fogShepherd', 'burrowBeetle']
+    }
+};
+
 function createRoomTemplateSystem(context) {
     const {
         game,
@@ -89,17 +137,7 @@ function createRoomTemplateSystem(context) {
     }
 
     function isRoomTemplateUnlocked(template) {
-        const level = getPlayerLevel();
-        const minLevel = {
-            mixedGate: 3,
-            fireWater: 3,
-            revealRoute: 3,
-            hiveQueen: 5,
-            fireLeech: 4,
-            sentinelThief: 5,
-            fogBurrow: 5
-        }[template] || 1;
-        return level >= minLevel;
+        return getPlayerLevel() >= (ROOM_TEMPLATE_DEFS[template]?.minLevel || 1);
     }
 
     function updateObjectiveProgress() {
@@ -230,13 +268,7 @@ function createRoomTemplateSystem(context) {
     }
 
     function placeEnemySynergy(template) {
-        const pairs = {
-            hiveQueen: ['waspHive', 'queenSignaler'],
-            fireLeech: ['crawlingFire', 'waterLeech'],
-            sentinelThief: ['waxSentinel', 'pollenThiefMoth'],
-            fogBurrow: ['fogShepherd', 'burrowBeetle']
-        };
-        const pair = pairs[template];
+        const pair = ROOM_TEMPLATE_DEFS[template]?.synergyEnemies;
         if (!pair || pair.some((object) => getObjectUnlockLevel(object) > getPlayerLevel())) return;
         const anchor = game.cells
             .filter((cell) => cell.object === 'empty'
@@ -470,6 +502,7 @@ function createRoomTemplateSystem(context) {
 
 window.HW_ROOM_TEMPLATES = {
     createRoomTemplateSystem,
-    ROOM_OBJECTIVES
+    ROOM_OBJECTIVES,
+    ROOM_TEMPLATE_DEFS
 };
 })();

@@ -195,7 +195,8 @@ window.HW_ROADMAP_STATE = {
                         "Added item-effect payload validation for resources, numbers, trade costs, and transform targets.",
                         "Added wearable gear metadata validation for slots, ids, rarity, and future effects.",
                         "Added relic metadata validation for ids, depths, rarity, and supported hooks.",
-                        "Added room-profile and spawn-weight validation for generation references and usable weighted enemies."
+                        "Added room-profile and spawn-weight validation for generation references and usable weighted enemies.",
+                        "Centralized authored room-template metadata and added smoke coverage for objective/template references."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -210,7 +211,8 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/items.js",
                         "npm test",
                         "src/systems/enemies.js",
-                        "CONTENT_AUTHORING_GUIDE.md"
+                        "CONTENT_AUTHORING_GUIDE.md",
+                        "src/systems/room-templates.js"
                     ]
                 },
                 {
