@@ -7,6 +7,7 @@ Honeycomb Wayfinder source layout
 - `systems/choice-ui.js`: shared markup for camp, trader, relic, and object-test choices.
 - `systems/inspect-ui.js`: DOM rendering for the persistent inspect panel and its stat chips.
 - `systems/inspect-stats.js`: visibility, enemy, object effect, terrain, and route-risk metadata that turns content data into inspect stat chips.
+- `systems/cell-interactions.js`: object interaction metadata, collect/free-walkover classification, and registered move handlers for special cells.
 - `systems/tactical-flow.js`: movement point/action availability helpers for the turn-based dungeon action economy.
 - `systems/tactical-combat.js`: turn-end orchestration and tactical action range helpers.
 - `systems/camp-market-controller.js`: localized camp/trader action definitions, availability checks, and market choice selection.
@@ -41,6 +42,7 @@ Adding content
 - New placeholder sprites should use an empty `src` plus a short `fallback` label in `SPRITE_DEFS`. The renderer will draw the text fallback until final art is available.
 - Every new game object must also be reachable from the Test page. Add the object to `OBJECTS` and its behavior data first; the test list is generated from those definitions.
 - If the object needs a special setup to demonstrate its mechanic clearly, add that support in `seedTestSupportCells()` and `getTestScenarioMessage()` in `../index.js`.
+- If the object needs a special role, action label, cursor symbol/color, collect-on-move exception, or free-walkover rule, add that metadata to `systems/cell-interactions.js`.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.
 
 Future passes should keep shrinking `../index.js` by moving tactical combat, inspect-panel formatting, market/camp flows, and boss scripting into focused systems.

@@ -4570,14 +4570,10 @@ function getRouteMoveCost(path = []) {
 
 function getObjectRole(object) {
     const roles = I18N[currentLanguage].roles;
-    if (object === 'empty') return roles.safe;
-    if (object === 'burningCell') return `${roles.hazard} | ${currentLanguage === 'es-419' ? 'gasta 1 agua o recibe 1 dano' : 'spend 1 water or take 1 damage'}`;
-    if (object === 'vine') return `${roles.hazard} | ${VINE_DAMAGE} ${currentLanguage === 'es-419' ? 'daño al cruzar' : 'damage when crossed'}`;
-    if (object === 'npc') return roles.trade;
-    if (object === 'entry' || object === 'exit' || object === 'finalExit') return roles.route;
-    if (object === 'waxDoor' || object === 'wall') return roles.blocker;
-    if (object === 'stickyTrap' || object === 'burrowWarningCell' || object === 'bomberMarkedCell') return roles.control;
-    return roles.item;
+    const rule = cellInteractions.getInteractionRule(object);
+    if (rule.detail === 'burningCell') return `${roles.hazard} | ${currentLanguage === 'es-419' ? 'gasta 1 agua o recibe 1 dano' : 'spend 1 water or take 1 damage'}`;
+    if (rule.detail === 'vine') return `${roles.hazard} | ${VINE_DAMAGE} ${currentLanguage === 'es-419' ? 'daño al cruzar' : 'damage when crossed'}`;
+    return roles[rule.role] || roles.item;
 }
 
 function getActionPreview(cell) {
@@ -4602,14 +4598,15 @@ function getActionPreview(cell) {
     }
 
     const object = cell.object;
+    const rule = cellInteractions.getInteractionRule(object);
     if (isEnemyObject(object)) return game.player.actionAvailable ? t('actions', 'sting') : t('actions', 'waitSting');
-    if (object === 'wall') return OBJECTS.wall?.description || t('ui', 'blockedGeneric');
-    if (object === 'waxDoor') return game.player.pollen > 0 ? t('actions', 'openPollen') : t('actions', 'openSting');
-    if (object === 'vine' || object === 'burningCell') return t('actions', 'crossHazard');
-    if (object === 'npc') return t('actions', 'trade');
-    if (object === 'exit') return t('actions', 'nextRoom');
-    if (object === 'finalExit') return t('actions', 'finalDance');
-    if (object === 'entry') return currentLanguage === 'es-419' ? 'Accion: la entrada ya esta cerrada.' : 'Action: the entry is sealed.';
+    if (rule.action === 'wall') return OBJECTS.wall?.description || t('ui', 'blockedGeneric');
+    if (rule.action === 'waxDoor') return game.player.pollen > 0 ? t('actions', 'openPollen') : t('actions', 'openSting');
+    if (rule.action === 'crossHazard') return t('actions', 'crossHazard');
+    if (rule.action === 'trade') return t('actions', 'trade');
+    if (rule.action === 'nextRoom') return t('actions', 'nextRoom');
+    if (rule.action === 'finalDance') return t('actions', 'finalDance');
+    if (rule.action === 'entrySealed') return currentLanguage === 'es-419' ? 'Accion: la entrada ya esta cerrada.' : 'Action: the entry is sealed.';
     if (isFreeWalkoverObject(object)) return t('actions', 'move');
     return t('actions', 'collect');
 }
@@ -6310,6 +6307,7 @@ function getCellActionState(cell) {
         };
     }
     const object = cell.object;
+    const rule = cellInteractions.getInteractionRule(object);
     if (isEnemyObject(object)) {
         const ready = game.player.actionAvailable && hexDistance(game.player.q, game.player.r, cell.q, cell.r) <= getActionRange(cell);
         return {
@@ -6319,32 +6317,31 @@ function getCellActionState(cell) {
             color: '#ff8a72'
         };
     }
-    if (object === 'wall') {
+    if (rule.action === 'wall') {
         return {
             available: false,
             reason: OBJECTS.wall?.description || t('ui', 'blockedGeneric'),
-            symbol: 'X',
-            color: '#7c8780'
+            symbol: rule.cursor.symbol,
+            color: rule.cursor.color
         };
     }
-    if (object === 'waxDoor') {
+    if (rule.action === 'waxDoor') {
         const canOpen = game.player.actionAvailable && (game.freeWaxDoorAvailable || game.player.pollen > 0 || game.player.actionAvailable);
         return {
             available: canOpen,
             reason: canOpen ? '' : t('ui', 'blockedWaxDoor'),
-            symbol: 'D',
-            color: '#d6b25f'
+            symbol: rule.cursor.symbol,
+            color: rule.cursor.color
         };
     }
-    if (object === 'vine') return { available: true, symbol: '!', color: '#78a94e' };
-    if (object === 'burningCell') return { available: true, symbol: '!', color: '#ff6a2a' };
-    if (object === 'npc') return { available: true, symbol: '$', color: '#64b5f6' };
-    if (object === 'exit' || object === 'entry' || object === 'finalExit') return { available: true, symbol: '>', color: '#f2bd4b' };
+    if (rule.action === 'crossHazard' || rule.action === 'trade' || rule.role === 'route') {
+        return { available: true, symbol: rule.cursor.symbol, color: rule.cursor.color };
+    }
     if (isFreeWalkoverObject(object)) {
         const canMove = (game.player.movePoints ?? game.player.stamina) > 0;
-        return { available: canMove, reason: canMove ? '' : t('ui', 'blockedStamina'), symbol: '.', color: '#fff2a7' };
+        return { available: canMove, reason: canMove ? '' : t('ui', 'blockedStamina'), symbol: rule.cursor.symbol, color: rule.cursor.color };
     }
-    return { available: true, symbol: '+', color: '#fff2a7' };
+    return { available: true, symbol: rule.cursor.symbol, color: rule.cursor.color };
 }
 
 function updateCursor(cell) {

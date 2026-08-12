@@ -11,6 +11,7 @@ Before adding or reviewing content, copy the relevant section from `CONTENT_MANI
 - `src/data/content.js`: content tables for translations, relics, sprites, enemies, objects, spawn weights.
 - `src/systems/items.js`: data-driven item effects.
 - `src/systems/enemies.js`: data-driven enemy behaviors.
+- `src/systems/cell-interactions.js`: object interaction roles, action labels, cursor hints, collect-on-move exceptions, free-walkover rules, and registered move handlers.
 - `src/systems/inspect-stats.js`: maps visibility states, enemy stats, object effects, terrain costs, and route risk into inspect panel stat chips.
 - `src/systems/dance.js`: final dance move generation, scoring, drawing, and dance replay events.
 - `src/systems/audio.js`: music/audio tracks, cue start times, volume ducking, replay audio sync helpers.
@@ -82,6 +83,7 @@ Item effects are resolved by `src/systems/items.js`. Supported effect examples i
 If an item needs a new effect, add a new branch to `applyEffect()` in `src/systems/items.js`.
 If the effect should be visible in the inspect panel, add its chip metadata to `src/systems/inspect-stats.js`.
 If route risk needs a new chip, add the metadata to `getRouteStats()` in `src/systems/inspect-stats.js`.
+If the object is not a normal collectable, add or update its interaction rule in `src/systems/cell-interactions.js` so the inspect panel, action preview, and cursor all describe the same action.
 
 ## Adding a New Enemy
 
@@ -143,9 +145,9 @@ To add another blocker:
 1. Add `OBJECTS[id]` and translations.
 2. Add a sprite/fallback.
 3. Add an unlock level.
-4. Add cursor/action handling in `getCellActionState()`.
-5. Add movement handling in `moveTo()` if it can be opened, paid for, or transformed.
-6. Add tooltip role/action text in `getObjectRole()` and `getActionPreview()`.
+4. Add an interaction rule in `src/systems/cell-interactions.js`.
+5. Register a move handler in `registerCellMoveHandlers()` if it can be opened, paid for, or transformed.
+6. Add inspect stat metadata in `src/systems/inspect-stats.js` if it has a cost, damage, or special requirement.
 
 ## Adding Music or Audio
 
