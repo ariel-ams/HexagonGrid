@@ -381,6 +381,9 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
         assert(sandbox.window.HW_EQUIPMENT.hasEquipmentEffectHandler(effect.type), `Equipment ${equipment.id} uses unsupported effect ${effect.type}`);
         assertPositiveNumber(effect.amount, `Equipment ${equipment.id} ${effect.type} amount must be positive`);
     });
+    if (equipment.rewardWeight != null) {
+        assertPositiveNumber(equipment.rewardWeight, `Equipment ${equipment.id} rewardWeight must be positive when provided`);
+    }
     if (equipment.rarity === 'starter') {
         starterEquipmentBySlot.get(equipment.slot).push(equipment.id);
     }
@@ -435,6 +438,52 @@ const replacementChoices = equipmentSystem.createEquipmentRewardChoices({
 replacementChoices.forEach((equipment) => {
     assert(!equippedIds.has(equipment.id), `Equipment reward choices should not offer already equipped item ${equipment.id}`);
 });
+const weightedEquipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
+    equipmentSlots: HW_CONTENT.EQUIPMENT_SLOTS,
+    equipmentDefs: {
+        commonHelmet: {
+            id: 'commonHelmet',
+            slot: 'helmet',
+            name: 'Common Helmet',
+            description: 'Synthetic common gear.',
+            rarity: 'common',
+            minLevel: 1,
+            effects: [{ type: 'futureRevealHint', amount: 1 }]
+        },
+        rareHelmet: {
+            id: 'rareHelmet',
+            slot: 'helmet',
+            name: 'Rare Helmet',
+            description: 'Synthetic rare gear.',
+            rarity: 'rare',
+            minLevel: 1,
+            effects: [{ type: 'futureRevealHint', amount: 1 }]
+        },
+        legendaryHelmet: {
+            id: 'legendaryHelmet',
+            slot: 'helmet',
+            name: 'Legendary Helmet',
+            description: 'Synthetic legendary gear.',
+            rarity: 'legendary',
+            minLevel: 1,
+            effects: [{ type: 'futureRevealHint', amount: 1 }]
+        },
+        lockedWings: {
+            id: 'lockedWings',
+            slot: 'wings',
+            name: 'Locked Wings',
+            description: 'Synthetic locked gear.',
+            rarity: 'common',
+            minLevel: 2,
+            effects: [{ type: 'futureMovePoint', amount: 1 }]
+        }
+    }
+});
+const lowRollWeightedChoice = weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, count: 1, rng: () => 0 })[0];
+assert(lowRollWeightedChoice.id === 'commonHelmet', 'Weighted equipment choices should select from the common-weight band on low rolls');
+const highRollWeightedChoice = weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, count: 1, rng: () => 0.99 })[0];
+assert(highRollWeightedChoice.id === 'legendaryHelmet', 'Weighted equipment choices should still allow rare high-roll rewards');
+assert(!weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, count: 3, rng: () => 0 }).some((equipment) => equipment.id === 'lockedWings'), 'Weighted equipment choices should respect minLevel filtering');
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
     helmet: 'waxScoutHelmet',
