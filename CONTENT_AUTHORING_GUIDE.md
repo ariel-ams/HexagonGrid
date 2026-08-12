@@ -114,7 +114,7 @@ guardWasp: {
 }
 ```
 
-Enemy behaviors are interpreted by `src/systems/enemies.js` and `index.js`.
+Enemy behaviors are listed in `ENEMY_BEHAVIOR_TYPES` in `src/systems/enemies.js` and interpreted by `src/systems/enemies.js`, `src/systems/enemy-turns.js`, and the tactical orchestration in `index.js`.
 If the enemy should show a new stat chip or behavior tag in the inspect panel, add that metadata to `src/systems/inspect-stats.js`.
 
 Existing behavior types:
@@ -131,7 +131,7 @@ Existing behavior types:
 - `chargeLane`: marks a short line in the enemy's facing direction with delayed danger cells.
 - `disguiseAs`: appears as another object until close.
 
-If a behavior does not exist yet, add a data entry and then implement it in `src/systems/enemies.js` or the movement/timer functions in `index.js`.
+If a behavior does not exist yet, add it to `ENEMY_BEHAVIOR_TYPES`, then implement it in `src/systems/enemies.js`, `src/systems/enemy-turns.js`, or the movement/timer functions in `index.js`.
 
 ## Adding a Wall, Door, or Blocker
 
@@ -321,7 +321,7 @@ The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is th
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, and equipment slot mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, unsupported enemy behavior types, and equipment slot mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

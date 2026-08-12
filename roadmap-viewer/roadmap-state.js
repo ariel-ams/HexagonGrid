@@ -189,7 +189,8 @@ window.HW_ROADMAP_STATE = {
                         "Added generated Test page scenarios for game objects.",
                         "Added automatic roadmap-state updates from a CLI helper.",
                         "Removed completed roadmap updater work from the pending list.",
-                        "Added item-effect handler registry coverage for content data."
+                        "Added item-effect handler registry coverage for content data.",
+                        "Added enemy-behavior registry coverage for content data."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -202,7 +203,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/update-roadmap-state.js",
                         "npm run test:roadmap",
                         "src/systems/items.js",
-                        "npm test"
+                        "npm test",
+                        "src/systems/enemies.js"
                     ]
                 },
                 {

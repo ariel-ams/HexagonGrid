@@ -1,5 +1,33 @@
 // Data-driven enemy behavior helpers.
 (() => {
+const ENEMY_BEHAVIOR_TYPES = Object.freeze([
+    'armoredFacing',
+    'biteAdjacent',
+    'buffEnemiesAura',
+    'burrowAmbush',
+    'chargeLane',
+    'damageAura',
+    'disguiseAs',
+    'fleeFromPlayer',
+    'markCellsAura',
+    'mirrorMove',
+    'moveEverySteps',
+    'moveTowardPlayer',
+    'refogAura',
+    'spawnEnemyAura',
+    'spawnTerrainAura',
+    'stealResourceAura',
+    'wakeOnRange',
+    'waterDrainAura',
+    'weakPointWindow'
+]);
+
+const ENEMY_BEHAVIOR_TYPE_SET = new Set(ENEMY_BEHAVIOR_TYPES);
+
+function hasEnemyBehaviorHandler(behaviorType) {
+    return ENEMY_BEHAVIOR_TYPE_SET.has(behaviorType);
+}
+
 function createEnemySystem(context) {
     const { game, enemyDefs, directions, helpers } = context;
 
@@ -290,6 +318,8 @@ function createEnemySystem(context) {
 }
 
 window.HW_ENEMIES = {
-    createEnemySystem
+    createEnemySystem,
+    ENEMY_BEHAVIOR_TYPES,
+    hasEnemyBehaviorHandler
 };
 })();

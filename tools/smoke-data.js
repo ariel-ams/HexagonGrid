@@ -31,6 +31,7 @@ runBrowserScript('src/data/progression.js');
 runBrowserScript('src/systems/run-summary.js');
 runBrowserScript('src/systems/cell-interactions.js');
 runBrowserScript('src/systems/items.js');
+runBrowserScript('src/systems/enemies.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
@@ -49,6 +50,7 @@ assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
+assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behavior handler metadata');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
@@ -124,6 +126,9 @@ Object.entries(HW_CONTENT.ENEMY_DEFS).forEach(([enemyId, enemy]) => {
     assert(Number.isFinite(enemy.attack) && enemy.attack >= 0, `Enemy ${enemyId} needs non-negative attack`);
     assert(Number.isFinite(enemy.range) && enemy.range >= 0, `Enemy ${enemyId} needs non-negative range`);
     assert(enemy.sprite && HW_CONTENT.SPRITE_DEFS[enemy.sprite], `Enemy ${enemyId} references missing sprite ${enemy.sprite}`);
+    enemy.behaviors?.forEach((behavior) => {
+        assert(sandbox.window.HW_ENEMIES.hasEnemyBehaviorHandler(behavior.type), `Enemy ${enemyId} uses unsupported behavior ${behavior.type}`);
+    });
 });
 
 Object.entries(HW_PROGRESSION.OBJECT_UNLOCK_LEVELS).forEach(([objectId, level]) => {
