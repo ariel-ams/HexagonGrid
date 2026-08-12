@@ -44,13 +44,6 @@ const relicHooks = new Set(['apply', 'onRoomStart']);
 const finalRoomDepth = 5;
 const relicChoiceCount = 3;
 const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
-const equipmentEffectTypes = new Set([
-    'futureAttackRange',
-    'futureHazardBlock',
-    'futureMovePoint',
-    'futureRevealHint',
-    'futureRoomHoney'
-]);
 const roomWeightTokens = new Set(['discovery']);
 const roomTemplateKeys = new Set([
     'minLevel',
@@ -73,6 +66,7 @@ assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment sl
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
+assert(sandbox.window.HW_EQUIPMENT?.hasEquipmentEffectHandler, 'Expected equipment effect metadata');
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
 assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behavior handler metadata');
@@ -380,7 +374,7 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
     assert(equipmentRarities.has(equipment.rarity), `Equipment ${equipment.id} uses unknown rarity ${equipment.rarity}`);
     assert(Array.isArray(equipment.effects) && equipment.effects.length > 0, `Equipment ${equipment.id} needs at least one future effect`);
     equipment.effects.forEach((effect) => {
-        assert(equipmentEffectTypes.has(effect.type), `Equipment ${equipment.id} uses unsupported future effect ${effect.type}`);
+        assert(sandbox.window.HW_EQUIPMENT.hasEquipmentEffectHandler(effect.type), `Equipment ${equipment.id} uses unsupported effect ${effect.type}`);
         assertPositiveNumber(effect.amount, `Equipment ${equipment.id} ${effect.type} amount must be positive`);
     });
     if (equipment.rarity === 'starter') {

@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-12",
-    "currentTaskId": "architecture",
+    "currentTaskId": "content-scaling",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -221,7 +221,8 @@ window.HW_ROADMAP_STATE = {
                         "Added data smoke coverage for relic localization.",
                         "Added data smoke coverage for relic reward-depth choice availability.",
                         "Added data smoke coverage for wearable slot uniqueness.",
-                        "Added data smoke coverage for exactly one starter wearable per slot."
+                        "Added data smoke coverage for exactly one starter wearable per slot.",
+                        "Centralized wearable effect metadata in the equipment system."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -240,7 +241,8 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/room-templates.js",
                         "index.js",
                         "ui-development/player-experience-roadmap.md",
-                        "src/systems/inspect-stats.js"
+                        "src/systems/inspect-stats.js",
+                        "src/systems/equipment.js"
                     ]
                 },
                 {
