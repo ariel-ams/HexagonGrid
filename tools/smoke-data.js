@@ -366,11 +366,15 @@ const starterEquipmentBySlot = new Map(HW_CONTENT.EQUIPMENT_SLOTS.map((slot) => 
 assert(slotIds.size === HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equipment slot ids must be unique');
 HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     assert(slot.id && slot.name && slot.description, `Equipment slot ${slot.id || '(missing id)'} needs id, name, and description`);
+    assert(slot.i18n?.en?.name && slot.i18n.en.description, `Equipment slot ${slot.id} needs English localized text`);
+    assert(slot.i18n?.['es-419']?.name && slot.i18n['es-419'].description, `Equipment slot ${slot.id} needs Latin American Spanish localized text`);
 });
 Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => {
     assert(equipment.id === equipmentId, `Equipment ${equipmentId} id must match its key`);
     assert(slotIds.has(equipment.slot), `Equipment ${equipment.id} uses unknown slot ${equipment.slot}`);
     assert(equipment.name && equipment.description, `Equipment ${equipment.id} needs name and description`);
+    assert(equipment.i18n?.en?.name && equipment.i18n.en.description, `Equipment ${equipment.id} needs English localized text`);
+    assert(equipment.i18n?.['es-419']?.name && equipment.i18n['es-419'].description, `Equipment ${equipment.id} needs Latin American Spanish localized text`);
     assert(equipmentRarities.has(equipment.rarity), `Equipment ${equipment.id} uses unknown rarity ${equipment.rarity}`);
     assert(Number.isInteger(equipment.minLevel) && equipment.minLevel >= 1, `Equipment ${equipment.id} needs a positive integer minLevel`);
     if (equipment.rarity === 'starter') {
@@ -396,6 +400,8 @@ const equipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
     equipmentSlots: HW_CONTENT.EQUIPMENT_SLOTS,
     equipmentDefs: HW_CONTENT.EQUIPMENT_DEFS
 });
+assert(equipmentSystem.getLocalizedSlot('helmet', 'es-419')?.name === 'Casco', 'Equipment system should localize slot display text');
+assert(equipmentSystem.getLocalizedEquipment('longSting', 'es-419')?.name === 'Aguijon largo', 'Equipment system should localize gear display text');
 const emptyLoadout = equipmentSystem.createStartingEquipment();
 HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     assert(Object.hasOwn(emptyLoadout, slot.id), `Starting equipment is missing slot ${slot.id}`);
@@ -537,6 +543,10 @@ const weightedRewardChoiceDetails = weightedEquipmentSystem.createEquipmentRewar
     rng: () => 0.7
 })[0];
 assert(weightedRewardChoiceDetails?.current?.id === 'commonHelmet', 'Equipment reward choice details should include replacement metadata');
+const localizedChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(starterLoadout, 'longSting', { language: 'es-419' });
+assert(localizedChoiceDetails?.equipment?.name === 'Aguijon largo', 'Equipment choice details should localize candidate gear');
+assert(localizedChoiceDetails?.slotDef?.name === 'Aguijon', 'Equipment choice details should localize slot metadata');
+assert(localizedChoiceDetails?.current?.name === 'Aguijon dentado', 'Equipment choice details should localize current gear');
 const activeEffectSummary = weightedEquipmentSystem.createEquipmentEffectSummaries({
     effects: [{ type: 'maxShield', amount: 1 }]
 })[0];

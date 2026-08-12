@@ -1134,27 +1134,47 @@ const EQUIPMENT_SLOTS = [
     {
         id: 'helmet',
         name: 'Helmet',
-        description: 'Head gear for scouting, protection, and room-reading effects.'
+        description: 'Head gear for scouting, protection, and room-reading effects.',
+        i18n: {
+            en: { name: 'Helmet', description: 'Head gear for scouting, protection, and room-reading effects.' },
+            'es-419': { name: 'Casco', description: 'Equipo de cabeza para explorar, protegerte y leer la sala.' }
+        }
     },
     {
         id: 'jacket',
         name: 'Jacket',
-        description: 'Body gear for defense, warmth, and resource conversion.'
+        description: 'Body gear for defense, warmth, and resource conversion.',
+        i18n: {
+            en: { name: 'Jacket', description: 'Body gear for defense, warmth, and resource conversion.' },
+            'es-419': { name: 'Chaqueta', description: 'Equipo de cuerpo para defensa, abrigo y convertir recursos.' }
+        }
     },
     {
         id: 'abdomen',
         name: 'Abdomen Guard',
-        description: 'Tail/abdomen gear for carrying nectar, honey, or emergency stores.'
+        description: 'Tail/abdomen gear for carrying nectar, honey, or emergency stores.',
+        i18n: {
+            en: { name: 'Abdomen Guard', description: 'Tail/abdomen gear for carrying nectar, honey, or emergency stores.' },
+            'es-419': { name: 'Protector abdominal', description: 'Equipo de abdomen para llevar nectar, miel o reservas de emergencia.' }
+        }
     },
     {
         id: 'sting',
         name: 'Sting',
-        description: 'Weapon gear that changes attack range, damage, or special sting rules.'
+        description: 'Weapon gear that changes attack range, damage, or special sting rules.',
+        i18n: {
+            en: { name: 'Sting', description: 'Weapon gear that changes attack range, damage, or special sting rules.' },
+            'es-419': { name: 'Aguijon', description: 'Equipo de arma que cambia alcance, dano o reglas especiales de ataque.' }
+        }
     },
     {
         id: 'wings',
         name: 'Wings',
-        description: 'Movement gear for route planning, reveal, and positioning effects.'
+        description: 'Movement gear for route planning, reveal, and positioning effects.',
+        i18n: {
+            en: { name: 'Wings', description: 'Movement gear for route planning, reveal, and positioning effects.' },
+            'es-419': { name: 'Alas', description: 'Equipo de movimiento para planear rutas, revelar y posicionarte.' }
+        }
     }
 ];
 
@@ -1166,6 +1186,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'starter',
         minLevel: 1,
         description: 'Future loot: reveals one extra cell near the exit at room start.',
+        i18n: {
+            en: { name: 'Wax Scout Helmet', description: 'Future loot: reveals one extra cell near the exit at room start.' },
+            'es-419': { name: 'Casco explorador de cera', description: 'Botin futuro: revela una celda extra cerca de la salida al iniciar la sala.' }
+        },
         effects: [{ type: 'futureRevealHint', amount: 1 }]
     },
     leafJacket: {
@@ -1175,6 +1199,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'starter',
         minLevel: 1,
         description: 'Future loot: softens the first hazard damage in each room.',
+        i18n: {
+            en: { name: 'Leaf Jacket', description: 'Future loot: softens the first hazard damage in each room.' },
+            'es-419': { name: 'Chaqueta de hoja', description: 'Botin futuro: reduce el primer dano de peligro en cada sala.' }
+        },
         effects: [{ type: 'futureHazardBlock', amount: 1 }]
     },
     nectarPouch: {
@@ -1184,6 +1212,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'starter',
         minLevel: 1,
         description: 'Future loot: carries bonus honey between rooms.',
+        i18n: {
+            en: { name: 'Nectar Pouch', description: 'Future loot: carries bonus honey between rooms.' },
+            'es-419': { name: 'Bolsa de nectar', description: 'Botin futuro: lleva miel adicional entre salas.' }
+        },
         effects: [{ type: 'futureRoomHoney', amount: 1 }]
     },
     barbedSting: {
@@ -1193,6 +1225,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'starter',
         minLevel: 1,
         description: 'Future loot: improves tactical attack reach or first-hit damage.',
+        i18n: {
+            en: { name: 'Barbed Sting', description: 'Future loot: improves tactical attack reach or first-hit damage.' },
+            'es-419': { name: 'Aguijon dentado', description: 'Botin futuro: mejora el alcance tactico o el dano del primer golpe.' }
+        },
         effects: [{ type: 'futureAttackRange', amount: 1 }]
     },
     scoutWings: {
@@ -1202,6 +1238,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'starter',
         minLevel: 1,
         description: 'Future loot: improves movement route control.',
+        i18n: {
+            en: { name: 'Scout Wings', description: 'Future loot: improves movement route control.' },
+            'es-419': { name: 'Alas exploradoras', description: 'Botin futuro: mejora el control de rutas de movimiento.' }
+        },
         effects: [{ type: 'futureMovePoint', amount: 1 }]
     },
     resinCrown: {
@@ -1211,6 +1251,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'common',
         minLevel: 2,
         description: 'Adds 1 max shield for early rooms that ask you to plan around danger.',
+        i18n: {
+            en: { name: 'Resin Crown', description: 'Adds 1 max shield for early rooms that ask you to plan around danger.' },
+            'es-419': { name: 'Corona de resina', description: 'Suma 1 escudo maximo para salas tempranas que piden planear alrededor del peligro.' }
+        },
         effects: [{ type: 'maxShield', amount: 1 }]
     },
     petalJacket: {
@@ -1220,6 +1264,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'common',
         minLevel: 2,
         description: 'Adds 1 max health for safer first boss attempts.',
+        i18n: {
+            en: { name: 'Petal Jacket', description: 'Adds 1 max health for safer first boss attempts.' },
+            'es-419': { name: 'Chaqueta de petalos', description: 'Suma 1 salud maxima para primeros intentos de jefe mas seguros.' }
+        },
         effects: [{ type: 'maxHealth', amount: 1 }]
     },
     honeySatchel: {
@@ -1229,6 +1277,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'common',
         minLevel: 2,
         description: 'Future loot: carries one bonus honey into each room.',
+        i18n: {
+            en: { name: 'Honey Satchel', description: 'Future loot: carries one bonus honey into each room.' },
+            'es-419': { name: 'Morral de miel', description: 'Botin futuro: lleva una miel extra a cada sala.' }
+        },
         effects: [{ type: 'futureRoomHoney', amount: 1 }]
     },
     longSting: {
@@ -1238,6 +1290,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'common',
         minLevel: 2,
         description: 'Adds 1 attack range so positional fights need fewer risky adjacent turns.',
+        i18n: {
+            en: { name: 'Long Sting', description: 'Adds 1 attack range so positional fights need fewer risky adjacent turns.' },
+            'es-419': { name: 'Aguijon largo', description: 'Suma 1 alcance de ataque para pelear con menos turnos adyacentes riesgosos.' }
+        },
         effects: [{ type: 'attackRange', amount: 1 }]
     },
     wideWings: {
@@ -1247,6 +1303,10 @@ const EQUIPMENT_DEFS = {
         rarity: 'common',
         minLevel: 2,
         description: 'Adds 1 movement point for longer tactical routes.',
+        i18n: {
+            en: { name: 'Wide Wings', description: 'Adds 1 movement point for longer tactical routes.' },
+            'es-419': { name: 'Alas amplias', description: 'Suma 1 punto de movimiento para rutas tacticas mas largas.' }
+        },
         effects: [{ type: 'maxMovePoints', amount: 1 }]
     }
 };

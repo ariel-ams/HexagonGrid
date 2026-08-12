@@ -51,6 +51,16 @@ function getEquipmentRewardWeight(equipment) {
     return Math.max(0, Number(equipment.rewardWeight ?? EQUIPMENT_RARITY_WEIGHTS[equipment.rarity] ?? 1) || 0);
 }
 
+function localizeEquipmentContent(entity, language = 'en') {
+    if (!entity) return null;
+    const localized = entity.i18n?.[language] || entity.i18n?.en || {};
+    return {
+        ...entity,
+        name: localized.name || entity.name,
+        description: localized.description || entity.description
+    };
+}
+
 function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     const slotDefs = new Map(equipmentSlots.map((slot) => [slot.id, slot]));
 
@@ -82,6 +92,14 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             .filter(Boolean)
             .map((id) => equipmentDefs[id])
             .filter(Boolean);
+    }
+
+    function getLocalizedSlot(slotId, language = 'en') {
+        return localizeEquipmentContent(slotDefs.get(slotId), language);
+    }
+
+    function getLocalizedEquipment(equipmentId, language = 'en') {
+        return localizeEquipmentContent(equipmentDefs[equipmentId], language);
     }
 
     function getAvailableEquipment(playerLevel = 1) {
@@ -130,20 +148,20 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         return choices;
     }
 
-    function getEquipmentChoiceDetails(loadout, equipmentId) {
+    function getEquipmentChoiceDetails(loadout, equipmentId, { language = 'en' } = {}) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
         const currentId = loadout?.[equipment.slot] || null;
         const current = currentId ? equipmentDefs[currentId] || null : null;
         return {
-            equipment,
+            equipment: localizeEquipmentContent(equipment, language),
             slot: equipment.slot,
-            slotDef: slotDefs.get(equipment.slot) || null,
+            slotDef: getLocalizedSlot(equipment.slot, language),
             rarity: equipment.rarity,
             rarityRank: EQUIPMENT_RARITY_ORDER[equipment.rarity] ?? 99,
             rewardWeight: getEquipmentRewardWeight(equipment),
             effects: createEquipmentEffectSummaries(equipment),
-            current,
+            current: localizeEquipmentContent(current, language),
             currentEffects: createEquipmentEffectSummaries(current),
             currentId,
             isEmptySlot: !current,
@@ -155,7 +173,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     function createEquipmentRewardChoiceDetails(options = {}) {
         const loadout = options.loadout || {};
         return createEquipmentRewardChoices(options)
-            .map((equipment) => getEquipmentChoiceDetails(loadout, equipment.id))
+            .map((equipment) => getEquipmentChoiceDetails(loadout, equipment.id, options))
             .filter(Boolean);
     }
 
@@ -192,6 +210,8 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         getAvailableEquipment,
         getEquipmentChoiceDetails,
         getEquippedItems,
+        getLocalizedEquipment,
+        getLocalizedSlot,
         hasEquipmentRewardsAvailable,
         equipItem
     };
