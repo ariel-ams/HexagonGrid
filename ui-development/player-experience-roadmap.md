@@ -163,4 +163,4 @@ The interactive roadmap lives in `roadmap-viewer/` and renders `roadmap-viewer/r
 - update `currentTaskId` when a sprint starts,
 - move node status through `active`, `in_progress`, `planned`, `backlog`, `done`, or `blocked`,
 - add evidence entries for tests, docs, screenshots, commits, or files that prove the node's state,
-- run `node tools/smoke-roadmap-viewer.js`, `node tools/smoke-roadmap-browser.js`, or `npm test` after changing the graph state.
+- run `npm run test:roadmap` for graph-only changes, or `npm test` when the sprint also touches gameplay.

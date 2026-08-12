@@ -67,6 +67,7 @@ Use `Iterate` when a visual/manual check could not be run or when a known readab
 - HUD/layout smoke: `node tools/smoke-ui-layout.js`
 - Roadmap viewer smoke: `node tools/smoke-roadmap-viewer.js`
 - Roadmap viewer browser smoke: `node tools/smoke-roadmap-browser.js`
+- Roadmap-only suite: `npm run test:roadmap`
 
 On this Windows workspace, Node/Playwright may need elevated execution if sandboxing blocks access to the user path. If a sandbox failure occurs, rerun the same command with the proper approval request rather than changing the command.
 

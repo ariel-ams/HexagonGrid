@@ -71,6 +71,12 @@ The full project check includes the roadmap data and browser render checks:
 npm test
 ```
 
+For roadmap-only changes, use the faster focused suite:
+
+```powershell
+npm run test:roadmap
+```
+
 Run the data-contract check by itself:
 
 ```powershell
