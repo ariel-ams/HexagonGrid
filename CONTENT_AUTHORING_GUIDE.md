@@ -367,7 +367,7 @@ The data smoke test keeps future gear data ready for implementation:
 - Every equipment slot and item needs English and Latin American Spanish `i18n` text before it can appear in future loot UI.
 - `rarity` must be `starter`, `common`, `rare`, `epic`, or `legendary`.
 - `minLevel` must be a positive integer, and `starter` gear must unlock at level 1.
-- `plannedAsset` must point to a future transparent PNG under `assets/equipment/`.
+- `plannedAsset` must point to a future transparent PNG under `assets/equipment/`, and the same id/path must appear in `ART_SPRITE_REQUESTS.md`.
 - Optional `rewardWeight` can override the default rarity weight when a specific item should be more or less common in reward choices.
 - Every slot must have exactly one `starter` item so future loadout and loot screens have a stable default.
 - The equipment system must be able to create empty and starter loadouts, describe every loadout slot, localize slot/item/rarity/effect copy, filter available gear by player level, report whether a non-equipped reward exists, generate weighted non-duplicated reward choices, package localized reward offers with pool counts, return reward choices with slot replacement, slot display, rarity, reward weight, and effect summary details, apply a selected reward into the loadout, equip each item into its declared slot, and mirror applied loadouts onto player state.
@@ -377,7 +377,7 @@ The data smoke test keeps future gear data ready for implementation:
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, missing object-to-sprite metadata, invalid sprite sheet rows or frame timing, missing asset files, objects with no spawn/theme/template/behavior usage path, invalid enemy/object fallback colors, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, terrain, visibility, and route-risk states, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic localization, metadata, or reward-depth coverage, and equipment metadata, slot-id, starter-loadout, or loadout-system mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, missing object-to-sprite metadata, invalid sprite sheet rows or frame timing, missing asset files, objects with no spawn/theme/template/behavior usage path, invalid enemy/object fallback colors, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, missing English or Spanish inspect hints for key item effects, terrain, visibility, and route-risk states, unsupported enemy behavior types, invalid enemy behavior payload references, missing English or Spanish inspect hints for key tactical behaviors, invalid relic localization, metadata, or reward-depth coverage, and equipment metadata, planned-art request coverage, slot-id, starter-loadout, or loadout-system mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

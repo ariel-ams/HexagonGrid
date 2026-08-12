@@ -45,6 +45,7 @@ const finalRoomDepth = 5;
 const relicChoiceCount = 3;
 const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
 const equipmentEffectTypes = sandbox.window.HW_EQUIPMENT.EQUIPMENT_EFFECT_TYPES || [];
+const artSpriteRequests = fs.readFileSync(path.join(root, 'ART_SPRITE_REQUESTS.md'), 'utf8');
 const roomWeightTokens = new Set(['discovery']);
 const roomTemplateKeys = new Set([
     'minLevel',
@@ -379,6 +380,8 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
     assert(equipmentRarities.has(equipment.rarity), `Equipment ${equipment.id} uses unknown rarity ${equipment.rarity}`);
     assert(Number.isInteger(equipment.minLevel) && equipment.minLevel >= 1, `Equipment ${equipment.id} needs a positive integer minLevel`);
     assert(typeof equipment.plannedAsset === 'string' && /^assets\/equipment\/.+\.png$/.test(equipment.plannedAsset), `Equipment ${equipment.id} needs a planned PNG asset path under assets/equipment`);
+    assert(artSpriteRequests.includes(`\`${equipment.id}\``), `Equipment ${equipment.id} needs an artist request row`);
+    assert(artSpriteRequests.includes(`\`${equipment.plannedAsset}\``), `Equipment ${equipment.id} planned asset ${equipment.plannedAsset} needs artist request coverage`);
     if (equipment.rarity === 'starter') {
         assert(equipment.minLevel === 1, `Starter equipment ${equipment.id} must unlock at level 1`);
     }
