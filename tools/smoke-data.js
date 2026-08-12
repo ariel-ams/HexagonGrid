@@ -29,6 +29,7 @@ runBrowserScript('src/data/content.js');
 runBrowserScript('src/data/art.js');
 runBrowserScript('src/data/progression.js');
 runBrowserScript('src/systems/run-summary.js');
+runBrowserScript('src/systems/cell-interactions.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
@@ -45,6 +46,7 @@ assert(HW_PROGRESSION?.DUNGEON_THEMES?.forest, 'Expected dungeon theme definitio
 assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment slots');
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
+assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);
@@ -188,5 +190,36 @@ assertIncludes(spanishSummary.getRunRecommendation({
     player: defaultPlayer,
     runStats: defaultRunStats
 }), 'murcielagos', 'Spanish bat recommendation should be localized');
+
+const cellInteractions = sandbox.window.HW_CELL_INTERACTIONS.createCellInteractionSystem({
+    objects: HW_CONTENT.OBJECTS
+});
+
+function assertInteractionRule(objectId, expected) {
+    const rule = cellInteractions.getInteractionRule(objectId);
+    Object.entries(expected).forEach(([key, value]) => {
+        if (key === 'cursor') {
+            Object.entries(value).forEach(([cursorKey, cursorValue]) => {
+                assert(rule.cursor?.[cursorKey] === cursorValue, `${objectId} cursor.${cursorKey} should be ${cursorValue}`);
+            });
+            return;
+        }
+        assert(rule[key] === value, `${objectId}.${key} should be ${value}`);
+    });
+}
+
+assertInteractionRule('exit', { role: 'route', action: 'nextRoom', cursor: { symbol: '>' } });
+assertInteractionRule('waxDoor', { role: 'blocker', action: 'waxDoor', cursor: { symbol: 'D' } });
+assertInteractionRule('vine', { role: 'hazard', detail: 'vine', action: 'crossHazard' });
+assertInteractionRule('burningCell', { role: 'hazard', detail: 'burningCell', action: 'crossHazard' });
+assertInteractionRule('npc', { role: 'trade', action: 'trade', cursor: { symbol: '$' } });
+assertInteractionRule('pollen', { role: 'item', action: 'collect', cursor: { symbol: '+' } });
+
+assert(cellInteractions.isFreeWalkoverObject('lampCell'), 'Lamp cells should be free walkover reveal cells');
+assert(cellInteractions.isFreeWalkoverObject('entry'), 'Entry cells should be free walkover cells');
+assert(!cellInteractions.isFreeWalkoverObject('waxDoor'), 'Wax doors should not be free walkover cells');
+assert(cellInteractions.isCollectOnMoveObject('pollen', () => false), 'Pollen should collect on move');
+assert(!cellInteractions.isCollectOnMoveObject('waxDoor', () => false), 'Wax doors should not collect on move');
+assert(!cellInteractions.isCollectOnMoveObject('enemy', (object) => object === 'enemy'), 'Enemy objects should not collect on move');
 
 console.log('Data smoke checks passed');

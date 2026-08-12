@@ -52,7 +52,7 @@ Future passes should keep shrinking `../index.js` by moving tactical combat, ins
 
 Smoke checks
 
-- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, content data, theme eligibility for core supplies plus mid/late enemies, and run-summary recommendation branches.
+- `node tools/smoke-data.js` validates asset maps, sprite files, room profiles, content data, theme eligibility for core supplies plus mid/late enemies, run-summary recommendation branches, and cell-interaction role/action metadata.
 - `node tools/smoke-browser.js` launches the browser, verifies the Test page renders and starts every generated object scenario, checks effect inspect stat metadata, starts a run, verifies auto-walk stops on stacked action objects, checks inspect stat chips, and checks market card structure.
 - `node tools/smoke-ui-layout.js` verifies the combat HUD stays inside the viewport, life/movement orbs stay on opposite sides, the inspect panel does not overlap them, and end-run stats render in grouped sections on desktop and mobile viewports.
 - `npm test` runs all smoke checks in sequence.
