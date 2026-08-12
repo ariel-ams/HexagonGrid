@@ -428,6 +428,9 @@ assert(new Set(rewardChoices.map((equipment) => equipment.id)).size === rewardCh
 rewardChoices.forEach((equipment) => {
     assert(equipment.minLevel <= 1, `Equipment reward choice ${equipment.id} should respect player level`);
 });
+const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadout, rewardChoices[0].id);
+assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
+assert(emptyChoiceDetails.isEmptySlot && !emptyChoiceDetails.isReplacement && !emptyChoiceDetails.isEquipped, 'Equipment choice details should flag empty slots');
 const equippedIds = new Set(Object.values(starterLoadout).filter(Boolean));
 const replacementChoices = equipmentSystem.createEquipmentRewardChoices({
     playerLevel: 1,
@@ -438,6 +441,9 @@ const replacementChoices = equipmentSystem.createEquipmentRewardChoices({
 replacementChoices.forEach((equipment) => {
     assert(!equippedIds.has(equipment.id), `Equipment reward choices should not offer already equipped item ${equipment.id}`);
 });
+const equippedChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(starterLoadout, starterLoadout.helmet);
+assert(equippedChoiceDetails?.isEquipped && !equippedChoiceDetails.isReplacement, 'Equipment choice details should flag already equipped gear');
+assert(equipmentSystem.getEquipmentChoiceDetails(starterLoadout, 'missingGear') === null, 'Equipment choice details should return null for unknown gear');
 const weightedEquipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
     equipmentSlots: HW_CONTENT.EQUIPMENT_SLOTS,
     equipmentDefs: {
@@ -484,6 +490,9 @@ assert(lowRollWeightedChoice.id === 'commonHelmet', 'Weighted equipment choices 
 const highRollWeightedChoice = weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, count: 1, rng: () => 0.99 })[0];
 assert(highRollWeightedChoice.id === 'legendaryHelmet', 'Weighted equipment choices should still allow rare high-roll rewards');
 assert(!weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, count: 3, rng: () => 0 }).some((equipment) => equipment.id === 'lockedWings'), 'Weighted equipment choices should respect minLevel filtering');
+const replacementChoiceDetails = weightedEquipmentSystem.getEquipmentChoiceDetails({ helmet: 'commonHelmet' }, 'rareHelmet');
+assert(replacementChoiceDetails?.current?.id === 'commonHelmet', 'Equipment choice details should include the currently equipped item in the same slot');
+assert(replacementChoiceDetails.isReplacement && !replacementChoiceDetails.isEmptySlot && !replacementChoiceDetails.isEquipped, 'Equipment choice details should flag slot replacements');
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
     helmet: 'waxScoutHelmet',

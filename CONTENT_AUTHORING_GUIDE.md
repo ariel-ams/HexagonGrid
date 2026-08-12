@@ -354,7 +354,7 @@ Current slots are:
 - `sting`
 - `wings`
 
-The run state stores `game.equipment`, new runs equip the starter loadout from `src/systems/equipment.js`, `getAvailableEquipment(playerLevel)` filters loot candidates by player level, `createEquipmentRewardChoices()` builds small unequipped reward sets for future loot screens using rarity weights, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
+The run state stores `game.equipment`, new runs equip the starter loadout from `src/systems/equipment.js`, `getAvailableEquipment(playerLevel)` filters loot candidates by player level, `createEquipmentRewardChoices()` builds small unequipped reward sets for future loot screens using rarity weights, `getEquipmentChoiceDetails()` describes whether a reward fills an empty slot or replaces current gear, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
 
 The data smoke test keeps future gear data ready for implementation:
 
@@ -366,7 +366,7 @@ The data smoke test keeps future gear data ready for implementation:
 - `minLevel` must be a positive integer, and `starter` gear must unlock at level 1.
 - Optional `rewardWeight` can override the default rarity weight when a specific item should be more or less common in reward choices.
 - Every slot must have exactly one `starter` item so future loadout and loot screens have a stable default.
-- The equipment system must be able to create empty and starter loadouts, filter available gear by player level, generate weighted non-duplicated reward choices, equip each item into its declared slot, and mirror applied loadouts onto player state.
+- The equipment system must be able to create empty and starter loadouts, filter available gear by player level, generate weighted non-duplicated reward choices, describe reward slot replacements, equip each item into its declared slot, and mirror applied loadouts onto player state.
 - Current effects must be registered in `src/systems/equipment.js`. Future-effect placeholders currently include `futureRevealHint`, `futureHazardBlock`, `futureRoomHoney`, `futureAttackRange`, and `futureMovePoint`, each with a positive `amount`.
 
 ## Testing Checklist

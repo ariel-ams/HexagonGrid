@@ -113,6 +113,22 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         return choices;
     }
 
+    function getEquipmentChoiceDetails(loadout, equipmentId) {
+        const equipment = equipmentDefs[equipmentId];
+        if (!equipment) return null;
+        const currentId = loadout?.[equipment.slot] || null;
+        const current = currentId ? equipmentDefs[currentId] || null : null;
+        return {
+            equipment,
+            slot: equipment.slot,
+            current,
+            currentId,
+            isEmptySlot: !current,
+            isEquipped: currentId === equipment.id,
+            isReplacement: Boolean(current && current.id !== equipment.id)
+        };
+    }
+
     function equipItem(loadout, equipmentId) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
@@ -142,6 +158,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         createStarterEquipment,
         createStartingEquipment,
         getAvailableEquipment,
+        getEquipmentChoiceDetails,
         getEquippedItems,
         equipItem
     };

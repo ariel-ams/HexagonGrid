@@ -258,7 +258,8 @@ window.HW_ROADMAP_STATE = {
                         "Added wearable minLevel metadata for future loot progression.",
                         "Added equipment availability filtering by player level.",
                         "Added deterministic equipment reward-choice candidate helper.",
-                        "Added rarity-weighted equipment reward selection."
+                        "Added rarity-weighted equipment reward selection.",
+                        "Added equipment reward replacement detail helper."
                     ],
                     "left": [
                         "Design loot acquisition.",
