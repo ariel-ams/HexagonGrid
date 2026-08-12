@@ -431,6 +431,14 @@ rewardChoices.forEach((equipment) => {
 const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadout, rewardChoices[0].id);
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.isEmptySlot && !emptyChoiceDetails.isReplacement && !emptyChoiceDetails.isEquipped, 'Equipment choice details should flag empty slots');
+const rewardChoiceDetails = equipmentSystem.createEquipmentRewardChoiceDetails({
+    playerLevel: 1,
+    loadout: emptyLoadout,
+    count: 3,
+    rng: () => 0
+});
+assert(rewardChoiceDetails.length === rewardChoices.length, 'Equipment reward choice details should match the raw reward choice count');
+assert(rewardChoiceDetails.every((details) => details.equipment && details.slot), 'Equipment reward choice details should include candidate and slot metadata');
 const equippedIds = new Set(Object.values(starterLoadout).filter(Boolean));
 const replacementChoices = equipmentSystem.createEquipmentRewardChoices({
     playerLevel: 1,
@@ -493,6 +501,13 @@ assert(!weightedEquipmentSystem.createEquipmentRewardChoices({ playerLevel: 1, c
 const replacementChoiceDetails = weightedEquipmentSystem.getEquipmentChoiceDetails({ helmet: 'commonHelmet' }, 'rareHelmet');
 assert(replacementChoiceDetails?.current?.id === 'commonHelmet', 'Equipment choice details should include the currently equipped item in the same slot');
 assert(replacementChoiceDetails.isReplacement && !replacementChoiceDetails.isEmptySlot && !replacementChoiceDetails.isEquipped, 'Equipment choice details should flag slot replacements');
+const weightedRewardChoiceDetails = weightedEquipmentSystem.createEquipmentRewardChoiceDetails({
+    playerLevel: 1,
+    loadout: { helmet: 'commonHelmet' },
+    count: 1,
+    rng: () => 0
+})[0];
+assert(weightedRewardChoiceDetails?.current?.id === 'commonHelmet', 'Equipment reward choice details should include replacement metadata');
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
     helmet: 'waxScoutHelmet',

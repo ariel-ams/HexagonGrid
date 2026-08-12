@@ -129,6 +129,13 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         };
     }
 
+    function createEquipmentRewardChoiceDetails(options = {}) {
+        const loadout = options.loadout || {};
+        return createEquipmentRewardChoices(options)
+            .map((equipment) => getEquipmentChoiceDetails(loadout, equipment.id))
+            .filter(Boolean);
+    }
+
     function equipItem(loadout, equipmentId) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
@@ -154,6 +161,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     return {
         applyLoadout,
+        createEquipmentRewardChoiceDetails,
         createEquipmentRewardChoices,
         createStarterEquipment,
         createStartingEquipment,

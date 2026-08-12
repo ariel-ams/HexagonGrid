@@ -259,7 +259,8 @@ window.HW_ROADMAP_STATE = {
                         "Added equipment availability filtering by player level.",
                         "Added deterministic equipment reward-choice candidate helper.",
                         "Added rarity-weighted equipment reward selection.",
-                        "Added equipment reward replacement detail helper."
+                        "Added equipment reward replacement detail helper.",
+                        "Added bundled equipment reward choice details for future UI cards."
                     ],
                     "left": [
                         "Design loot acquisition.",
