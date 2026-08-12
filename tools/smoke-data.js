@@ -442,38 +442,46 @@ assert(cellInteractions.isCollectOnMoveObject('pollen', () => false), 'Pollen sh
 assert(!cellInteractions.isCollectOnMoveObject('waxDoor', () => false), 'Wax doors should not collect on move');
 assert(!cellInteractions.isCollectOnMoveObject('enemy', (object) => object === 'enemy'), 'Enemy objects should not collect on move');
 
-const inspectStats = sandbox.window.HW_INSPECT_STATS.createInspectStatsSystem({
-    hudRows: HW_ART.HUD_ICON_ROWS,
-    getLanguage: () => 'en',
-    vineDamage: 1,
-    hasEnemyBehavior: (objectId, behaviorType) => Boolean(HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.some((behavior) => behavior.type === behaviorType)),
-    getEnemyBehavior: (objectId, behaviorType) => HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.find((behavior) => behavior.type === behaviorType)
-});
-
 const enemyInspectExpectations = {
-    armoredFacing: { kind: 'guard', label: 'Front' },
-    chargeLane: { kind: 'danger', label: 'Lane' },
-    markCellsAura: { kind: 'danger', label: 'Marks' },
-    spawnEnemyAura: { kind: 'spawn', label: 'Spawns' },
-    stealResourceAura: { label: 'Steals', tone: 'cost' },
-    waterDrainAura: { kind: 'water', label: 'Drains', tone: 'cost' },
-    refogAura: { kind: 'reveal', label: 'Fog' },
-    spawnTerrainAura: { label: 'Terrain' },
-    weakPointWindow: { kind: 'attack', label: 'Core' }
+    armoredFacing: { kind: 'guard', en: 'Front', es: 'Frente' },
+    chargeLane: { kind: 'danger', en: 'Lane', es: 'Carril' },
+    markCellsAura: { kind: 'danger', en: 'Marks', es: 'Marca' },
+    spawnEnemyAura: { kind: 'spawn', en: 'Spawns', es: 'Invoca' },
+    stealResourceAura: { en: 'Steals', es: 'Roba', tone: 'cost' },
+    waterDrainAura: { kind: 'water', en: 'Drains', es: 'Drena', tone: 'cost' },
+    refogAura: { kind: 'reveal', en: 'Fog', es: 'Niebla' },
+    spawnTerrainAura: { en: 'Terrain', es: 'Terreno' },
+    weakPointWindow: { kind: 'attack', en: 'Core', es: 'Nucleo' }
 };
 
-Object.entries(HW_CONTENT.ENEMY_DEFS).forEach(([enemyId, enemy]) => {
-    const stats = inspectStats.getEnemyStats(enemyId, { object: enemyId, hits: 0 }, enemy);
-    enemy.behaviors?.forEach((behavior) => {
-        const expected = enemyInspectExpectations[behavior.type];
-        if (!expected) return;
-        const hasExpectedStat = stats.some((stat) => (
-            stat.label === expected.label
-            && (expected.kind == null || stat.kind === expected.kind)
-            && (expected.tone == null || stat.tone === expected.tone)
-        ));
-        assert(hasExpectedStat, `Enemy ${enemyId} ${behavior.type} should expose inspect stat ${expected.label}`);
+function createInspectStats(language) {
+    return sandbox.window.HW_INSPECT_STATS.createInspectStatsSystem({
+        hudRows: HW_ART.HUD_ICON_ROWS,
+        getLanguage: () => language,
+        vineDamage: 1,
+        hasEnemyBehavior: (objectId, behaviorType) => Boolean(HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.some((behavior) => behavior.type === behaviorType)),
+        getEnemyBehavior: (objectId, behaviorType) => HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.find((behavior) => behavior.type === behaviorType)
     });
-});
+}
+
+function assertEnemyInspectExpectations(language, labelKey) {
+    const inspectStats = createInspectStats(language);
+    Object.entries(HW_CONTENT.ENEMY_DEFS).forEach(([enemyId, enemy]) => {
+        const stats = inspectStats.getEnemyStats(enemyId, { object: enemyId, hits: 0 }, enemy);
+        enemy.behaviors?.forEach((behavior) => {
+            const expected = enemyInspectExpectations[behavior.type];
+            if (!expected) return;
+            const hasExpectedStat = stats.some((stat) => (
+                stat.label === expected[labelKey]
+                && (expected.kind == null || stat.kind === expected.kind)
+                && (expected.tone == null || stat.tone === expected.tone)
+            ));
+            assert(hasExpectedStat, `${language} enemy ${enemyId} ${behavior.type} should expose inspect stat ${expected[labelKey]}`);
+        });
+    });
+}
+
+assertEnemyInspectExpectations('en', 'en');
+assertEnemyInspectExpectations('es-419', 'es');
 
 console.log('Data smoke checks passed');
