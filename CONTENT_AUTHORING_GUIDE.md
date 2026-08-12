@@ -331,11 +331,19 @@ Current slots are:
 
 The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
 
+The data smoke test keeps future gear data ready for implementation:
+
+- Every slot needs `id`, `name`, and `description`.
+- Every equipment entry key must match `equipment.id`.
+- `slot` must be one of the ids in `EQUIPMENT_SLOTS`.
+- `rarity` must be `starter`, `common`, `rare`, `epic`, or `legendary`.
+- Current future-effect placeholders must use one of `futureRevealHint`, `futureHazardBlock`, `futureRoomHoney`, `futureAttackRange`, or `futureMovePoint`, with a positive `amount`.
+
 ## Testing Checklist
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, and equipment slot mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, and equipment metadata mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

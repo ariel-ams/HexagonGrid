@@ -192,7 +192,8 @@ window.HW_ROADMAP_STATE = {
                         "Added item-effect handler registry coverage for content data.",
                         "Added enemy-behavior registry coverage for content data.",
                         "Added enemy-behavior payload reference coverage.",
-                        "Added item-effect payload validation for resources, numbers, trade costs, and transform targets."
+                        "Added item-effect payload validation for resources, numbers, trade costs, and transform targets.",
+                        "Added wearable gear metadata validation for slots, ids, rarity, and future effects."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

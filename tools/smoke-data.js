@@ -36,6 +36,14 @@ runBrowserScript('src/systems/enemies.js');
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
 const resourceIds = new Set(['pollen', 'water', 'honey', 'stingCharges']);
+const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
+const equipmentEffectTypes = new Set([
+    'futureAttackRange',
+    'futureHazardBlock',
+    'futureMovePoint',
+    'futureRevealHint',
+    'futureRoomHoney'
+]);
 
 assert(HW_CONTENT?.OBJECTS, 'HW_CONTENT.OBJECTS was not registered');
 assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
@@ -205,8 +213,19 @@ Object.entries(HW_CONTENT.SPRITE_DEFS).forEach(([spriteId, definition]) => {
 });
 
 const slotIds = new Set(HW_CONTENT.EQUIPMENT_SLOTS.map((slot) => slot.id));
-Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
+HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
+    assert(slot.id && slot.name && slot.description, `Equipment slot ${slot.id || '(missing id)'} needs id, name, and description`);
+});
+Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => {
+    assert(equipment.id === equipmentId, `Equipment ${equipmentId} id must match its key`);
     assert(slotIds.has(equipment.slot), `Equipment ${equipment.id} uses unknown slot ${equipment.slot}`);
+    assert(equipment.name && equipment.description, `Equipment ${equipment.id} needs name and description`);
+    assert(equipmentRarities.has(equipment.rarity), `Equipment ${equipment.id} uses unknown rarity ${equipment.rarity}`);
+    assert(Array.isArray(equipment.effects) && equipment.effects.length > 0, `Equipment ${equipment.id} needs at least one future effect`);
+    equipment.effects.forEach((effect) => {
+        assert(equipmentEffectTypes.has(effect.type), `Equipment ${equipment.id} uses unsupported future effect ${effect.type}`);
+        assertPositiveNumber(effect.amount, `Equipment ${equipment.id} ${effect.type} amount must be positive`);
+    });
 });
 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
