@@ -61,7 +61,7 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
         if (hasEnemyBehavior(objectId, 'chargeLane')) {
             stats.push({ icon: '!', label: isSpanish() ? 'Carril' : 'Lane', tone: 'danger', kind: 'danger', hudRow: hudRows.danger });
         }
-        if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemy')) {
+        if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemyAura')) {
             stats.push({ icon: '!', label: isSpanish() ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: hudRows.danger });
         }
 

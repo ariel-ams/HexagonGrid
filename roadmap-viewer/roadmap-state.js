@@ -203,7 +203,8 @@ window.HW_ROADMAP_STATE = {
                         "Filtered random room-template selection by active dungeon theme and validated each theme has a compatible random lesson.",
                         "Added browser smoke coverage for active-theme room-template selection and stabilized positional-combat setup against irregular rooms.",
                         "Added room-template unlock-level smoke coverage and corrected mixedGate required enemy metadata.",
-                        "Synced Markdown roadmap with the latest room-template content-scaling guardrails."
+                        "Synced Markdown roadmap with the latest room-template content-scaling guardrails.",
+                        "Fixed spawn-enemy inspect stat detection and added smoke coverage for spawner learning chips."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -221,7 +222,8 @@ window.HW_ROADMAP_STATE = {
                         "CONTENT_AUTHORING_GUIDE.md",
                         "src/systems/room-templates.js",
                         "index.js",
-                        "ui-development/player-experience-roadmap.md"
+                        "ui-development/player-experience-roadmap.md",
+                        "src/systems/inspect-stats.js"
                     ]
                 },
                 {

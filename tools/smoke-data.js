@@ -32,6 +32,7 @@ runBrowserScript('src/systems/run-summary.js');
 runBrowserScript('src/systems/cell-interactions.js');
 runBrowserScript('src/systems/items.js');
 runBrowserScript('src/systems/enemies.js');
+runBrowserScript('src/systems/inspect-stats.js');
 runBrowserScript('src/systems/room-templates.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
@@ -71,6 +72,7 @@ assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summ
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
 assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behavior handler metadata');
+assert(sandbox.window.HW_INSPECT_STATS?.createInspectStatsSystem, 'Expected inspect stats system');
 assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_OBJECTIVES, 'Expected room objective metadata');
 assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_TEMPLATE_DEFS, 'Expected room template metadata');
 
@@ -439,5 +441,16 @@ assert(!cellInteractions.isFreeWalkoverObject('waxDoor'), 'Wax doors should not 
 assert(cellInteractions.isCollectOnMoveObject('pollen', () => false), 'Pollen should collect on move');
 assert(!cellInteractions.isCollectOnMoveObject('waxDoor', () => false), 'Wax doors should not collect on move');
 assert(!cellInteractions.isCollectOnMoveObject('enemy', (object) => object === 'enemy'), 'Enemy objects should not collect on move');
+
+const inspectStats = sandbox.window.HW_INSPECT_STATS.createInspectStatsSystem({
+    hudRows: HW_ART.HUD_ICON_ROWS,
+    getLanguage: () => 'en',
+    vineDamage: 1,
+    hasEnemyBehavior: (objectId, behaviorType) => Boolean(HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.some((behavior) => behavior.type === behaviorType)),
+    getEnemyBehavior: (objectId, behaviorType) => HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.find((behavior) => behavior.type === behaviorType)
+});
+const hiveEnemy = HW_CONTENT.ENEMY_DEFS.waspHive;
+const hiveStats = inspectStats.getEnemyStats('waspHive', { object: 'waspHive', hits: 0 }, hiveEnemy);
+assert(hiveStats.some((stat) => stat.kind === 'spawn' && stat.label === 'Spawns'), 'Wasp Hive inspect stats should advertise spawned enemies');
 
 console.log('Data smoke checks passed');
