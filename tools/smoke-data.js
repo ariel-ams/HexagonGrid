@@ -366,6 +366,7 @@ Object.entries(HW_CONTENT.SPRITE_DEFS).forEach(([spriteId, definition]) => {
 });
 
 const slotIds = new Set(HW_CONTENT.EQUIPMENT_SLOTS.map((slot) => slot.id));
+assert(slotIds.size === HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equipment slot ids must be unique');
 HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     assert(slot.id && slot.name && slot.description, `Equipment slot ${slot.id || '(missing id)'} needs id, name, and description`);
 });
