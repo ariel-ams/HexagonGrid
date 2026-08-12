@@ -272,7 +272,8 @@ window.HW_ROADMAP_STATE = {
                         "Added localized equipment rarity metadata for reward cards.",
                         "Added equipment loadout slot details for future inventory UI.",
                         "Added localized equipment reward-offer packaging for future loot UI.",
-                        "Added a level-4 rare equipment reward tier with one piece per slot."
+                        "Added a level-4 rare equipment reward tier with one piece per slot.",
+                        "Added planned asset paths and artist request coverage for wearable gear."
                     ],
                     "left": [
                         "Design loot acquisition.",

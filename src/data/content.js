@@ -1185,6 +1185,7 @@ const EQUIPMENT_DEFS = {
         name: 'Wax Scout Helmet',
         rarity: 'starter',
         minLevel: 1,
+        plannedAsset: 'assets/equipment/helmet-wax-scout.png',
         description: 'Future loot: reveals one extra cell near the exit at room start.',
         i18n: {
             en: { name: 'Wax Scout Helmet', description: 'Future loot: reveals one extra cell near the exit at room start.' },
@@ -1198,6 +1199,7 @@ const EQUIPMENT_DEFS = {
         name: 'Leaf Jacket',
         rarity: 'starter',
         minLevel: 1,
+        plannedAsset: 'assets/equipment/jacket-leaf.png',
         description: 'Future loot: softens the first hazard damage in each room.',
         i18n: {
             en: { name: 'Leaf Jacket', description: 'Future loot: softens the first hazard damage in each room.' },
@@ -1211,6 +1213,7 @@ const EQUIPMENT_DEFS = {
         name: 'Nectar Pouch',
         rarity: 'starter',
         minLevel: 1,
+        plannedAsset: 'assets/equipment/abdomen-nectar-pouch.png',
         description: 'Future loot: carries bonus honey between rooms.',
         i18n: {
             en: { name: 'Nectar Pouch', description: 'Future loot: carries bonus honey between rooms.' },
@@ -1224,6 +1227,7 @@ const EQUIPMENT_DEFS = {
         name: 'Barbed Sting',
         rarity: 'starter',
         minLevel: 1,
+        plannedAsset: 'assets/equipment/sting-barbed.png',
         description: 'Future loot: improves tactical attack reach or first-hit damage.',
         i18n: {
             en: { name: 'Barbed Sting', description: 'Future loot: improves tactical attack reach or first-hit damage.' },
@@ -1237,6 +1241,7 @@ const EQUIPMENT_DEFS = {
         name: 'Scout Wings',
         rarity: 'starter',
         minLevel: 1,
+        plannedAsset: 'assets/equipment/wings-scout.png',
         description: 'Future loot: improves movement route control.',
         i18n: {
             en: { name: 'Scout Wings', description: 'Future loot: improves movement route control.' },
@@ -1250,6 +1255,7 @@ const EQUIPMENT_DEFS = {
         name: 'Resin Crown',
         rarity: 'common',
         minLevel: 2,
+        plannedAsset: 'assets/equipment/helmet-resin-crown.png',
         description: 'Adds 1 max shield for early rooms that ask you to plan around danger.',
         i18n: {
             en: { name: 'Resin Crown', description: 'Adds 1 max shield for early rooms that ask you to plan around danger.' },
@@ -1263,6 +1269,7 @@ const EQUIPMENT_DEFS = {
         name: 'Petal Jacket',
         rarity: 'common',
         minLevel: 2,
+        plannedAsset: 'assets/equipment/jacket-petal.png',
         description: 'Adds 1 max health for safer first boss attempts.',
         i18n: {
             en: { name: 'Petal Jacket', description: 'Adds 1 max health for safer first boss attempts.' },
@@ -1276,6 +1283,7 @@ const EQUIPMENT_DEFS = {
         name: 'Honey Satchel',
         rarity: 'common',
         minLevel: 2,
+        plannedAsset: 'assets/equipment/abdomen-honey-satchel.png',
         description: 'Future loot: carries one bonus honey into each room.',
         i18n: {
             en: { name: 'Honey Satchel', description: 'Future loot: carries one bonus honey into each room.' },
@@ -1289,6 +1297,7 @@ const EQUIPMENT_DEFS = {
         name: 'Long Sting',
         rarity: 'common',
         minLevel: 2,
+        plannedAsset: 'assets/equipment/sting-long.png',
         description: 'Adds 1 attack range so positional fights need fewer risky adjacent turns.',
         i18n: {
             en: { name: 'Long Sting', description: 'Adds 1 attack range so positional fights need fewer risky adjacent turns.' },
@@ -1302,6 +1311,7 @@ const EQUIPMENT_DEFS = {
         name: 'Wide Wings',
         rarity: 'common',
         minLevel: 2,
+        plannedAsset: 'assets/equipment/wings-wide.png',
         description: 'Adds 1 movement point for longer tactical routes.',
         i18n: {
             en: { name: 'Wide Wings', description: 'Adds 1 movement point for longer tactical routes.' },
@@ -1315,6 +1325,7 @@ const EQUIPMENT_DEFS = {
         name: 'Pollen Lens',
         rarity: 'rare',
         minLevel: 4,
+        plannedAsset: 'assets/equipment/helmet-pollen-lens.png',
         description: 'Future loot: improves room-reading clues before committing to a route.',
         i18n: {
             en: { name: 'Pollen Lens', description: 'Future loot: improves room-reading clues before committing to a route.' },
@@ -1328,6 +1339,7 @@ const EQUIPMENT_DEFS = {
         name: 'Amber Jacket',
         rarity: 'rare',
         minLevel: 4,
+        plannedAsset: 'assets/equipment/jacket-amber.png',
         description: 'Adds 2 max shield for rooms with heavier telegraphed danger.',
         i18n: {
             en: { name: 'Amber Jacket', description: 'Adds 2 max shield for rooms with heavier telegraphed danger.' },
@@ -1341,6 +1353,7 @@ const EQUIPMENT_DEFS = {
         name: 'Royal Nectar Band',
         rarity: 'rare',
         minLevel: 4,
+        plannedAsset: 'assets/equipment/abdomen-royal-nectar-band.png',
         description: 'Adds 1 max health for longer routes through mixed hazards.',
         i18n: {
             en: { name: 'Royal Nectar Band', description: 'Adds 1 max health for longer routes through mixed hazards.' },
@@ -1354,6 +1367,7 @@ const EQUIPMENT_DEFS = {
         name: 'Hooked Sting',
         rarity: 'rare',
         minLevel: 4,
+        plannedAsset: 'assets/equipment/sting-hooked.png',
         description: 'Future loot: improves tactical attack pressure after repositioning.',
         i18n: {
             en: { name: 'Hooked Sting', description: 'Future loot: improves tactical attack pressure after repositioning.' },
@@ -1367,6 +1381,7 @@ const EQUIPMENT_DEFS = {
         name: 'Windcut Wings',
         rarity: 'rare',
         minLevel: 4,
+        plannedAsset: 'assets/equipment/wings-windcut.png',
         description: 'Future loot: improves route control in larger cave rooms.',
         i18n: {
             en: { name: 'Windcut Wings', description: 'Future loot: improves route control in larger cave rooms.' },

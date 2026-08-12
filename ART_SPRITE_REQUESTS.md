@@ -37,11 +37,22 @@ Sprite sheets should be PNG files with transparent background unless the note sa
 
 ## Future Wearable Loot Icons
 
-| Slot | Suggested files | Sheet | Gameplay use |
-|---|---|---:|---|
-| Helmet | `assets/equipment/helmet-wax-scout.png` | `4 x 1` | Head gear for scouting, exit hints, reveal bonuses. |
-| Jacket | `assets/equipment/jacket-leaf.png` | `4 x 1` | Body gear for defense and hazard mitigation. |
-| Abdomen Guard | `assets/equipment/abdomen-nectar-pouch.png` | `4 x 1` | Carrying gear for honey/resource storage. |
-| Sting | `assets/equipment/sting-barbed.png` | `4 x 1` | Attack gear for range, damage, or special sting rules. |
-| Wings | `assets/equipment/wings-scout.png` | `4 x 1` | Movement gear for route control and repositioning. |
+All wearable loot icons should be transparent PNG sprite strips, `4 x 1`, centered in a square frame. They are not rendered yet, but the data table now stores the planned asset path for each item so the future equipment UI and artist handoff stay aligned.
 
+| Equipment id | Target file | Rarity | Gameplay use |
+|---|---|---:|---|
+| `waxScoutHelmet` | `assets/equipment/helmet-wax-scout.png` | starter | Soft scout helmet for exit hints and reveal bonuses. |
+| `leafJacket` | `assets/equipment/jacket-leaf.png` | starter | Light leaf body gear for first hazard protection. |
+| `nectarPouch` | `assets/equipment/abdomen-nectar-pouch.png` | starter | Small abdomen pouch for future honey/resource storage. |
+| `barbedSting` | `assets/equipment/sting-barbed.png` | starter | Basic attack gear with a sharper readable sting silhouette. |
+| `scoutWings` | `assets/equipment/wings-scout.png` | starter | Simple movement wings for route-control identity. |
+| `resinCrown` | `assets/equipment/helmet-resin-crown.png` | common | Resin head guard that reads as extra shield/defense. |
+| `petalJacket` | `assets/equipment/jacket-petal.png` | common | Petal armor that reads as safer health for early bosses. |
+| `honeySatchel` | `assets/equipment/abdomen-honey-satchel.png` | common | Honey-carrying abdomen gear with a small storage pouch. |
+| `longSting` | `assets/equipment/sting-long.png` | common | Longer sting weapon that clearly suggests increased reach. |
+| `wideWings` | `assets/equipment/wings-wide.png` | common | Wider movement wings that suggest longer tactical routes. |
+| `pollenLens` | `assets/equipment/helmet-pollen-lens.png` | rare | Scout lens/headgear for stronger room-reading clues. |
+| `amberJacket` | `assets/equipment/jacket-amber.png` | rare | Amber defensive jacket for heavier telegraphed danger. |
+| `royalNectarBand` | `assets/equipment/abdomen-royal-nectar-band.png` | rare | Royal abdomen band for longer mixed-hazard routes. |
+| `hookedSting` | `assets/equipment/sting-hooked.png` | rare | Curved sting weapon for stronger reposition-and-attack pressure. |
+| `windcutWings` | `assets/equipment/wings-windcut.png` | rare | Sleek fast wings for larger cave-route control. |

@@ -378,6 +378,7 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
     assert(equipment.i18n?.['es-419']?.name && equipment.i18n['es-419'].description, `Equipment ${equipment.id} needs Latin American Spanish localized text`);
     assert(equipmentRarities.has(equipment.rarity), `Equipment ${equipment.id} uses unknown rarity ${equipment.rarity}`);
     assert(Number.isInteger(equipment.minLevel) && equipment.minLevel >= 1, `Equipment ${equipment.id} needs a positive integer minLevel`);
+    assert(typeof equipment.plannedAsset === 'string' && /^assets\/equipment\/.+\.png$/.test(equipment.plannedAsset), `Equipment ${equipment.id} needs a planned PNG asset path under assets/equipment`);
     if (equipment.rarity === 'starter') {
         assert(equipment.minLevel === 1, `Starter equipment ${equipment.id} must unlock at level 1`);
     }

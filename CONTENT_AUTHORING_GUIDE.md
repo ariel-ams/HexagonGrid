@@ -367,6 +367,7 @@ The data smoke test keeps future gear data ready for implementation:
 - Every equipment slot and item needs English and Latin American Spanish `i18n` text before it can appear in future loot UI.
 - `rarity` must be `starter`, `common`, `rare`, `epic`, or `legendary`.
 - `minLevel` must be a positive integer, and `starter` gear must unlock at level 1.
+- `plannedAsset` must point to a future transparent PNG under `assets/equipment/`.
 - Optional `rewardWeight` can override the default rarity weight when a specific item should be more or less common in reward choices.
 - Every slot must have exactly one `starter` item so future loadout and loot screens have a stable default.
 - The equipment system must be able to create empty and starter loadouts, describe every loadout slot, localize slot/item/rarity/effect copy, filter available gear by player level, report whether a non-equipped reward exists, generate weighted non-duplicated reward choices, package localized reward offers with pool counts, return reward choices with slot replacement, slot display, rarity, reward weight, and effect summary details, apply a selected reward into the loadout, equip each item into its declared slot, and mirror applied loadouts onto player state.
