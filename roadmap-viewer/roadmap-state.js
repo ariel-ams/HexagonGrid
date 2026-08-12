@@ -190,7 +190,8 @@ window.HW_ROADMAP_STATE = {
                         "Added automatic roadmap-state updates from a CLI helper.",
                         "Removed completed roadmap updater work from the pending list.",
                         "Added item-effect handler registry coverage for content data.",
-                        "Added enemy-behavior registry coverage for content data."
+                        "Added enemy-behavior registry coverage for content data.",
+                        "Added enemy-behavior payload reference coverage."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -204,7 +205,8 @@ window.HW_ROADMAP_STATE = {
                         "npm run test:roadmap",
                         "src/systems/items.js",
                         "npm test",
-                        "src/systems/enemies.js"
+                        "src/systems/enemies.js",
+                        "CONTENT_AUTHORING_GUIDE.md"
                     ]
                 },
                 {

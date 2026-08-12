@@ -106,6 +106,21 @@ function assertLocalizedTuple(section, id, expectedLength = 2) {
     });
 }
 
+function assertBehaviorPayload(enemyId, behavior) {
+    const object = behavior.object;
+    if (behavior.type === 'spawnEnemyAura') {
+        assert(object && HW_CONTENT.ENEMY_DEFS[object], `Enemy ${enemyId} ${behavior.type} must reference a valid enemy object`);
+        return;
+    }
+    if (behavior.type === 'spawnTerrainAura' || behavior.type === 'markCellsAura' || behavior.type === 'chargeLane') {
+        assert(object && HW_CONTENT.OBJECTS[object], `Enemy ${enemyId} ${behavior.type} must reference a valid terrain/effect object`);
+        return;
+    }
+    if (behavior.type === 'disguiseAs') {
+        assert(object && HW_CONTENT.OBJECTS[object], `Enemy ${enemyId} ${behavior.type} must reference a valid disguise object`);
+    }
+}
+
 Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
     assert(object.name && object.description, `Object ${objectId} needs name and description`);
     assert(/^#[0-9a-f]{6}$/i.test(object.color), `Object ${objectId} needs a hex color`);
@@ -128,6 +143,7 @@ Object.entries(HW_CONTENT.ENEMY_DEFS).forEach(([enemyId, enemy]) => {
     assert(enemy.sprite && HW_CONTENT.SPRITE_DEFS[enemy.sprite], `Enemy ${enemyId} references missing sprite ${enemy.sprite}`);
     enemy.behaviors?.forEach((behavior) => {
         assert(sandbox.window.HW_ENEMIES.hasEnemyBehaviorHandler(behavior.type), `Enemy ${enemyId} uses unsupported behavior ${behavior.type}`);
+        assertBehaviorPayload(enemyId, behavior);
     });
 });
 

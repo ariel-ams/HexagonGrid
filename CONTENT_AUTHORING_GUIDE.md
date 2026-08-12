@@ -133,6 +133,12 @@ Existing behavior types:
 
 If a behavior does not exist yet, add it to `ENEMY_BEHAVIOR_TYPES`, then implement it in `src/systems/enemies.js`, `src/systems/enemy-turns.js`, or the movement/timer functions in `index.js`.
 
+Behavior payloads that reference another object are also checked by `node tools/smoke-data.js`:
+
+- `spawnEnemyAura.object` must be an enemy id in `ENEMY_DEFS`.
+- `spawnTerrainAura.object`, `markCellsAura.object`, and `chargeLane.object` must be object ids in `OBJECTS`.
+- `disguiseAs.object` must be an object id in `OBJECTS`.
+
 ## Adding a Wall, Door, or Blocker
 
 Blockers are objects with special movement rules.
@@ -321,7 +327,7 @@ The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is th
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, unsupported enemy behavior types, and equipment slot mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, unsupported enemy behavior types, invalid enemy behavior payload references, and equipment slot mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.
