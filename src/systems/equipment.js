@@ -260,6 +260,24 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         };
     }
 
+    function createEquipmentLoadoutDetails(loadout = {}, { language = 'en' } = {}) {
+        return equipmentSlots.map((slot) => {
+            const equipmentId = loadout?.[slot.id] || null;
+            const equipment = equipmentId ? equipmentDefs[equipmentId] || null : null;
+            return {
+                slot: slot.id,
+                slotDef: getLocalizedSlot(slot.id, language),
+                equipment: localizeEquipmentContent(equipment, language),
+                equipmentId: equipment?.id || null,
+                rarity: equipment?.rarity || null,
+                rarityDef: equipment ? getLocalizedRarity(equipment.rarity, language) : null,
+                rarityLabel: equipment ? getEquipmentRarityLabel(equipment.rarity, language) : null,
+                effects: createEquipmentEffectSummaries(equipment, { language }),
+                isEmpty: !equipment
+            };
+        });
+    }
+
     function createEquipmentRewardChoiceDetails(options = {}) {
         const loadout = options.loadout || {};
         return createEquipmentRewardChoices(options)
@@ -304,6 +322,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     return {
         applyLoadout,
         createEquipmentEffectSummaries,
+        createEquipmentLoadoutDetails,
         createEquipmentRewardChoiceDetails,
         createEquipmentRewardChoices,
         createStarterEquipment,

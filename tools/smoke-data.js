@@ -424,6 +424,13 @@ HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     const starterEquipment = starterEquipmentBySlot.get(slot.id)[0];
     assert(starterLoadout[slot.id] === starterEquipment, `Starter equipment should equip ${starterEquipment} in ${slot.id}`);
 });
+const starterLoadoutDetails = equipmentSystem.createEquipmentLoadoutDetails(starterLoadout, { language: 'es-419' });
+assert(starterLoadoutDetails.length === HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equipment loadout details should include every slot');
+assert(starterLoadoutDetails.every((details) => !details.isEmpty && details.equipment && details.slotDef), 'Equipment loadout details should include equipped gear and slot metadata');
+assert(starterLoadoutDetails.some((details) => details.slot === 'helmet' && details.slotDef.name === 'Casco' && details.equipment.name === 'Casco explorador de cera'), 'Equipment loadout details should localize equipped starter gear');
+assert(starterLoadoutDetails.every((details) => details.rarityLabel && details.effects.length > 0), 'Equipment loadout details should include rarity labels and effect summaries');
+const emptyLoadoutDetails = equipmentSystem.createEquipmentLoadoutDetails(emptyLoadout, { language: 'en' });
+assert(emptyLoadoutDetails.every((details) => details.isEmpty && !details.equipment && details.effects.length === 0), 'Equipment loadout details should mark empty slots');
 Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
     const equipped = equipmentSystem.equipItem(emptyLoadout, equipment.id);
     assert(equipped?.loadout?.[equipment.slot] === equipment.id, `Equipment system should equip ${equipment.id} into ${equipment.slot}`);
