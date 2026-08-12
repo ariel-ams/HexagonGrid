@@ -42,6 +42,44 @@ const EQUIPMENT_RARITY_ORDER = Object.freeze({
     epic: 3,
     legendary: 4
 });
+const EQUIPMENT_EFFECT_COPY = Object.freeze({
+    maxHealth: {
+        en: { label: '+{amount} max health', description: 'Raises the bee health limit.' },
+        'es-419': { label: '+{amount} salud max.', description: 'Aumenta el limite de salud de la abeja.' }
+    },
+    maxShield: {
+        en: { label: '+{amount} max shield', description: 'Raises the bee shield limit.' },
+        'es-419': { label: '+{amount} escudo max.', description: 'Aumenta el limite de escudo de la abeja.' }
+    },
+    attackRange: {
+        en: { label: '+{amount} attack range', description: 'Lets the bee sting from farther away.' },
+        'es-419': { label: '+{amount} alcance', description: 'Permite atacar desde mas lejos.' }
+    },
+    maxMovePoints: {
+        en: { label: '+{amount} movement', description: 'Adds movement points each turn.' },
+        'es-419': { label: '+{amount} movimiento', description: 'Suma puntos de movimiento por turno.' }
+    },
+    futureAttackRange: {
+        en: { label: 'Future attack +{amount}', description: 'Reserved for future sting upgrade rules.' },
+        'es-419': { label: 'Ataque futuro +{amount}', description: 'Reservado para futuras reglas del aguijon.' }
+    },
+    futureHazardBlock: {
+        en: { label: 'Future hazard block +{amount}', description: 'Reserved for future hazard defense rules.' },
+        'es-419': { label: 'Bloqueo futuro +{amount}', description: 'Reservado para futuras defensas contra peligros.' }
+    },
+    futureMovePoint: {
+        en: { label: 'Future movement +{amount}', description: 'Reserved for future route-control rules.' },
+        'es-419': { label: 'Movimiento futuro +{amount}', description: 'Reservado para futuras reglas de rutas.' }
+    },
+    futureRevealHint: {
+        en: { label: 'Future reveal +{amount}', description: 'Reserved for future room-reading rules.' },
+        'es-419': { label: 'Revelado futuro +{amount}', description: 'Reservado para futuras reglas de exploracion.' }
+    },
+    futureRoomHoney: {
+        en: { label: 'Future honey +{amount}', description: 'Reserved for future room resource rules.' },
+        'es-419': { label: 'Miel futura +{amount}', description: 'Reservado para futuras reglas de recursos.' }
+    }
+});
 
 function hasEquipmentEffectHandler(effectType) {
     return EQUIPMENT_EFFECT_TYPES.includes(effectType);
@@ -49,6 +87,19 @@ function hasEquipmentEffectHandler(effectType) {
 
 function getEquipmentRewardWeight(equipment) {
     return Math.max(0, Number(equipment.rewardWeight ?? EQUIPMENT_RARITY_WEIGHTS[equipment.rarity] ?? 1) || 0);
+}
+
+function formatEquipmentEffectText(template, effect) {
+    return String(template || '').replaceAll('{amount}', effect.amount);
+}
+
+function getEquipmentEffectCopy(effect, language = 'en') {
+    const copy = EQUIPMENT_EFFECT_COPY[effect.type] || {};
+    const localized = copy[language] || copy.en || {};
+    return {
+        label: formatEquipmentEffectText(localized.label || `${effect.type} +{amount}`, effect),
+        description: formatEquipmentEffectText(localized.description || '', effect)
+    };
 }
 
 function localizeEquipmentContent(entity, language = 'en') {
@@ -64,10 +115,11 @@ function localizeEquipmentContent(entity, language = 'en') {
 function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     const slotDefs = new Map(equipmentSlots.map((slot) => [slot.id, slot]));
 
-    function createEquipmentEffectSummaries(equipment) {
+    function createEquipmentEffectSummaries(equipment, { language = 'en' } = {}) {
         return (equipment?.effects || []).map((effect) => ({
             type: effect.type,
             amount: effect.amount,
+            ...getEquipmentEffectCopy(effect, language),
             isActive: Boolean(EQUIPMENT_EFFECT_HANDLERS[effect.type]),
             isFuture: !EQUIPMENT_EFFECT_HANDLERS[effect.type]
         }));
@@ -160,9 +212,9 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             rarity: equipment.rarity,
             rarityRank: EQUIPMENT_RARITY_ORDER[equipment.rarity] ?? 99,
             rewardWeight: getEquipmentRewardWeight(equipment),
-            effects: createEquipmentEffectSummaries(equipment),
+            effects: createEquipmentEffectSummaries(equipment, { language }),
             current: localizeEquipmentContent(current, language),
-            currentEffects: createEquipmentEffectSummaries(current),
+            currentEffects: createEquipmentEffectSummaries(current, { language }),
             currentId,
             isEmptySlot: !current,
             isEquipped: currentId === equipment.id,
@@ -218,6 +270,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 }
 
 window.HW_EQUIPMENT = {
+    EQUIPMENT_EFFECT_COPY,
     EQUIPMENT_EFFECT_TYPES,
     EQUIPMENT_RARITY_ORDER,
     EQUIPMENT_RARITY_WEIGHTS,

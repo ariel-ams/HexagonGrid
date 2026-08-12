@@ -44,6 +44,7 @@ const relicHooks = new Set(['apply', 'onRoomStart']);
 const finalRoomDepth = 5;
 const relicChoiceCount = 3;
 const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legendary']);
+const equipmentEffectTypes = sandbox.window.HW_EQUIPMENT.EQUIPMENT_EFFECT_TYPES || [];
 const roomWeightTokens = new Set(['discovery']);
 const roomTemplateKeys = new Set([
     'minLevel',
@@ -392,6 +393,11 @@ Object.entries(HW_CONTENT.EQUIPMENT_DEFS).forEach(([equipmentId, equipment]) => 
         starterEquipmentBySlot.get(equipment.slot).push(equipment.id);
     }
 });
+equipmentEffectTypes.forEach((effectType) => {
+    const copy = sandbox.window.HW_EQUIPMENT.EQUIPMENT_EFFECT_COPY?.[effectType];
+    assert(copy?.en?.label && copy.en.description, `Equipment effect ${effectType} needs English reward copy`);
+    assert(copy?.['es-419']?.label && copy['es-419'].description, `Equipment effect ${effectType} needs Latin American Spanish reward copy`);
+});
 starterEquipmentBySlot.forEach((starterEquipment, slotId) => {
     assert(starterEquipment.length === 1, `Equipment slot ${slotId} needs exactly one starter item`);
 });
@@ -444,6 +450,7 @@ assert(Number.isInteger(emptyChoiceDetails.rarityRank), 'Equipment choice detail
 assert(emptyChoiceDetails.rewardWeight > 0, 'Equipment choice details should include a reward weight');
 assert(emptyChoiceDetails.effects.length === emptyChoiceDetails.equipment.effects.length, 'Equipment choice details should include candidate effect summaries');
 assert(emptyChoiceDetails.effects.every((effect) => effect.isFuture && !effect.isActive), 'Starter equipment choice effect summaries should mark future effects');
+assert(emptyChoiceDetails.effects.every((effect) => effect.label && effect.description), 'Equipment choice details should include readable effect copy');
 assert(emptyChoiceDetails.isEmptySlot && !emptyChoiceDetails.isReplacement && !emptyChoiceDetails.isEquipped, 'Equipment choice details should flag empty slots');
 const rewardChoiceDetails = equipmentSystem.createEquipmentRewardChoiceDetails({
     playerLevel: 1,
@@ -547,10 +554,12 @@ const localizedChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(starter
 assert(localizedChoiceDetails?.equipment?.name === 'Aguijon largo', 'Equipment choice details should localize candidate gear');
 assert(localizedChoiceDetails?.slotDef?.name === 'Aguijon', 'Equipment choice details should localize slot metadata');
 assert(localizedChoiceDetails?.current?.name === 'Aguijon dentado', 'Equipment choice details should localize current gear');
+assert(localizedChoiceDetails?.effects?.[0]?.label === '+1 alcance', 'Equipment choice details should localize effect summaries');
 const activeEffectSummary = weightedEquipmentSystem.createEquipmentEffectSummaries({
     effects: [{ type: 'maxShield', amount: 1 }]
 })[0];
 assert(activeEffectSummary.isActive && !activeEffectSummary.isFuture, 'Equipment effect summaries should mark active effects');
+assert(activeEffectSummary.label === '+1 max shield', 'Equipment effect summaries should include active effect labels');
 const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
 equipmentSystem.applyLoadout(testPlayer, {
     helmet: 'waxScoutHelmet',
