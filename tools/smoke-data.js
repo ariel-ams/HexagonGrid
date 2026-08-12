@@ -528,4 +528,119 @@ function assertItemEffectInspectExpectations(language, labelKey) {
 assertItemEffectInspectExpectations('en', 'en');
 assertItemEffectInspectExpectations('es-419', 'es');
 
+function assertInspectStat(stats, expected, message) {
+    const hasExpectedStat = stats.some((stat) => (
+        stat.label === expected.label
+        && (expected.kind == null || stat.kind === expected.kind)
+        && (expected.tone == null || stat.tone === expected.tone)
+    ));
+    assert(hasExpectedStat, message);
+}
+
+function assertTerrainVisibilityAndRouteStats(language, labels) {
+    const inspectStats = createInspectStats(language);
+
+    assertInspectStat(
+        inspectStats.getObjectEffectStats('vine', HW_CONTENT.OBJECTS),
+        { kind: 'damage', label: '1', tone: 'danger' },
+        `${language} vine should expose terrain damage inspect stat`
+    );
+    assertInspectStat(
+        inspectStats.getObjectEffectStats('burningCell', HW_CONTENT.OBJECTS),
+        { kind: 'damage', label: '1', tone: 'danger' },
+        `${language} burning cell should expose damage inspect stat`
+    );
+    assertInspectStat(
+        inspectStats.getObjectEffectStats('burningCell', HW_CONTENT.OBJECTS),
+        { kind: 'water', label: '1', tone: 'cost' },
+        `${language} burning cell should expose water cost inspect stat`
+    );
+    assertInspectStat(
+        inspectStats.getObjectEffectStats('waxDoor', HW_CONTENT.OBJECTS),
+        { kind: 'pollen', label: '1', tone: 'cost' },
+        `${language} wax door should expose pollen cost inspect stat`
+    );
+    assertInspectStat(
+        inspectStats.getObjectEffectStats('wall', HW_CONTENT.OBJECTS),
+        { kind: 'blocked', label: labels.path, tone: 'cost' },
+        `${language} wall should expose blocked path inspect stat`
+    );
+    assertInspectStat(
+        inspectStats.getObjectEffectStats('exit', HW_CONTENT.OBJECTS),
+        { kind: 'action', label: labels.action, tone: 'route' },
+        `${language} exit should expose action inspect stat`
+    );
+
+    assertInspectStat(
+        inspectStats.getVisibilityStats({ revealed: false, litByLamp: false }, false),
+        { kind: 'hidden', label: labels.hidden, tone: 'route' },
+        `${language} hidden mist cells should expose visibility inspect stat`
+    );
+    assertInspectStat(
+        inspectStats.getVisibilityStats({ revealed: false, litByLamp: true }, false),
+        { kind: 'reveal', label: labels.lit, tone: 'route' },
+        `${language} lamp-lit mist cells should expose visibility inspect stat`
+    );
+
+    const riskyRouteStats = inspectStats.getRouteStats({
+        path: [{}, {}],
+        complete: false,
+        blockedTarget: true,
+        risk: { totalDamage: 1, totalBlocked: 1, waterSpent: 1 }
+    }, 1);
+    assertInspectStat(
+        riskyRouteStats,
+        { kind: 'move', label: '1/2', tone: 'cost' },
+        `${language} route preview should expose reachable movement inspect stat`
+    );
+    assertInspectStat(
+        riskyRouteStats,
+        { kind: 'damage', label: '1', tone: 'danger' },
+        `${language} route preview should expose damage risk inspect stat`
+    );
+    assertInspectStat(
+        riskyRouteStats,
+        { kind: 'shield', label: '1', tone: 'route' },
+        `${language} route preview should expose shield block inspect stat`
+    );
+    assertInspectStat(
+        riskyRouteStats,
+        { kind: 'water', label: '1', tone: 'cost' },
+        `${language} route preview should expose water spend inspect stat`
+    );
+    assertInspectStat(
+        riskyRouteStats,
+        { kind: 'blocked', label: labels.blocked, tone: 'cost' },
+        `${language} route preview should expose blocked inspect stat`
+    );
+
+    assertInspectStat(
+        inspectStats.getRouteStats({
+            path: [{}],
+            complete: true,
+            deathCell: {},
+            risk: {}
+        }, 1),
+        { kind: 'lethal', label: labels.lethal, tone: 'danger' },
+        `${language} route preview should expose lethal inspect stat`
+    );
+}
+
+assertTerrainVisibilityAndRouteStats('en', {
+    action: 'Action',
+    blocked: 'Blocked',
+    hidden: 'Hidden',
+    lethal: 'Lethal',
+    lit: 'Lit',
+    path: 'Path'
+});
+assertTerrainVisibilityAndRouteStats('es-419', {
+    action: 'Accion',
+    blocked: 'Bloqueado',
+    hidden: 'Oculto',
+    lethal: 'Letal',
+    lit: 'Iluminada',
+    path: 'Paso'
+});
+
 console.log('Data smoke checks passed');
