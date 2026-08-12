@@ -326,6 +326,8 @@ Object.entries(HW_PROGRESSION.OBJECT_UNLOCK_LEVELS).forEach(([objectId, level]) 
 Object.entries(HW_CONTENT.SPRITE_DEFS).forEach(([spriteId, definition]) => {
     assert(Number.isInteger(definition.columns) && definition.columns >= 1, `Sprite ${spriteId} needs columns`);
     assert(Number.isInteger(definition.rows) && definition.rows >= 1, `Sprite ${spriteId} needs rows`);
+    assert(Number.isInteger(definition.row) && definition.row >= 0 && definition.row < definition.rows, `Sprite ${spriteId} needs row within sheet rows`);
+    assert(Number.isFinite(definition.frameMs) && definition.frameMs > 0, `Sprite ${spriteId} needs positive frameMs`);
     assert(definition.src || definition.fallback || definition.plannedAsset, `Sprite ${spriteId} needs src, fallback, or plannedAsset`);
 });
 

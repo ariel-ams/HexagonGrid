@@ -210,7 +210,8 @@ window.HW_ROADMAP_STATE = {
                         "Extended tactical enemy inspect-chip smoke coverage to Latin American Spanish labels.",
                         "Added bilingual inspect-chip coverage for planning-focused item effects such as slow and trap creation.",
                         "Added data smoke coverage for visibility, terrain, and route-risk inspect chips.",
-                        "Added data smoke coverage for object-to-sprite metadata."
+                        "Added data smoke coverage for object-to-sprite metadata.",
+                        "Added data smoke validation for sprite sheet rows and animation frame timing."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
