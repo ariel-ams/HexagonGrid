@@ -398,6 +398,11 @@ equipmentEffectTypes.forEach((effectType) => {
     assert(copy?.en?.label && copy.en.description, `Equipment effect ${effectType} needs English reward copy`);
     assert(copy?.['es-419']?.label && copy['es-419'].description, `Equipment effect ${effectType} needs Latin American Spanish reward copy`);
 });
+equipmentRarities.forEach((rarity) => {
+    const copy = sandbox.window.HW_EQUIPMENT.EQUIPMENT_RARITY_COPY?.[rarity];
+    assert(copy?.en?.label, `Equipment rarity ${rarity} needs English reward copy`);
+    assert(copy?.['es-419']?.label, `Equipment rarity ${rarity} needs Latin American Spanish reward copy`);
+});
 starterEquipmentBySlot.forEach((starterEquipment, slotId) => {
     assert(starterEquipment.length === 1, `Equipment slot ${slotId} needs exactly one starter item`);
 });
@@ -408,6 +413,7 @@ const equipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
 });
 assert(equipmentSystem.getLocalizedSlot('helmet', 'es-419')?.name === 'Casco', 'Equipment system should localize slot display text');
 assert(equipmentSystem.getLocalizedEquipment('longSting', 'es-419')?.name === 'Aguijon largo', 'Equipment system should localize gear display text');
+assert(equipmentSystem.getLocalizedRarity('common', 'es-419')?.label === 'Comun', 'Equipment system should localize rarity labels');
 const emptyLoadout = equipmentSystem.createStartingEquipment();
 HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
     assert(Object.hasOwn(emptyLoadout, slot.id), `Starting equipment is missing slot ${slot.id}`);
@@ -446,6 +452,8 @@ assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment cho
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');
 assert(emptyChoiceDetails.slotDef?.name, 'Equipment choice details should include the slot display name');
 assert(emptyChoiceDetails.rarity === emptyChoiceDetails.equipment.rarity, 'Equipment choice details should include candidate rarity');
+assert(emptyChoiceDetails.rarityLabel === 'Starter', 'Equipment choice details should include localized rarity label');
+assert(emptyChoiceDetails.rarityDef?.id === emptyChoiceDetails.rarity, 'Equipment choice details should include localized rarity metadata');
 assert(Number.isInteger(emptyChoiceDetails.rarityRank), 'Equipment choice details should include a rarity rank');
 assert(emptyChoiceDetails.rewardWeight > 0, 'Equipment choice details should include a reward weight');
 assert(emptyChoiceDetails.effects.length === emptyChoiceDetails.equipment.effects.length, 'Equipment choice details should include candidate effect summaries');
@@ -555,6 +563,7 @@ assert(localizedChoiceDetails?.equipment?.name === 'Aguijon largo', 'Equipment c
 assert(localizedChoiceDetails?.slotDef?.name === 'Aguijon', 'Equipment choice details should localize slot metadata');
 assert(localizedChoiceDetails?.current?.name === 'Aguijon dentado', 'Equipment choice details should localize current gear');
 assert(localizedChoiceDetails?.effects?.[0]?.label === '+1 alcance', 'Equipment choice details should localize effect summaries');
+assert(localizedChoiceDetails?.rarityLabel === 'Comun', 'Equipment choice details should localize rarity labels');
 const selectedEquipmentReward = equipmentSystem.selectEquipmentReward(starterLoadout, 'longSting', { language: 'es-419' });
 assert(selectedEquipmentReward?.loadout?.sting === 'longSting', 'Equipment reward selection should equip the chosen item');
 assert(selectedEquipmentReward.currentId === 'barbedSting' && selectedEquipmentReward.isReplacement, 'Equipment reward selection should include replacement details');

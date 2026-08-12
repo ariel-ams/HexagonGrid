@@ -42,6 +42,28 @@ const EQUIPMENT_RARITY_ORDER = Object.freeze({
     epic: 3,
     legendary: 4
 });
+const EQUIPMENT_RARITY_COPY = Object.freeze({
+    starter: {
+        en: { label: 'Starter' },
+        'es-419': { label: 'Inicial' }
+    },
+    common: {
+        en: { label: 'Common' },
+        'es-419': { label: 'Comun' }
+    },
+    rare: {
+        en: { label: 'Rare' },
+        'es-419': { label: 'Raro' }
+    },
+    epic: {
+        en: { label: 'Epic' },
+        'es-419': { label: 'Epico' }
+    },
+    legendary: {
+        en: { label: 'Legendary' },
+        'es-419': { label: 'Legendario' }
+    }
+});
 const EQUIPMENT_EFFECT_COPY = Object.freeze({
     maxHealth: {
         en: { label: '+{amount} max health', description: 'Raises the bee health limit.' },
@@ -102,6 +124,11 @@ function getEquipmentEffectCopy(effect, language = 'en') {
     };
 }
 
+function getEquipmentRarityLabel(rarity, language = 'en') {
+    const copy = EQUIPMENT_RARITY_COPY[rarity] || {};
+    return (copy[language] || copy.en || {}).label || rarity;
+}
+
 function localizeEquipmentContent(entity, language = 'en') {
     if (!entity) return null;
     const localized = entity.i18n?.[language] || entity.i18n?.en || {};
@@ -152,6 +179,15 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     function getLocalizedEquipment(equipmentId, language = 'en') {
         return localizeEquipmentContent(equipmentDefs[equipmentId], language);
+    }
+
+    function getLocalizedRarity(rarity, language = 'en') {
+        return {
+            id: rarity,
+            rank: EQUIPMENT_RARITY_ORDER[rarity] ?? 99,
+            label: getEquipmentRarityLabel(rarity, language),
+            rewardWeight: EQUIPMENT_RARITY_WEIGHTS[rarity] ?? 1
+        };
     }
 
     function getAvailableEquipment(playerLevel = 1) {
@@ -210,6 +246,8 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             slot: equipment.slot,
             slotDef: getLocalizedSlot(equipment.slot, language),
             rarity: equipment.rarity,
+            rarityDef: getLocalizedRarity(equipment.rarity, language),
+            rarityLabel: getEquipmentRarityLabel(equipment.rarity, language),
             rarityRank: EQUIPMENT_RARITY_ORDER[equipment.rarity] ?? 99,
             rewardWeight: getEquipmentRewardWeight(equipment),
             effects: createEquipmentEffectSummaries(equipment, { language }),
@@ -274,6 +312,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         getEquipmentChoiceDetails,
         getEquippedItems,
         getLocalizedEquipment,
+        getLocalizedRarity,
         getLocalizedSlot,
         hasEquipmentRewardsAvailable,
         equipItem,
@@ -283,6 +322,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
 window.HW_EQUIPMENT = {
     EQUIPMENT_EFFECT_COPY,
+    EQUIPMENT_RARITY_COPY,
     EQUIPMENT_EFFECT_TYPES,
     EQUIPMENT_RARITY_ORDER,
     EQUIPMENT_RARITY_WEIGHTS,
