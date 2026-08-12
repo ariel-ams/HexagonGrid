@@ -452,5 +452,15 @@ const inspectStats = sandbox.window.HW_INSPECT_STATS.createInspectStatsSystem({
 const hiveEnemy = HW_CONTENT.ENEMY_DEFS.waspHive;
 const hiveStats = inspectStats.getEnemyStats('waspHive', { object: 'waspHive', hits: 0 }, hiveEnemy);
 assert(hiveStats.some((stat) => stat.kind === 'spawn' && stat.label === 'Spawns'), 'Wasp Hive inspect stats should advertise spawned enemies');
+const leechStats = inspectStats.getEnemyStats('waterLeech', { object: 'waterLeech', hits: 0 }, HW_CONTENT.ENEMY_DEFS.waterLeech);
+assert(leechStats.some((stat) => stat.kind === 'water' && stat.label === 'Drains' && stat.tone === 'cost'), 'Water Leech inspect stats should show non-red water drain pressure');
+const thiefStats = inspectStats.getEnemyStats('pollenThiefMoth', { object: 'pollenThiefMoth', hits: 0 }, HW_CONTENT.ENEMY_DEFS.pollenThiefMoth);
+assert(thiefStats.some((stat) => stat.kind === 'pollen' && stat.label === 'Steals'), 'Pollen Thief Moth inspect stats should show stolen resource pressure');
+const fogStats = inspectStats.getEnemyStats('fogShepherd', { object: 'fogShepherd', hits: 0 }, HW_CONTENT.ENEMY_DEFS.fogShepherd);
+assert(fogStats.some((stat) => stat.kind === 'reveal' && stat.label === 'Fog'), 'Fog Shepherd inspect stats should show refog pressure');
+const fireStats = inspectStats.getEnemyStats('crawlingFire', { object: 'crawlingFire', hits: 0 }, HW_CONTENT.ENEMY_DEFS.crawlingFire);
+assert(fireStats.some((stat) => stat.kind === 'danger' && stat.label === 'Terrain'), 'Crawling Fire inspect stats should show terrain-spread pressure');
+const sentinelStats = inspectStats.getEnemyStats('waxSentinel', { object: 'waxSentinel', hits: 0 }, HW_CONTENT.ENEMY_DEFS.waxSentinel);
+assert(sentinelStats.some((stat) => stat.kind === 'attack' && stat.label === 'Core'), 'Wax Sentinel inspect stats should show weak-core timing');
 
 console.log('Data smoke checks passed');

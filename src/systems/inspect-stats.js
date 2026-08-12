@@ -61,8 +61,42 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
         if (hasEnemyBehavior(objectId, 'chargeLane')) {
             stats.push({ icon: '!', label: isSpanish() ? 'Carril' : 'Lane', tone: 'danger', kind: 'danger', hudRow: hudRows.danger });
         }
+        if (hasEnemyBehavior(objectId, 'markCellsAura')) {
+            stats.push({ icon: '!', label: isSpanish() ? 'Marca' : 'Marks', tone: 'danger', kind: 'danger', hudRow: hudRows.danger });
+        }
         if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemyAura')) {
             stats.push({ icon: '!', label: isSpanish() ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: hudRows.danger });
+        }
+        const stealBehavior = getEnemyBehavior(objectId, 'stealResourceAura');
+        if (stealBehavior) {
+            const resource = stealBehavior.resource || 'pollen';
+            stats.push({
+                icon: resourceIcons[resource] || '-',
+                label: isSpanish() ? 'Roba' : 'Steals',
+                tone: 'cost',
+                kind: resourceKinds[resource] || 'cost',
+                hudRow: resourceRows[resource] ?? hudRows.pollen
+            });
+        }
+        if (hasEnemyBehavior(objectId, 'waterDrainAura')) {
+            stats.push({ icon: '~', label: isSpanish() ? 'Drena' : 'Drains', tone: 'cost', kind: 'water', hudRow: hudRows.water });
+        }
+        if (hasEnemyBehavior(objectId, 'refogAura')) {
+            stats.push({ icon: 'O', label: isSpanish() ? 'Niebla' : 'Fog', tone: 'route', kind: 'reveal', hudRow: hudRows.objective });
+        }
+        const terrainBehavior = getEnemyBehavior(objectId, 'spawnTerrainAura');
+        if (terrainBehavior) {
+            const isBurning = terrainBehavior.object === 'burningCell';
+            stats.push({
+                icon: isBurning ? '!' : 'O',
+                label: isSpanish() ? 'Terreno' : 'Terrain',
+                tone: isBurning ? 'danger' : 'cost',
+                kind: isBurning ? 'danger' : 'terrain',
+                hudRow: isBurning ? hudRows.danger : hudRows.objective
+            });
+        }
+        if (hasEnemyBehavior(objectId, 'weakPointWindow')) {
+            stats.push({ icon: '+', label: isSpanish() ? 'Nucleo' : 'Core', tone: 'route', kind: 'attack', hudRow: hudRows.sting });
         }
 
         return stats;

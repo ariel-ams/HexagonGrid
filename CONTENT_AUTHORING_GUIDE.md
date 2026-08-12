@@ -127,7 +127,7 @@ guardWasp: {
 ```
 
 Enemy behaviors are listed in `ENEMY_BEHAVIOR_TYPES` in `src/systems/enemies.js` and interpreted by `src/systems/enemies.js`, `src/systems/enemy-turns.js`, and the tactical orchestration in `index.js`.
-If the enemy should show a new stat chip or behavior tag in the inspect panel, add that metadata to `src/systems/inspect-stats.js`.
+If the enemy should show a new stat chip or behavior tag in the inspect panel, add that metadata to `src/systems/inspect-stats.js`. Reserve red danger chips for direct damage, lethal telegraphs, or marked danger cells; utility pressure such as water drain or resource theft should use cost/route tones so danger language stays readable.
 
 Existing behavior types:
 
