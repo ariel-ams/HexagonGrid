@@ -140,7 +140,15 @@ Existing behavior types:
 - `stealResourceAura`: steals a resource.
 - `fleeFromPlayer`: moves away after stealing.
 - `spawnEnemyAura`: spawns another enemy nearby.
+- `spawnTerrainAura`: spreads terrain or hazard cells nearby.
+- `markCellsAura`: marks nearby cells for delayed danger.
 - `chargeLane`: marks a short line in the enemy's facing direction with delayed danger cells.
+- `burrowAmbush`: marks a cracked warning cell before resurfacing.
+- `buffEnemiesAura`: accelerates nearby enemy timers.
+- `waterDrainAura`: suppresses water utility nearby.
+- `weakPointWindow`: exposes a timed attack opening.
+- `mirrorMove`: copies the bee's last movement direction.
+- `armoredFacing`: blocks careless frontal attacks.
 - `disguiseAs`: appears as another object until close.
 
 If a behavior does not exist yet, add it to `ENEMY_BEHAVIOR_TYPES`, then implement it in `src/systems/enemies.js`, `src/systems/enemy-turns.js`, or the movement/timer functions in `index.js`.
@@ -357,7 +365,7 @@ The data smoke test keeps future gear data ready for implementation:
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, missing inspect hints for key behaviors such as spawners, invalid relic metadata, and equipment metadata mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme/spawn/template references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, missing inspect hints for key tactical behaviors, invalid relic metadata, and equipment metadata mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.

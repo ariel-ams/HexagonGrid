@@ -449,18 +449,31 @@ const inspectStats = sandbox.window.HW_INSPECT_STATS.createInspectStatsSystem({
     hasEnemyBehavior: (objectId, behaviorType) => Boolean(HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.some((behavior) => behavior.type === behaviorType)),
     getEnemyBehavior: (objectId, behaviorType) => HW_CONTENT.ENEMY_DEFS[objectId]?.behaviors?.find((behavior) => behavior.type === behaviorType)
 });
-const hiveEnemy = HW_CONTENT.ENEMY_DEFS.waspHive;
-const hiveStats = inspectStats.getEnemyStats('waspHive', { object: 'waspHive', hits: 0 }, hiveEnemy);
-assert(hiveStats.some((stat) => stat.kind === 'spawn' && stat.label === 'Spawns'), 'Wasp Hive inspect stats should advertise spawned enemies');
-const leechStats = inspectStats.getEnemyStats('waterLeech', { object: 'waterLeech', hits: 0 }, HW_CONTENT.ENEMY_DEFS.waterLeech);
-assert(leechStats.some((stat) => stat.kind === 'water' && stat.label === 'Drains' && stat.tone === 'cost'), 'Water Leech inspect stats should show non-red water drain pressure');
-const thiefStats = inspectStats.getEnemyStats('pollenThiefMoth', { object: 'pollenThiefMoth', hits: 0 }, HW_CONTENT.ENEMY_DEFS.pollenThiefMoth);
-assert(thiefStats.some((stat) => stat.kind === 'pollen' && stat.label === 'Steals'), 'Pollen Thief Moth inspect stats should show stolen resource pressure');
-const fogStats = inspectStats.getEnemyStats('fogShepherd', { object: 'fogShepherd', hits: 0 }, HW_CONTENT.ENEMY_DEFS.fogShepherd);
-assert(fogStats.some((stat) => stat.kind === 'reveal' && stat.label === 'Fog'), 'Fog Shepherd inspect stats should show refog pressure');
-const fireStats = inspectStats.getEnemyStats('crawlingFire', { object: 'crawlingFire', hits: 0 }, HW_CONTENT.ENEMY_DEFS.crawlingFire);
-assert(fireStats.some((stat) => stat.kind === 'danger' && stat.label === 'Terrain'), 'Crawling Fire inspect stats should show terrain-spread pressure');
-const sentinelStats = inspectStats.getEnemyStats('waxSentinel', { object: 'waxSentinel', hits: 0 }, HW_CONTENT.ENEMY_DEFS.waxSentinel);
-assert(sentinelStats.some((stat) => stat.kind === 'attack' && stat.label === 'Core'), 'Wax Sentinel inspect stats should show weak-core timing');
+
+const enemyInspectExpectations = {
+    armoredFacing: { kind: 'guard', label: 'Front' },
+    chargeLane: { kind: 'danger', label: 'Lane' },
+    markCellsAura: { kind: 'danger', label: 'Marks' },
+    spawnEnemyAura: { kind: 'spawn', label: 'Spawns' },
+    stealResourceAura: { label: 'Steals', tone: 'cost' },
+    waterDrainAura: { kind: 'water', label: 'Drains', tone: 'cost' },
+    refogAura: { kind: 'reveal', label: 'Fog' },
+    spawnTerrainAura: { label: 'Terrain' },
+    weakPointWindow: { kind: 'attack', label: 'Core' }
+};
+
+Object.entries(HW_CONTENT.ENEMY_DEFS).forEach(([enemyId, enemy]) => {
+    const stats = inspectStats.getEnemyStats(enemyId, { object: enemyId, hits: 0 }, enemy);
+    enemy.behaviors?.forEach((behavior) => {
+        const expected = enemyInspectExpectations[behavior.type];
+        if (!expected) return;
+        const hasExpectedStat = stats.some((stat) => (
+            stat.label === expected.label
+            && (expected.kind == null || stat.kind === expected.kind)
+            && (expected.tone == null || stat.tone === expected.tone)
+        ));
+        assert(hasExpectedStat, `Enemy ${enemyId} ${behavior.type} should expose inspect stat ${expected.label}`);
+    });
+});
 
 console.log('Data smoke checks passed');

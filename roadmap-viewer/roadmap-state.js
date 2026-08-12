@@ -205,7 +205,8 @@ window.HW_ROADMAP_STATE = {
                         "Added room-template unlock-level smoke coverage and corrected mixedGate required enemy metadata.",
                         "Synced Markdown roadmap with the latest room-template content-scaling guardrails.",
                         "Fixed spawn-enemy inspect stat detection and added smoke coverage for spawner learning chips.",
-                        "Expanded enemy inspect behavior chips for steal, drain, fog, terrain, marked cells, and weak-point planning cues."
+                        "Expanded enemy inspect behavior chips for steal, drain, fog, terrain, marked cells, and weak-point planning cues.",
+                        "Generalized data smoke coverage so supported tactical enemy behaviors must expose inspect learning chips."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
