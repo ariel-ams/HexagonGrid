@@ -54,6 +54,7 @@ Adding content
 - If relics change, keep ids unique, depth/rarity valid, and hook names supported; `smoke-data` fails typo hooks before the reward screen uses them.
 - If wearable gear changes, keep slot ids unique, provide exactly one starter item per slot, and keep equipment ids, minLevel, rarity, optional rewardWeight, registered effect payloads, player-level availability, reward availability, weighted reward choices, bundled replacement/slot/rarity/effect details, empty/starter loadouts, and loadout behavior valid; `smoke-data` treats this as the gear contract until loot is implemented.
 - New runs use the starter equipment loadout, so starter gear must remain safe for first-run balance until the loot UI exists.
+- Level 2 currently has one common replacement per equipment slot so future room rewards can offer gear choices before higher-rarity loot exists.
 - If room profiles or spawn weights change, keep references valid and make sure weighted enemies are usable by at least one eligible room profile; runtime generation still filters by player unlock level.
 - If authored room templates change, update `ROOM_TEMPLATE_DEFS` with the lesson's supported metadata keys and required objects/enemies so data smoke can catch schema typos, broken references, required content that unlocks after the template, random templates that do not fit any dungeon theme, and themes with no compatible random lesson before browser tests.
 - Add localized text in `I18N` for player-facing names, descriptions, warnings, and inspect labels.

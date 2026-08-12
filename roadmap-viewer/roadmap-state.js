@@ -264,7 +264,8 @@ window.HW_ROADMAP_STATE = {
                         "Added slot display metadata to equipment reward details.",
                         "Added equipment effect summaries to reward details.",
                         "Added rarity and reward-weight metadata to equipment reward details.",
-                        "Added equipment reward availability helper."
+                        "Added equipment reward availability helper.",
+                        "Added first level-2 common equipment reward tier."
                     ],
                     "left": [
                         "Design loot acquisition.",

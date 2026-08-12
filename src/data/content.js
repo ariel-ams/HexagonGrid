@@ -1203,6 +1203,51 @@ const EQUIPMENT_DEFS = {
         minLevel: 1,
         description: 'Future loot: improves movement route control.',
         effects: [{ type: 'futureMovePoint', amount: 1 }]
+    },
+    resinCrown: {
+        id: 'resinCrown',
+        slot: 'helmet',
+        name: 'Resin Crown',
+        rarity: 'common',
+        minLevel: 2,
+        description: 'Adds 1 max shield for early rooms that ask you to plan around danger.',
+        effects: [{ type: 'maxShield', amount: 1 }]
+    },
+    petalJacket: {
+        id: 'petalJacket',
+        slot: 'jacket',
+        name: 'Petal Jacket',
+        rarity: 'common',
+        minLevel: 2,
+        description: 'Adds 1 max health for safer first boss attempts.',
+        effects: [{ type: 'maxHealth', amount: 1 }]
+    },
+    honeySatchel: {
+        id: 'honeySatchel',
+        slot: 'abdomen',
+        name: 'Honey Satchel',
+        rarity: 'common',
+        minLevel: 2,
+        description: 'Future loot: carries one bonus honey into each room.',
+        effects: [{ type: 'futureRoomHoney', amount: 1 }]
+    },
+    longSting: {
+        id: 'longSting',
+        slot: 'sting',
+        name: 'Long Sting',
+        rarity: 'common',
+        minLevel: 2,
+        description: 'Adds 1 attack range so positional fights need fewer risky adjacent turns.',
+        effects: [{ type: 'attackRange', amount: 1 }]
+    },
+    wideWings: {
+        id: 'wideWings',
+        slot: 'wings',
+        name: 'Wide Wings',
+        rarity: 'common',
+        minLevel: 2,
+        description: 'Adds 1 movement point for longer tactical routes.',
+        effects: [{ type: 'maxMovePoints', amount: 1 }]
     }
 };
 

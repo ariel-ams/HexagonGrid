@@ -458,6 +458,15 @@ replacementChoices.forEach((equipment) => {
     assert(!equippedIds.has(equipment.id), `Equipment reward choices should not offer already equipped item ${equipment.id}`);
 });
 assert(!equipmentSystem.hasEquipmentRewardsAvailable({ playerLevel: 1, loadout: starterLoadout }), 'Equipment rewards should report unavailable when every level 1 item is equipped');
+assert(equipmentSystem.hasEquipmentRewardsAvailable({ playerLevel: 2, loadout: starterLoadout }), 'Equipment rewards should become available after starter-only level 2 unlocks');
+const levelTwoRewardChoices = equipmentSystem.createEquipmentRewardChoices({
+    playerLevel: 2,
+    loadout: starterLoadout,
+    count: 3,
+    rng: () => 0
+});
+assert(levelTwoRewardChoices.length === 3, 'Equipment reward choices should offer three unlocked replacements at level 2');
+assert(levelTwoRewardChoices.every((equipment) => equipment.rarity !== 'starter'), 'Equipment reward choices should not offer equipped starter gear as replacements');
 const equippedChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(starterLoadout, starterLoadout.helmet);
 assert(equippedChoiceDetails?.isEquipped && !equippedChoiceDetails.isReplacement, 'Equipment choice details should flag already equipped gear');
 assert(equipmentSystem.getEquipmentChoiceDetails(starterLoadout, 'missingGear') === null, 'Equipment choice details should return null for unknown gear');

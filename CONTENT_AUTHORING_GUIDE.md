@@ -356,6 +356,8 @@ Current slots are:
 
 The run state stores `game.equipment`, new runs equip the starter loadout from `src/systems/equipment.js`, `getAvailableEquipment(playerLevel)` filters loot candidates by player level, `hasEquipmentRewardsAvailable({ playerLevel, loadout })` lets room/camp flow decide whether a gear reward can be offered, `createEquipmentRewardChoices()` builds small unequipped reward sets for future loot screens using rarity weights, `getEquipmentChoiceDetails()` describes whether a reward fills an empty slot or replaces current gear and includes slot display metadata, rarity metadata, reward weight, and effect summaries, `createEquipmentRewardChoiceDetails()` returns reward choices already bundled with that replacement metadata, and `applyEquipmentLoadout(player)` is the hook for applying gear stats. Only simple stat effects are active for now; future loot should add deliberate effects such as route reveal, hazard reduction, extra room carrying capacity, attack range, or movement control.
 
+The first reward-ready gear tier unlocks at player level 2. It adds one common replacement per slot so the future loot UI can offer real choices without exposing late-run complexity too early.
+
 The data smoke test keeps future gear data ready for implementation:
 
 - Every slot needs `id`, `name`, and `description`.
