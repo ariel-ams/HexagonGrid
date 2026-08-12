@@ -555,6 +555,11 @@ assert(localizedChoiceDetails?.equipment?.name === 'Aguijon largo', 'Equipment c
 assert(localizedChoiceDetails?.slotDef?.name === 'Aguijon', 'Equipment choice details should localize slot metadata');
 assert(localizedChoiceDetails?.current?.name === 'Aguijon dentado', 'Equipment choice details should localize current gear');
 assert(localizedChoiceDetails?.effects?.[0]?.label === '+1 alcance', 'Equipment choice details should localize effect summaries');
+const selectedEquipmentReward = equipmentSystem.selectEquipmentReward(starterLoadout, 'longSting', { language: 'es-419' });
+assert(selectedEquipmentReward?.loadout?.sting === 'longSting', 'Equipment reward selection should equip the chosen item');
+assert(selectedEquipmentReward.currentId === 'barbedSting' && selectedEquipmentReward.isReplacement, 'Equipment reward selection should include replacement details');
+assert(selectedEquipmentReward.equipment.name === 'Aguijon largo', 'Equipment reward selection should preserve localized candidate details');
+assert(equipmentSystem.selectEquipmentReward(selectedEquipmentReward.loadout, 'longSting') === null, 'Equipment reward selection should reject already equipped items');
 const activeEffectSummary = weightedEquipmentSystem.createEquipmentEffectSummaries({
     effects: [{ type: 'maxShield', amount: 1 }]
 })[0];

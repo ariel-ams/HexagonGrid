@@ -267,7 +267,8 @@ window.HW_ROADMAP_STATE = {
                         "Added equipment reward availability helper.",
                         "Added first level-2 common equipment reward tier.",
                         "Added localized slot and gear reward metadata.",
-                        "Added localized equipment effect summaries for future reward cards."
+                        "Added localized equipment effect summaries for future reward cards.",
+                        "Added equipment reward selection helper."
                     ],
                     "left": [
                         "Design loot acquisition.",

@@ -7,7 +7,7 @@ Honeycomb Wayfinder source layout
 - `systems/choice-ui.js`: shared markup for camp, trader, relic, and object-test choices.
 - `systems/inspect-ui.js`: DOM rendering for the persistent inspect panel and its stat chips.
 - `systems/inspect-stats.js`: visibility, enemy, object effect, terrain, and route-risk metadata that turns content data into inspect stat chips.
-- `systems/equipment.js`: wearable slot loadout helpers for empty/starter gear, localized slot/item/effect copy, player-level availability, reward availability, weighted reward choices, bundled reward replacement, slot display, rarity, reward weight, and effect summary details, lookup, effects, and slot replacement.
+- `systems/equipment.js`: wearable slot loadout helpers for empty/starter gear, localized slot/item/effect copy, player-level availability, reward availability, weighted reward choices, reward selection, bundled reward replacement, slot display, rarity, reward weight, and effect summary details, lookup, effects, and slot replacement.
 - `systems/cell-interactions.js`: object interaction metadata, collect/free-walkover classification, and registered move handlers for special cells.
 - `systems/tactical-flow.js`: movement point/action availability helpers for the turn-based dungeon action economy.
 - `systems/tactical-combat.js`: turn-end orchestration and tactical action range helpers.
@@ -52,7 +52,7 @@ Adding content
 - If an enemy declares a new `behaviors[].type`, add it to `ENEMY_BEHAVIOR_TYPES` in `systems/enemies.js` and implement the behavior in the relevant enemy/tactical turn system; the data smoke test fails unsupported behavior types.
 - If an enemy behavior references another object, keep the payload typed: spawned enemies must exist in `ENEMY_DEFS`, while terrain, marked cells, charge-lane cells, and disguise targets must exist in `OBJECTS`.
 - If relics change, keep ids unique, depth/rarity valid, and hook names supported; `smoke-data` fails typo hooks before the reward screen uses them.
-- If wearable gear changes, keep slot ids unique, provide exactly one starter item per slot, and keep equipment ids, localized English/Spanish copy, localized effect labels, minLevel, rarity, optional rewardWeight, registered effect payloads, player-level availability, reward availability, weighted reward choices, bundled replacement/slot/rarity/effect details, empty/starter loadouts, and loadout behavior valid; `smoke-data` treats this as the gear contract until loot is implemented.
+- If wearable gear changes, keep slot ids unique, provide exactly one starter item per slot, and keep equipment ids, localized English/Spanish copy, localized effect labels, minLevel, rarity, optional rewardWeight, registered effect payloads, player-level availability, reward availability, weighted reward choices, reward selection, bundled replacement/slot/rarity/effect details, empty/starter loadouts, and loadout behavior valid; `smoke-data` treats this as the gear contract until loot is implemented.
 - New runs use the starter equipment loadout, so starter gear must remain safe for first-run balance until the loot UI exists.
 - Level 2 currently has one common replacement per equipment slot so future room rewards can offer gear choices before higher-rarity loot exists.
 - If room profiles or spawn weights change, keep references valid and make sure weighted enemies are usable by at least one eligible room profile; runtime generation still filters by player unlock level.

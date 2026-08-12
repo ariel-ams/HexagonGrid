@@ -242,6 +242,17 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         };
     }
 
+    function selectEquipmentReward(loadout, equipmentId, options = {}) {
+        const details = getEquipmentChoiceDetails(loadout, equipmentId, options);
+        if (!details || details.isEquipped) return null;
+        const result = equipItem(loadout, equipmentId);
+        if (!result) return null;
+        return {
+            ...details,
+            loadout: result.loadout
+        };
+    }
+
     function applyLoadout(player, loadout, options = {}) {
         if (!player) return;
         player.equipment = { ...(loadout || {}) };
@@ -265,7 +276,8 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         getLocalizedEquipment,
         getLocalizedSlot,
         hasEquipmentRewardsAvailable,
-        equipItem
+        equipItem,
+        selectEquipmentReward
     };
 }
 
