@@ -102,6 +102,16 @@ const EQUIPMENT_EFFECT_COPY = Object.freeze({
         'es-419': { label: 'Miel futura +{amount}', description: 'Reservado para futuras reglas de recursos.' }
     }
 });
+const EQUIPMENT_REWARD_OFFER_COPY = Object.freeze({
+    available: {
+        en: { label: 'Gear reward ready', description: 'Choose one piece of wearable gear.' },
+        'es-419': { label: 'Recompensa lista', description: 'Elige una pieza de equipo.' }
+    },
+    noChoices: {
+        en: { label: 'No gear choices', description: 'There is no new gear available for this level yet.' },
+        'es-419': { label: 'Sin opciones de equipo', description: 'Todavia no hay equipo nuevo para este nivel.' }
+    }
+});
 
 function hasEquipmentEffectHandler(effectType) {
     return EQUIPMENT_EFFECT_TYPES.includes(effectType);
@@ -127,6 +137,11 @@ function getEquipmentEffectCopy(effect, language = 'en') {
 function getEquipmentRarityLabel(rarity, language = 'en') {
     const copy = EQUIPMENT_RARITY_COPY[rarity] || {};
     return (copy[language] || copy.en || {}).label || rarity;
+}
+
+function getEquipmentRewardOfferCopy(status, language = 'en') {
+    const copy = EQUIPMENT_REWARD_OFFER_COPY[status] || EQUIPMENT_REWARD_OFFER_COPY.noChoices;
+    return copy[language] || copy.en;
 }
 
 function localizeEquipmentContent(entity, language = 'en') {
@@ -203,9 +218,13 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     }
 
     function hasEquipmentRewardsAvailable({ playerLevel = 1, loadout = {} } = {}) {
+        return getEquipmentRewardPool({ playerLevel, loadout }).length > 0;
+    }
+
+    function getEquipmentRewardPool({ playerLevel = 1, loadout = {} } = {}) {
         const equippedIds = new Set(Object.values(loadout || {}).filter(Boolean));
         return getAvailableEquipment(playerLevel)
-            .some((equipment) => !equippedIds.has(equipment.id) && getEquipmentRewardWeight(equipment) > 0);
+            .filter((equipment) => !equippedIds.has(equipment.id) && getEquipmentRewardWeight(equipment) > 0);
     }
 
     function createEquipmentRewardChoices({
@@ -214,9 +233,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         count = 3,
         rng = Math.random
     } = {}) {
-        const equippedIds = new Set(Object.values(loadout || {}).filter(Boolean));
-        const pool = getAvailableEquipment(playerLevel)
-            .filter((equipment) => !equippedIds.has(equipment.id) && getEquipmentRewardWeight(equipment) > 0);
+        const pool = getEquipmentRewardPool({ playerLevel, loadout });
         const choices = [];
         const choiceCount = Math.max(0, Math.floor(Number(count) || 0));
         while (choices.length < choiceCount && pool.length > 0) {
@@ -285,6 +302,26 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             .filter(Boolean);
     }
 
+    function createEquipmentRewardOffer(options = {}) {
+        const {
+            language = 'en',
+            playerLevel = 1,
+            loadout = {},
+            count = 3
+        } = options;
+        const choices = createEquipmentRewardChoiceDetails(options);
+        const status = choices.length > 0 ? 'available' : 'noChoices';
+        return {
+            status,
+            available: choices.length > 0,
+            playerLevel: Math.max(1, Math.floor(Number(playerLevel) || 1)),
+            requestedCount: Math.max(0, Math.floor(Number(count) || 0)),
+            totalAvailable: getEquipmentRewardPool({ playerLevel, loadout }).length,
+            choices,
+            ...getEquipmentRewardOfferCopy(status, language)
+        };
+    }
+
     function equipItem(loadout, equipmentId) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
@@ -323,6 +360,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         applyLoadout,
         createEquipmentEffectSummaries,
         createEquipmentLoadoutDetails,
+        createEquipmentRewardOffer,
         createEquipmentRewardChoiceDetails,
         createEquipmentRewardChoices,
         createStarterEquipment,
@@ -341,6 +379,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
 window.HW_EQUIPMENT = {
     EQUIPMENT_EFFECT_COPY,
+    EQUIPMENT_REWARD_OFFER_COPY,
     EQUIPMENT_RARITY_COPY,
     EQUIPMENT_EFFECT_TYPES,
     EQUIPMENT_RARITY_ORDER,

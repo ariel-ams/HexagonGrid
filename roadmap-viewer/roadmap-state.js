@@ -270,7 +270,8 @@ window.HW_ROADMAP_STATE = {
                         "Added localized equipment effect summaries for future reward cards.",
                         "Added equipment reward selection helper.",
                         "Added localized equipment rarity metadata for reward cards.",
-                        "Added equipment loadout slot details for future inventory UI."
+                        "Added equipment loadout slot details for future inventory UI.",
+                        "Added localized equipment reward-offer packaging for future loot UI."
                     ],
                     "left": [
                         "Design loot acquisition.",

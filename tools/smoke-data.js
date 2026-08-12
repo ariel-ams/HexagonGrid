@@ -454,6 +454,25 @@ assert(new Set(rewardChoices.map((equipment) => equipment.id)).size === rewardCh
 rewardChoices.forEach((equipment) => {
     assert(equipment.minLevel <= 1, `Equipment reward choice ${equipment.id} should respect player level`);
 });
+const rewardOffer = equipmentSystem.createEquipmentRewardOffer({
+    playerLevel: 2,
+    loadout: starterLoadout,
+    count: 3,
+    rng: () => 0,
+    language: 'es-419'
+});
+assert(rewardOffer.available && rewardOffer.status === 'available', 'Equipment reward offer should mark available choices');
+assert(rewardOffer.label === 'Recompensa lista', 'Equipment reward offer should localize available status');
+assert(rewardOffer.totalAvailable >= rewardOffer.choices.length, 'Equipment reward offer should report available pool size');
+assert(rewardOffer.choices.every((details) => details.equipment && details.slotDef && details.effects.length > 0), 'Equipment reward offer should include localized choice details');
+const emptyRewardOffer = equipmentSystem.createEquipmentRewardOffer({
+    playerLevel: 1,
+    loadout: starterLoadout,
+    count: 3,
+    language: 'en'
+});
+assert(!emptyRewardOffer.available && emptyRewardOffer.status === 'noChoices', 'Equipment reward offer should explain when no gear is available');
+assert(emptyRewardOffer.label === 'No gear choices', 'Equipment reward offer should localize empty status');
 const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadout, rewardChoices[0].id);
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');
