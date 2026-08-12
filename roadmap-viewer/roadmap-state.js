@@ -191,7 +191,8 @@ window.HW_ROADMAP_STATE = {
                         "Removed completed roadmap updater work from the pending list.",
                         "Added item-effect handler registry coverage for content data.",
                         "Added enemy-behavior registry coverage for content data.",
-                        "Added enemy-behavior payload reference coverage."
+                        "Added enemy-behavior payload reference coverage.",
+                        "Added item-effect payload validation for resources, numbers, trade costs, and transform targets."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",

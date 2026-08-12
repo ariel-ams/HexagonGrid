@@ -35,6 +35,7 @@ runBrowserScript('src/systems/enemies.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
+const resourceIds = new Set(['pollen', 'water', 'honey', 'stingCharges']);
 
 assert(HW_CONTENT?.OBJECTS, 'HW_CONTENT.OBJECTS was not registered');
 assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
@@ -121,11 +122,56 @@ function assertBehaviorPayload(enemyId, behavior) {
     }
 }
 
+function assertPositiveNumber(value, message) {
+    assert(Number.isFinite(value) && value > 0, message);
+}
+
+function assertNonNegativeNumber(value, message) {
+    assert(Number.isFinite(value) && value >= 0, message);
+}
+
+function assertItemEffectPayload(objectId, effect) {
+    if (effect.type === 'gainResource') {
+        assert(resourceIds.has(effect.resource), `Object ${objectId} gainResource must use a known resource`);
+        assertPositiveNumber(effect.amount, `Object ${objectId} gainResource amount must be positive`);
+        return;
+    }
+    if (effect.type === 'gainShield' || effect.type === 'heal') {
+        assertPositiveNumber(effect.amount, `Object ${objectId} ${effect.type} amount must be positive`);
+        return;
+    }
+    if (effect.type === 'revealAround') {
+        assertPositiveNumber(effect.radius, `Object ${objectId} revealAround radius must be positive`);
+        return;
+    }
+    if (effect.type === 'pauseEnemyTimers' || effect.type === 'slowNearbyEnemies') {
+        assertPositiveNumber(effect.durationMs, `Object ${objectId} ${effect.type} durationMs must be positive`);
+        assertNonNegativeNumber(effect.radius, `Object ${objectId} ${effect.type} radius must be non-negative`);
+        return;
+    }
+    if (effect.type === 'transformCell') {
+        assert(effect.object && HW_CONTENT.OBJECTS[effect.object], `Object ${objectId} transformCell must reference a valid object`);
+        return;
+    }
+    if (effect.type === 'royalNectar') {
+        assertPositiveNumber(effect.heal, `Object ${objectId} royalNectar heal must be positive`);
+        return;
+    }
+    if (effect.type === 'tradeCooldown') {
+        assertNonNegativeNumber(effect.pollen, `Object ${objectId} tradeCooldown pollen cost must be non-negative`);
+        assertNonNegativeNumber(effect.water, `Object ${objectId} tradeCooldown water cost must be non-negative`);
+        if (effect.attackRange != null) {
+            assertPositiveNumber(effect.attackRange, `Object ${objectId} tradeCooldown attackRange must be positive`);
+        }
+    }
+}
+
 Object.entries(HW_CONTENT.OBJECTS).forEach(([objectId, object]) => {
     assert(object.name && object.description, `Object ${objectId} needs name and description`);
     assert(/^#[0-9a-f]{6}$/i.test(object.color), `Object ${objectId} needs a hex color`);
     object.effects?.forEach((effect) => {
         assert(sandbox.window.HW_ITEMS.hasItemEffectHandler(effect.type), `Object ${objectId} uses unsupported item effect ${effect.type}`);
+        assertItemEffectPayload(objectId, effect);
     });
     if (objectId !== 'empty') {
         assert(HW_PROGRESSION.OBJECT_UNLOCK_LEVELS[objectId], `Object ${objectId} needs an unlock level`);

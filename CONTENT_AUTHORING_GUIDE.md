@@ -85,6 +85,14 @@ If the effect should be visible in the inspect panel, add its chip metadata to `
 If route risk needs a new chip, add the metadata to `getRouteStats()` in `src/systems/inspect-stats.js`.
 If the object is not a normal collectable, add or update its interaction rule in `src/systems/cell-interactions.js` so the inspect panel, action preview, and cursor all describe the same action.
 
+Item effect payloads are also checked by `node tools/smoke-data.js`:
+
+- `gainResource.resource` must be `pollen`, `water`, `honey`, or `stingCharges`, and `amount` must be positive.
+- `gainShield.amount`, `heal.amount`, `revealAround.radius`, and `royalNectar.heal` must be positive.
+- `pauseEnemyTimers` and `slowNearbyEnemies` need positive `durationMs` and non-negative `radius`.
+- `transformCell.object` must be an object id in `OBJECTS`.
+- `tradeCooldown` needs non-negative `pollen` and `water` costs; optional `attackRange` must be positive.
+
 ## Adding a New Enemy
 
 Edit `src/data/content.js`.
@@ -327,7 +335,7 @@ The run state stores `game.equipment`, and `applyEquipmentLoadout(player)` is th
 
 After content changes:
 
-- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, unsupported enemy behavior types, invalid enemy behavior payload references, and equipment slot mismatches.
+- Run `node tools/smoke-data.js` to catch missing localization, unlock levels, sprite metadata, missing asset files, invalid room/theme references, unsupported item effect types, invalid item effect payloads, unsupported enemy behavior types, invalid enemy behavior payload references, and equipment slot mismatches.
 - Run `node tools/smoke-browser.js` to catch Test page omissions; it compares the rendered scenario list against the generated object list, verifies each entry has an icon canvas, starts every generated scenario, and checks that objects with effects expose inspect stat chips with HUD sprite rows.
 - Run syntax checks on changed JS files.
 - Start a new run and inspect the first revealed cells.
