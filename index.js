@@ -1803,26 +1803,8 @@ function equipItem(equipmentId) {
 }
 
 function applyEquipmentLoadout(player) {
-    if (!player) return;
-    player.equipment = { ...game.equipment };
-    getEquippedItems().forEach((equipment) => {
-        equipment.effects?.forEach((effect) => {
-            if (effect.type === 'maxHealth') {
-                player.maxHealth += effect.amount;
-                player.health = Math.min(player.maxHealth, player.health + effect.amount);
-            }
-            if (effect.type === 'maxShield') {
-                player.maxShield += effect.amount;
-            }
-            if (effect.type === 'attackRange') {
-                player.attackRange += effect.amount;
-            }
-            if (effect.type === 'maxMovePoints') {
-                player.maxMovePoints += effect.amount;
-                player.movePoints = player.maxMovePoints;
-                syncLegacyStamina();
-            }
-        });
+    equipmentSystem.applyLoadout(player, game.equipment, {
+        onMovePointsChanged: syncLegacyStamina
     });
 }
 

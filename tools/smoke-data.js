@@ -405,6 +405,16 @@ Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
     assert(equipped?.loadout?.[equipment.slot] === equipment.id, `Equipment system should equip ${equipment.id} into ${equipment.slot}`);
     assert(equipmentSystem.getEquippedItems(equipped.loadout).some((item) => item.id === equipment.id), `Equipment system should list ${equipment.id} as equipped`);
 });
+const testPlayer = { health: 7, maxHealth: 7, maxShield: 5, attackRange: 1, maxMovePoints: 2, movePoints: 2 };
+equipmentSystem.applyLoadout(testPlayer, {
+    helmet: 'waxScoutHelmet',
+    jacket: 'leafJacket',
+    abdomen: 'nectarPouch',
+    sting: 'barbedSting',
+    wings: 'scoutWings'
+});
+assert(testPlayer.equipment?.sting === 'barbedSting', 'Equipment system should mirror applied loadout on player state');
+assert(testPlayer.maxHealth === 7 && testPlayer.maxShield === 5 && testPlayer.attackRange === 1 && testPlayer.maxMovePoints === 2, 'Future equipment effects should not change active combat stats yet');
 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
     .filter(([, definition]) => definition.src)

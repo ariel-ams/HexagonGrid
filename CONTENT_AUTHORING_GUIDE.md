@@ -364,7 +364,7 @@ The data smoke test keeps future gear data ready for implementation:
 - `slot` must be one of the ids in `EQUIPMENT_SLOTS`.
 - `rarity` must be `starter`, `common`, `rare`, `epic`, or `legendary`.
 - Every slot must have exactly one `starter` item so future loadout and loot screens have a stable default.
-- The equipment system must be able to create an empty loadout and equip each item into its declared slot.
+- The equipment system must be able to create an empty loadout, equip each item into its declared slot, and mirror applied loadouts onto player state.
 - Current future-effect placeholders must use one of `futureRevealHint`, `futureHazardBlock`, `futureRoomHoney`, `futureAttackRange`, or `futureMovePoint`, with a positive `amount`.
 
 ## Testing Checklist

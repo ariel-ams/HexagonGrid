@@ -38,7 +38,8 @@ window.HW_ROADMAP_STATE = {
                         "Extracted tactical flow/combat helpers.",
                         "Extracted room templates, generation, rendering, replay, HUD, inspect, items, enemies, and market systems.",
                         "Removed stale room-template pass-through wrappers.",
-                        "Extracted wearable loadout helpers into src/systems/equipment.js."
+                        "Extracted wearable loadout helpers into src/systems/equipment.js.",
+                        "Moved wearable loadout application into the equipment system."
                     ],
                     "left": [
                         "Move remaining end-screen assembly.",
