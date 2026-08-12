@@ -514,6 +514,11 @@ const levelTwoRewardChoices = equipmentSystem.createEquipmentRewardChoices({
 });
 assert(levelTwoRewardChoices.length === 3, 'Equipment reward choices should offer three unlocked replacements at level 2');
 assert(levelTwoRewardChoices.every((equipment) => equipment.rarity !== 'starter'), 'Equipment reward choices should not offer equipped starter gear as replacements');
+const levelFourRewards = equipmentSystem.getAvailableEquipment(4).filter((equipment) => equipment.rarity === 'rare');
+assert(levelFourRewards.length >= HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equipment rewards should include a rare tier with at least one item per slot by level 4');
+HW_CONTENT.EQUIPMENT_SLOTS.forEach((slot) => {
+    assert(levelFourRewards.some((equipment) => equipment.slot === slot.id), `Rare equipment tier should include a ${slot.id} reward`);
+});
 const equippedChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(starterLoadout, starterLoadout.helmet);
 assert(equippedChoiceDetails?.isEquipped && !equippedChoiceDetails.isReplacement, 'Equipment choice details should flag already equipped gear');
 assert(equipmentSystem.getEquipmentChoiceDetails(starterLoadout, 'missingGear') === null, 'Equipment choice details should return null for unknown gear');

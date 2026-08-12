@@ -1308,6 +1308,71 @@ const EQUIPMENT_DEFS = {
             'es-419': { name: 'Alas amplias', description: 'Suma 1 punto de movimiento para rutas tacticas mas largas.' }
         },
         effects: [{ type: 'maxMovePoints', amount: 1 }]
+    },
+    pollenLens: {
+        id: 'pollenLens',
+        slot: 'helmet',
+        name: 'Pollen Lens',
+        rarity: 'rare',
+        minLevel: 4,
+        description: 'Future loot: improves room-reading clues before committing to a route.',
+        i18n: {
+            en: { name: 'Pollen Lens', description: 'Future loot: improves room-reading clues before committing to a route.' },
+            'es-419': { name: 'Lente de polen', description: 'Botin futuro: mejora las pistas para leer la sala antes de comprometer una ruta.' }
+        },
+        effects: [{ type: 'futureRevealHint', amount: 2 }]
+    },
+    amberJacket: {
+        id: 'amberJacket',
+        slot: 'jacket',
+        name: 'Amber Jacket',
+        rarity: 'rare',
+        minLevel: 4,
+        description: 'Adds 2 max shield for rooms with heavier telegraphed danger.',
+        i18n: {
+            en: { name: 'Amber Jacket', description: 'Adds 2 max shield for rooms with heavier telegraphed danger.' },
+            'es-419': { name: 'Chaqueta de ambar', description: 'Suma 2 escudo maximo para salas con peligros telegrafiados mas pesados.' }
+        },
+        effects: [{ type: 'maxShield', amount: 2 }]
+    },
+    royalNectarBand: {
+        id: 'royalNectarBand',
+        slot: 'abdomen',
+        name: 'Royal Nectar Band',
+        rarity: 'rare',
+        minLevel: 4,
+        description: 'Adds 1 max health for longer routes through mixed hazards.',
+        i18n: {
+            en: { name: 'Royal Nectar Band', description: 'Adds 1 max health for longer routes through mixed hazards.' },
+            'es-419': { name: 'Banda de nectar real', description: 'Suma 1 salud maxima para rutas largas con peligros mezclados.' }
+        },
+        effects: [{ type: 'maxHealth', amount: 1 }]
+    },
+    hookedSting: {
+        id: 'hookedSting',
+        slot: 'sting',
+        name: 'Hooked Sting',
+        rarity: 'rare',
+        minLevel: 4,
+        description: 'Future loot: improves tactical attack pressure after repositioning.',
+        i18n: {
+            en: { name: 'Hooked Sting', description: 'Future loot: improves tactical attack pressure after repositioning.' },
+            'es-419': { name: 'Aguijon curvo', description: 'Botin futuro: mejora la presion tactica de ataque despues de reposicionarte.' }
+        },
+        effects: [{ type: 'futureAttackRange', amount: 2 }]
+    },
+    windcutWings: {
+        id: 'windcutWings',
+        slot: 'wings',
+        name: 'Windcut Wings',
+        rarity: 'rare',
+        minLevel: 4,
+        description: 'Future loot: improves route control in larger cave rooms.',
+        i18n: {
+            en: { name: 'Windcut Wings', description: 'Future loot: improves route control in larger cave rooms.' },
+            'es-419': { name: 'Alas cortaviento', description: 'Botin futuro: mejora el control de rutas en cavernas mas grandes.' }
+        },
+        effects: [{ type: 'futureMovePoint', amount: 2 }]
     }
 };
 
