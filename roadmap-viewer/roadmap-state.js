@@ -202,7 +202,8 @@ window.HW_ROADMAP_STATE = {
                         "Added smoke coverage so random room templates must fit at least one dungeon theme.",
                         "Filtered random room-template selection by active dungeon theme and validated each theme has a compatible random lesson.",
                         "Added browser smoke coverage for active-theme room-template selection and stabilized positional-combat setup against irregular rooms.",
-                        "Added room-template unlock-level smoke coverage and corrected mixedGate required enemy metadata."
+                        "Added room-template unlock-level smoke coverage and corrected mixedGate required enemy metadata.",
+                        "Synced Markdown roadmap with the latest room-template content-scaling guardrails."
                     ],
                     "left": [
                         "Add data-defined behavior for more object classes.",
@@ -219,7 +220,8 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/enemies.js",
                         "CONTENT_AUTHORING_GUIDE.md",
                         "src/systems/room-templates.js",
-                        "index.js"
+                        "index.js",
+                        "ui-development/player-experience-roadmap.md"
                     ]
                 },
                 {
