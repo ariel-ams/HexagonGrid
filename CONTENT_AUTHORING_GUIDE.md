@@ -46,6 +46,20 @@ Where to edit:
 
 The renderer trims transparent sprite bounds in `buildSpriteFrames()` and animates frames in `drawSprite()`.
 
+## Adding Wearable Gear Art
+
+Wearable gear uses `plannedAsset` paths in `EQUIPMENT_DEFS` until final art exists. Add final files under `assets/equipment/` using the contract in `ART_SPRITE_REQUESTS.md`.
+
+Rules:
+
+- Use transparent PNG files with no baked background.
+- Use a `4 x 1` idle strip, left-to-right frames.
+- Prefer `128 x 128` frames, exported as a `512 x 128` sheet.
+- Keep the silhouette centered so reward cards, side-panel chips, hover details, and future inventory slots can reuse the same art.
+- Keep one clear visual identity per slot: helmet, jacket, abdomen gear, sting, and wings should be distinguishable at HUD-chip size.
+
+After adding or renaming wearable art, run `node tools/smoke-data.js`; it checks that each equipment id and planned asset path has artist-request coverage.
+
 ## Adding a New Item or Object
 
 Edit `src/data/content.js`.

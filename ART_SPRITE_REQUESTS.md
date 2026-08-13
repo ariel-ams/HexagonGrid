@@ -39,6 +39,17 @@ Sprite sheets should be PNG files with transparent background unless the note sa
 
 All wearable loot icons should be transparent PNG sprite strips, `4 x 1`, centered in a square frame. They are not rendered yet, but the data table now stores the planned asset path for each item so the future equipment UI and artist handoff stay aligned.
 
+## Wearable Gear Format
+
+Place final wearable art at each `plannedAsset` path under `assets/equipment/`.
+
+- Format: transparent PNG with no white square or baked background.
+- Sprite layout: `4 x 1` idle strip, left-to-right frames.
+- Recommended frame size: `128 x 128` per frame, exported as a `512 x 128` sheet.
+- Framing: keep the item centered with consistent padding so it can appear in reward cards, side-panel gear chips, hover details, and a future inventory screen without sliding between frames.
+- Readability target: clear at small HUD chip size first, then polished at card size.
+- Shape language: helmet=head gear, jacket=torso/body shell, abdomen=rear pouch/guard, sting=weapon silhouette, wings=movement silhouette.
+
 | Equipment id | Target file | Rarity | Gameplay use |
 |---|---|---:|---|
 | `waxScoutHelmet` | `assets/equipment/helmet-wax-scout.png` | starter | Soft scout helmet for exit hints and reveal bonuses. |

@@ -286,7 +286,8 @@ window.HW_ROADMAP_STATE = {
                         "Added browser smoke coverage for relic-to-equipment reward sequencing.",
                         "Added compact equipped-gear visibility in the side stats panel.",
                         "Added equipped-gear hover details for effect summaries.",
-                        "Added aggregate equipped-gear effect chips to the side stats panel."
+                        "Added aggregate equipped-gear effect chips to the side stats panel.",
+                        "Added wearable gear sprite format guidance for final artist handoff."
                     ],
                     "left": [
                         "Design loot acquisition.",
@@ -303,7 +304,8 @@ window.HW_ROADMAP_STATE = {
                         "CONTENT_MANIFEST_CHECKLIST.md",
                         "src/systems/choice-ui.js",
                         "index.html",
-                        "src/systems/reward-flow.js"
+                        "src/systems/reward-flow.js",
+                        "CONTENT_AUTHORING_GUIDE.md"
                     ]
                 },
                 {

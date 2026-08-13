@@ -71,6 +71,10 @@ assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment sl
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(contentManifestChecklist.includes('## Wearable'), 'Content manifest checklist needs a wearable section');
 assert(contentManifestChecklist.includes('plannedAsset'), 'Wearable checklist should mention plannedAsset coverage');
+assert(artSpriteRequests.includes('## Wearable Gear Format'), 'Artist request notes need wearable gear format guidance');
+assert(artSpriteRequests.includes('assets/equipment/'), 'Wearable artist notes should point to assets/equipment paths');
+assert(artSpriteRequests.includes('4 x 1'), 'Wearable artist notes should define 4 x 1 idle strip format');
+assert(artSpriteRequests.includes('transparent PNG'), 'Wearable artist notes should request transparent PNG assets');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
 assert(sandbox.window.HW_EQUIPMENT?.hasEquipmentEffectHandler, 'Expected equipment effect metadata');
