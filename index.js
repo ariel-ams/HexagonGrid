@@ -453,7 +453,10 @@ enemySystem = window.HW_ENEMIES.createEnemySystem({
         getCell,
         hexDistance,
         recordReplayEvent,
-        seededRandom
+        seededRandom,
+        startPlayerMotion,
+        revealAroundPlayer,
+        getLanguage: () => currentLanguage
     }
 });
 
@@ -3140,6 +3143,7 @@ function resolveEnemyTurn(reason = 'action') {
 }
 
 function resolveTurnEnemyPressure() {
+    let forcedMovementResolved = false;
     game.cells
         .filter((cell) => isEnemyObject(cell.object))
         .forEach((enemyCell) => {
@@ -3150,6 +3154,9 @@ function resolveTurnEnemyPressure() {
             if (!enemySystem.hasTimedThreat(enemyCell.object) && enemyCell.object !== 'bat' && enemyCell.object !== 'sleepingBat') return;
             applyDamage(enemy.attack, enemyCell.q, enemyCell.r, `${enemy.name} Attack`);
             recordReplayEvent('enemyDamage', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, amount: enemy.attack, mode: 'turn' });
+            if (!game.ended && !forcedMovementResolved && enemySystem.hasBehavior(enemyCell.object, 'pushPlayerOnAttack')) {
+                forcedMovementResolved = enemySystem.pushPlayerAway(enemyCell);
+            }
         });
 }
 

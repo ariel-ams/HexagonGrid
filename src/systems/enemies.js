@@ -13,6 +13,7 @@ const ENEMY_BEHAVIOR_TYPES = Object.freeze([
     'mirrorMove',
     'moveEverySteps',
     'moveTowardPlayer',
+    'pushPlayerOnAttack',
     'refogAura',
     'spawnEnemyAura',
     'spawnTerrainAura',
@@ -309,11 +310,41 @@ function createEnemySystem(context) {
         )) || null;
     }
 
+    function pushPlayerAway(enemyCell) {
+        const previous = { q: game.player.q, r: game.player.r };
+        const currentDistance = helpers.hexDistance(enemyCell.q, enemyCell.r, previous.q, previous.r);
+        const target = directions
+            .map((direction) => helpers.getCell(previous.q + direction.q, previous.r + direction.r))
+            .filter((cell) => cell && cell.object === 'empty')
+            .map((cell) => ({
+                cell,
+                distance: helpers.hexDistance(enemyCell.q, enemyCell.r, cell.q, cell.r)
+            }))
+            .filter((candidate) => candidate.distance > currentDistance)
+            .sort((a, b) => b.distance - a.distance)[0]?.cell;
+        if (!target) return false;
+
+        game.player.q = target.q;
+        game.player.r = target.r;
+        target.visited = true;
+        target.revealed = true;
+        helpers.startPlayerMotion?.(previous.q, previous.r, target.q, target.r);
+        helpers.revealAroundPlayer?.();
+        const enemy = enemyDefs[enemyCell.object];
+        const message = helpers.getLanguage?.() === 'es-419'
+            ? `${enemy.name} empujó a la abeja fuera de posición.`
+            : `${enemy.name} pushed the bee out of position.`;
+        helpers.addLog(enemy.name, message);
+        helpers.recordReplayEvent('enemyMove', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'pushPlayer', toQ: target.q, toR: target.r });
+        return true;
+    }
+
     return {
         getBehavior,
         hasBehavior,
         hasTimedThreat,
-        handleTimedThreat
+        handleTimedThreat,
+        pushPlayerAway
     };
 }
 

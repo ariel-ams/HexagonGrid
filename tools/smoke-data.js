@@ -895,6 +895,7 @@ const enemyInspectExpectations = {
     armoredFacing: { kind: 'guard', en: 'Front', es: 'Frente' },
     chargeLane: { kind: 'danger', en: 'Lane', es: 'Carril' },
     markCellsAura: { kind: 'danger', en: 'Marks', es: 'Marca' },
+    pushPlayerOnAttack: { kind: 'danger', en: 'Push', es: 'Empuja' },
     spawnEnemyAura: { kind: 'spawn', en: 'Spawns', es: 'Invoca' },
     stealResourceAura: { en: 'Steals', es: 'Roba', tone: 'cost' },
     waterDrainAura: { kind: 'water', en: 'Drains', es: 'Drena', tone: 'cost' },

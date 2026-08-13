@@ -72,6 +72,8 @@ Status: in progress. The first Iteration 2 sprint added a Stag Beetle `chargeLan
 
 The second Iteration 2 sprint added the first direct resource counter in combat. Clicking an adjacent Crawling Fire while carrying water spends `1 water`, extinguishes it without using the sting, awards the normal defeat progress, and ends the turn. The focused Test scenario teaches this counter, browser smoke coverage verifies it, and resource-cost popups now keep their utility colors instead of borrowing danger red.
 
+The third Iteration 2 sprint added a reusable forced-movement behavior. Guard Wasp turn attacks now push the bee one empty hex farther away when landing space exists, without consuming player movement. Only one forced move resolves per enemy turn, the inspect panel labels the threat as `Push`/`Empuja`, and browser coverage verifies both displacement and learning copy.
+
 Scope:
 
 - Convert more enemies into position puzzles:

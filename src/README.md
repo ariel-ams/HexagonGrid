@@ -81,5 +81,6 @@ Room lesson templates
 - Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.
 - The Stag Beetle now uses `chargeLane` to turn armored combat into a lane-dodge puzzle: it marks cells in its facing direction, then those marked cells detonate if the bee stays in the lane.
 - Crawling Fire has a direct tactical counter: interacting while carrying water spends `1 water` and extinguishes it as the turn action without consuming a sting attack. Its Test scenario starts with water and explains this option.
+- Guard Wasp uses the data-driven `pushPlayerOnAttack` behavior: a surviving turn hit can displace the bee one empty hex farther away, making nearby landing space part of route planning. The inspect panel labels this as a forced-movement threat.
 - Later rooms can add synergy templates such as hive + queen signaler, fire + water leech, wax sentinel + pollen thief, and fog shepherd + burrow beetle.
 - Exit cells remain visible, but the route to them can be shaped by blockers, hazards, or enemies so the room asks for a specific plan.

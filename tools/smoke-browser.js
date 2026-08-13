@@ -392,6 +392,34 @@ async function main() {
     assert(positionalCombat.sideHits > positionalCombat.frontHits, 'Armored enemies should take damage when flanked from the side or back.');
     assert(positionalCombat.object === 'thornBeetle', 'Flanking one hit should damage, not instantly remove, thorn beetles.');
 
+    await page.evaluate(() => {
+        window.HW_TEST_API.startTestScenario('guardWasp');
+        window.HW_TEST_API.inspectCell(1, 0);
+    });
+    const guardInspectText = await page.locator('#inspectPanel').textContent();
+    assert(guardInspectText.includes('Push'), 'Guard Wasp inspect details should warn about forced movement.');
+    const guardPush = await page.evaluate(() => {
+        const api = window.HW_TEST_API;
+        const distance = (a, b) => {
+            const dq = a.q - b.q;
+            const dr = a.r - b.r;
+            return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
+        };
+        const guard = { q: 1, r: 0 };
+        const destination = { q: 0, r: 1 };
+        api.moveToCell(destination.q, destination.r);
+        const player = api.getState().player;
+        return {
+            destination,
+            player: { q: player.q, r: player.r },
+            distanceBefore: distance(destination, guard),
+            distanceAfter: distance(player, guard)
+        };
+    });
+    assert(guardPush.distanceAfter > guardPush.distanceBefore, 'Guard Wasp attacks should push the bee one cell farther away.');
+    assert(guardPush.player.q !== guardPush.destination.q || guardPush.player.r !== guardPush.destination.r, 'Forced movement should visibly change the bee position.');
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'guard-wasp-push.png') });
+
     const stagChargeLane = await page.evaluate(() => {
         const api = window.HW_TEST_API;
         const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];

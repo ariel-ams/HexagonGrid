@@ -94,11 +94,12 @@ window.HW_ROADMAP_STATE = {
                         "Stag Beetle charge lane telegraph.",
                         "Boss fight uses hive pressure instead of only long-range reach.",
                         "Added a direct water counter that extinguishes Crawling Fire without spending a sting attack.",
-                        "Resource-cost popups now use utility colors instead of danger red."
+                        "Resource-cost popups now use utility colors instead of danger red.",
+                        "Added reusable pushPlayerOnAttack forced movement and assigned it to Guard Wasp."
                     ],
                     "left": [
-                        "Add more enemy lane, flank, and forced-movement behaviors.",
-                        "Tune boss pressure through playtest evidence."
+                        "Tune boss pressure through playtest evidence.",
+                        "Add another lane or flank behavior that combines with Guard Wasp displacement."
                     ],
                     "evidence": [
                         "src/systems/tactical-combat.js",
@@ -106,7 +107,9 @@ window.HW_ROADMAP_STATE = {
                         "tools/playtest-boss-cdp.js",
                         "Next focus after the completed UI declutter milestone",
                         "node tools/smoke-browser.js: Crawling Fire water counter passed",
-                        ".codex-video-frames/tactical-water-counter.png"
+                        ".codex-video-frames/tactical-water-counter.png",
+                        "node tools/smoke-browser.js: Guard Wasp push and inspect warning passed",
+                        ".codex-video-frames/guard-wasp-push.png"
                     ]
                 },
                 {

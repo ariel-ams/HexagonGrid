@@ -87,6 +87,9 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
         if (hasEnemyBehavior(objectId, 'markCellsAura')) {
             stats.push({ icon: '!', label: isSpanish() ? 'Marca' : 'Marks', tone: 'danger', kind: 'danger', hudRow: hudRows.danger });
         }
+        if (hasEnemyBehavior(objectId, 'pushPlayerOnAttack')) {
+            stats.push({ icon: '>', label: isSpanish() ? 'Empuja' : 'Push', tone: 'danger', kind: 'danger', hudRow: hudRows.danger });
+        }
         if (enemy.behaviors?.some((behavior) => behavior.type === 'spawnEnemyAura')) {
             stats.push({ icon: '!', label: isSpanish() ? 'Invoca' : 'Spawns', tone: 'danger', kind: 'spawn', hudRow: hudRows.danger });
         }
