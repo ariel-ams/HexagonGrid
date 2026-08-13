@@ -528,6 +528,39 @@ assert(emptyRewardOffer.label === 'No gear choices', 'Equipment reward offer sho
 const emptyEquipmentRewardNode = { innerHTML: '' };
 choiceUi.renderEquipmentRewardOffer(emptyEquipmentRewardNode, emptyRewardOffer);
 assert(emptyEquipmentRewardNode.innerHTML.includes('disabled'), 'Choice UI should render empty equipment rewards as disabled');
+const waitingRewardPlan = equipmentSystem.createEquipmentRewardPlan({
+    roomDepth: 1,
+    playerLevel: 2,
+    loadout: starterLoadout,
+    language: 'es-419'
+});
+assert(!waitingRewardPlan.available && waitingRewardPlan.status === 'waiting', 'Equipment reward plan should wait before the first reward depth');
+assert(waitingRewardPlan.nextEligibleDepth === 2 && waitingRewardPlan.label === 'Equipo mas tarde', 'Equipment reward plan should localize waiting copy and next eligible depth');
+const activeRewardPlan = equipmentSystem.createEquipmentRewardPlan({
+    roomDepth: 2,
+    playerLevel: 2,
+    loadout: starterLoadout,
+    count: 3,
+    rng: () => 0,
+    language: 'en'
+});
+assert(activeRewardPlan.available && activeRewardPlan.status === 'available' && activeRewardPlan.choices.length === 3, 'Equipment reward plan should offer choices on eligible reward depths');
+assert(activeRewardPlan.nextEligibleDepth === 2 && activeRewardPlan.cadenceEligible, 'Equipment reward plan should mark the current room as eligible');
+const exhaustedRewardPlan = equipmentSystem.createEquipmentRewardPlan({
+    roomDepth: 2,
+    playerLevel: 1,
+    loadout: starterLoadout,
+    language: 'en'
+});
+assert(!exhaustedRewardPlan.available && exhaustedRewardPlan.status === 'noChoices' && exhaustedRewardPlan.totalAvailable === 0, 'Equipment reward plan should explain eligible depths with no new gear');
+const laterRewardPlan = equipmentSystem.createEquipmentRewardPlan({
+    roomDepth: 3,
+    playerLevel: 4,
+    loadout: starterLoadout,
+    firstRewardDepth: 2,
+    cadence: 2
+});
+assert(laterRewardPlan.status === 'waiting' && laterRewardPlan.nextEligibleDepth === 4, 'Equipment reward plan should compute the next cadence reward depth');
 const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadout, rewardChoices[0].id);
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');

@@ -279,7 +279,8 @@ window.HW_ROADMAP_STATE = {
                         "Added equipped effect total summaries for future inventory/stat UI.",
                         "Added equipment effect delta summaries for future reward comparison UI.",
                         "Added shared equipment reward-card rendering with effect delta chips.",
-                        "Made active equipment loadout application idempotent so replacement bonuses do not stack."
+                        "Made active equipment loadout application idempotent so replacement bonuses do not stack.",
+                        "Added room-depth equipment reward cadence planning."
                     ],
                     "left": [
                         "Design loot acquisition.",

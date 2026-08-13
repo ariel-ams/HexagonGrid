@@ -112,6 +112,12 @@ const EQUIPMENT_REWARD_OFFER_COPY = Object.freeze({
         'es-419': { label: 'Sin opciones de equipo', description: 'Todavia no hay equipo nuevo para este nivel.' }
     }
 });
+const EQUIPMENT_REWARD_PLAN_COPY = Object.freeze({
+    waiting: {
+        en: { label: 'Gear reward later', description: 'Equipment rewards appear after key rooms.' },
+        'es-419': { label: 'Equipo mas tarde', description: 'Las recompensas de equipo aparecen despues de salas clave.' }
+    }
+});
 
 function hasEquipmentEffectHandler(effectType) {
     return EQUIPMENT_EFFECT_TYPES.includes(effectType);
@@ -142,6 +148,13 @@ function getEquipmentRarityLabel(rarity, language = 'en') {
 function getEquipmentRewardOfferCopy(status, language = 'en') {
     const copy = EQUIPMENT_REWARD_OFFER_COPY[status] || EQUIPMENT_REWARD_OFFER_COPY.noChoices;
     return copy[language] || copy.en;
+}
+
+function getEquipmentRewardPlanCopy(status, language = 'en') {
+    if (status === 'waiting') {
+        return EQUIPMENT_REWARD_PLAN_COPY.waiting[language] || EQUIPMENT_REWARD_PLAN_COPY.waiting.en;
+    }
+    return getEquipmentRewardOfferCopy(status, language);
 }
 
 function localizeEquipmentContent(entity, language = 'en') {
@@ -421,6 +434,56 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         };
     }
 
+    function getNextEquipmentRewardDepth(roomDepth = 1, { firstRewardDepth = 2, cadence = 2 } = {}) {
+        const depth = Math.max(1, Math.floor(Number(roomDepth) || 1));
+        const first = Math.max(1, Math.floor(Number(firstRewardDepth) || 1));
+        const interval = Math.max(1, Math.floor(Number(cadence) || 1));
+        if (depth <= first) return first;
+        const remainder = (depth - first) % interval;
+        return remainder === 0 ? depth : depth + interval - remainder;
+    }
+
+    function createEquipmentRewardPlan(options = {}) {
+        const {
+            roomDepth = 1,
+            playerLevel = 1,
+            loadout = {},
+            count = 3,
+            rng = Math.random,
+            language = 'en',
+            firstRewardDepth = 2,
+            cadence = 2
+        } = options;
+        const depth = Math.max(1, Math.floor(Number(roomDepth) || 1));
+        const first = Math.max(1, Math.floor(Number(firstRewardDepth) || 1));
+        const interval = Math.max(1, Math.floor(Number(cadence) || 1));
+        const cadenceEligible = depth >= first && (depth - first) % interval === 0;
+        const totalAvailable = getEquipmentRewardPool({ playerLevel, loadout }).length;
+        let status = 'waiting';
+        if (cadenceEligible) {
+            status = totalAvailable > 0 ? 'available' : 'noChoices';
+        }
+        const offer = status === 'available'
+            ? createEquipmentRewardOffer({ playerLevel, loadout, count, rng, language })
+            : {
+                status,
+                available: false,
+                playerLevel: Math.max(1, Math.floor(Number(playerLevel) || 1)),
+                requestedCount: Math.max(0, Math.floor(Number(count) || 0)),
+                totalAvailable,
+                choices: [],
+                ...getEquipmentRewardPlanCopy(status, language)
+            };
+        return {
+            ...offer,
+            roomDepth: depth,
+            cadence: interval,
+            firstRewardDepth: first,
+            cadenceEligible,
+            nextEligibleDepth: getNextEquipmentRewardDepth(depth, { firstRewardDepth: first, cadence: interval })
+        };
+    }
+
     function equipItem(loadout, equipmentId) {
         const equipment = equipmentDefs[equipmentId];
         if (!equipment) return null;
@@ -467,6 +530,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         createEquipmentRewardOffer,
         createEquipmentRewardChoiceDetails,
         createEquipmentRewardChoices,
+        createEquipmentRewardPlan,
         createStarterEquipment,
         createStartingEquipment,
         getAvailableEquipment,
@@ -484,6 +548,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 window.HW_EQUIPMENT = {
     EQUIPMENT_EFFECT_COPY,
     EQUIPMENT_REWARD_OFFER_COPY,
+    EQUIPMENT_REWARD_PLAN_COPY,
     EQUIPMENT_RARITY_COPY,
     EQUIPMENT_EFFECT_TYPES,
     EQUIPMENT_RARITY_ORDER,
