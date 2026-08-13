@@ -8,7 +8,7 @@ Honeycomb Wayfinder source layout
 - `systems/inspect-ui.js`: DOM rendering for the persistent inspect panel and its stat chips.
 - `systems/inspect-stats.js`: visibility, enemy, object effect, terrain, and route-risk metadata that turns content data into inspect stat chips.
 - `systems/equipment.js`: wearable slot loadout helpers for empty/starter gear, loadout slot details, active bonus summaries, idempotent loadout application, equipped effect totals and deltas, localized slot/item/rarity/effect copy, player-level availability, reward availability, localized reward cadence plans/offers, weighted reward choices, reward selection, bundled reward replacement, slot display, rarity, reward weight, and effect comparison details, lookup, effects, and slot replacement.
-- `systems/reward-flow.js`: post-room reward sequencing helpers that combine relic choices and equipment reward cadence into an ordered reward flow.
+- `systems/reward-flow.js`: post-room reward sequencing helpers that combine relic choices and equipment reward cadence into an ordered reward flow; `index.js` now uses it to show relic rewards before eligible gear rewards.
 - `systems/cell-interactions.js`: object interaction metadata, collect/free-walkover classification, and registered move handlers for special cells.
 - `systems/tactical-flow.js`: movement point/action availability helpers for the turn-based dungeon action economy.
 - `systems/tactical-combat.js`: turn-end orchestration and tactical action range helpers.

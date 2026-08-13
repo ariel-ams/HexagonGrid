@@ -281,11 +281,11 @@ window.HW_ROADMAP_STATE = {
                         "Added shared equipment reward-card rendering with effect delta chips.",
                         "Made active equipment loadout application idempotent so replacement bonuses do not stack.",
                         "Added room-depth equipment reward cadence planning.",
-                        "Added post-room reward-flow planning for relic/equipment sequencing."
+                        "Added post-room reward-flow planning for relic/equipment sequencing.",
+                        "Wired eligible equipment choices into the post-room reward screen after relic selection."
                     ],
                     "left": [
                         "Design loot acquisition.",
-                        "Add UI for equipment choices.",
                         "Request final wearable sprites and icons."
                     ],
                     "evidence": [

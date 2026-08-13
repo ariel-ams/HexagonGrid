@@ -30,6 +30,8 @@ const objectEditorFields = document.getElementById('objectEditorFields');
 const saveObjectButton = document.getElementById('saveObjectButton');
 const resetObjectButton = document.getElementById('resetObjectButton');
 const relicScreen = document.getElementById('relicScreen');
+const relicTitleNode = relicScreen?.querySelector('h2');
+const relicCopyNode = relicScreen?.querySelector('p');
 const relicChoicesNode = document.getElementById('relicChoices');
 const relicListNode = document.getElementById('relicList');
 const campScreen = document.getElementById('campScreen');
@@ -144,6 +146,9 @@ progression = progressionSystem.load();
 const equipmentSystem = window.HW_EQUIPMENT.createEquipmentSystem({
     equipmentSlots: EQUIPMENT_SLOTS,
     equipmentDefs: EQUIPMENT_DEFS
+});
+const rewardFlowSystem = window.HW_REWARD_FLOW.createRewardFlowSystem({
+    equipmentSystem
 });
 
 const uiArtAssets = {};
@@ -332,6 +337,8 @@ const game = {
     lastStaminaRegenAt: 0,
     relics: [],
     relicChoices: [],
+    rewardFlowPlan: null,
+    completedRewardSteps: [],
     pendingNextRoomReason: null,
     campBuffs: {},
     campRelicRerolls: 0,
@@ -1102,6 +1109,8 @@ function startRunState() {
     game.playerMotion = null;
     game.relics = [];
     game.relicChoices = [];
+    game.rewardFlowPlan = null;
+    game.completedRewardSteps = [];
     game.pendingNextRoomReason = null;
     game.campBuffs = {};
     game.campRelicRerolls = 0;
@@ -2317,9 +2326,22 @@ function openRelicChoice() {
         game.relicChoices = chooseRelicRewards();
     }
     game.campRelicRerolls = 0;
-    game.message = 'Choose a relic before entering the next chamber.';
-    renderRelicChoices();
+    game.rewardFlowPlan = rewardFlowSystem.createPostRoomRewardPlan({
+        roomDepth: game.roomDepth,
+        playerLevel: getPlayerLevel(),
+        loadout: game.equipment,
+        relicChoices: game.relicChoices,
+        equipmentOptions: { count: 3 },
+        language: currentLanguage,
+        rng: seededRandom
+    });
+    game.completedRewardSteps = [];
+    game.relicChoices = game.rewardFlowPlan.relic.choices;
+    game.message = currentLanguage === 'es-419'
+        ? 'Elige una recompensa antes de entrar a la siguiente camara.'
+        : 'Choose a reward before entering the next chamber.';
     relicScreen.classList.add('visible');
+    renderNextRewardStep();
     draw();
 }
 
@@ -2331,6 +2353,7 @@ function chooseRelicRewards() {
 }
 
 function renderRelicChoices() {
+    renderRewardHeader(t('ui', 'chooseRelic'), t('ui', 'chooseRelicCopy'));
     choiceUi.renderRelicChoices(relicChoicesNode, game.relicChoices, {
         emptyTitle: currentLanguage === 'es-419' ? 'Sin reliquias nuevas' : 'No New Relics',
         emptyCopy: currentLanguage === 'es-419'
@@ -2339,13 +2362,47 @@ function renderRelicChoices() {
     });
 }
 
+function renderRewardHeader(title, copy) {
+    if (relicTitleNode) relicTitleNode.textContent = title;
+    if (relicCopyNode) relicCopyNode.textContent = copy;
+}
+
+function renderEquipmentChoices(step) {
+    renderRewardHeader(t('ui', 'chooseEquipment'), t('ui', 'chooseEquipmentCopy'));
+    choiceUi.renderEquipmentRewardOffer(relicChoicesNode, step.plan, {
+        replaces: t('ui', 'equipmentReplaces'),
+        emptySlot: t('ui', 'equipmentEmptySlot')
+    });
+}
+
+function renderNextRewardStep() {
+    const step = rewardFlowSystem.getNextRewardStep(game.rewardFlowPlan, game.completedRewardSteps);
+    if (!step) {
+        advanceFromRewardFlow();
+        return;
+    }
+    if (step.type === 'equipment') {
+        renderEquipmentChoices(step);
+        return;
+    }
+    renderRelicChoices();
+}
+
+function advanceFromRewardFlow() {
+    relicScreen.classList.remove('visible');
+    game.relicChoices = [];
+    game.rewardFlowPlan = null;
+    game.completedRewardSteps = [];
+    game.pendingNextRoomReason = null;
+    game.roomDepth += 1;
+    generateRoom('exit');
+}
+
 function chooseRelic(id) {
     if (id === 'skip' && game.mode === 'relicChoice') {
-        relicScreen.classList.remove('visible');
         game.relicChoices = [];
-        game.pendingNextRoomReason = null;
-        game.roomDepth += 1;
-        generateRoom('exit');
+        game.completedRewardSteps.push('relic');
+        renderNextRewardStep();
         return;
     }
     const relic = getRelic(id);
@@ -2359,11 +2416,25 @@ function chooseRelic(id) {
     }
     renderRelics();
     addLog('Relic Chosen', `${relic.name}: ${relic.description}`);
-    relicScreen.classList.remove('visible');
     game.relicChoices = [];
-    game.pendingNextRoomReason = null;
-    game.roomDepth += 1;
-    generateRoom('exit');
+    game.completedRewardSteps.push('relic');
+    renderNextRewardStep();
+}
+
+function chooseEquipmentReward(id) {
+    if (game.mode !== 'relicChoice') return;
+    const reward = equipmentSystem.selectEquipmentReward(game.equipment, id, {
+        language: currentLanguage
+    });
+    if (!reward) return;
+    game.equipment = reward.loadout;
+    applyEquipmentLoadout(game.player);
+    addLog(
+        currentLanguage === 'es-419' ? 'Equipo elegido' : 'Gear Chosen',
+        `${reward.equipment.name}: ${reward.equipment.description}`
+    );
+    game.completedRewardSteps.push('equipment');
+    renderNextRewardStep();
 }
 
 function renderRelics() {
@@ -6409,6 +6480,11 @@ relicChoicesNode.addEventListener('click', (event) => {
     const button = event.target.closest('[data-relic-id]');
     if (button) {
         chooseRelic(button.dataset.relicId);
+        return;
+    }
+    const equipmentButton = event.target.closest('[data-equipment-id]');
+    if (equipmentButton) {
+        chooseEquipmentReward(equipmentButton.dataset.equipmentId);
     }
 });
 campActionsNode.addEventListener('click', (event) => {
