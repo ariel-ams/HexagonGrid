@@ -6147,6 +6147,29 @@ window.HW_TEST_API = {
     },
     equipItem: (equipmentId) => equipItem(equipmentId),
     getEquipment: () => ({ ...game.equipment }),
+    openRewardFlowForTest: ({ roomDepth = 2, level = 2 } = {}) => {
+        const nextDepth = Math.max(1, Math.floor(Number(roomDepth) || 1));
+        const nextLevel = Math.max(1, Math.floor(Number(level) || 1));
+        progression.level = nextLevel;
+        progression.xp = 0;
+        game.roomDepth = nextDepth;
+        game.mode = 'dungeon';
+        openRelicChoice();
+        return window.HW_TEST_API.getRewardOverlayState();
+    },
+    getRewardOverlayState: () => ({
+        visible: relicScreen.classList.contains('visible'),
+        title: relicTitleNode?.textContent || '',
+        copy: relicCopyNode?.textContent || '',
+        relicIds: [...relicChoicesNode.querySelectorAll('[data-relic-id]')]
+            .map((node) => node.getAttribute('data-relic-id')),
+        equipmentIds: [...relicChoicesNode.querySelectorAll('[data-equipment-id]')]
+            .map((node) => node.getAttribute('data-equipment-id')),
+        rewardFlowSteps: (game.rewardFlowPlan?.steps || []).map((step) => step.id),
+        completedRewardSteps: [...(game.completedRewardSteps || [])],
+        equipment: { ...game.equipment },
+        roomDepth: game.roomDepth
+    }),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
     isEnemyObject: (object) => isEnemyObject(object),
     getCellData: (q, r) => {

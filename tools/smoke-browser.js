@@ -90,6 +90,21 @@ async function main() {
     assert(startingEquipment.abdomen === 'nectarPouch', 'New runs should equip the starter abdomen guard.');
     assert(startingEquipment.sting === 'barbedSting', 'New runs should equip the starter sting.');
     assert(startingEquipment.wings === 'scoutWings', 'New runs should equip the starter wings.');
+    const initialRewardOverlay = await page.evaluate(() => window.HW_TEST_API.openRewardFlowForTest({ roomDepth: 2, level: 2 }));
+    assert(initialRewardOverlay.visible, 'Reward overlay should open between rooms.');
+    assert(initialRewardOverlay.rewardFlowSteps.join(',') === 'relic,equipment', 'Reward overlay should sequence relic rewards before equipment rewards.');
+    assert(initialRewardOverlay.title === 'Choose a Relic', 'Reward overlay should start on the relic step.');
+    assert(initialRewardOverlay.relicIds.length > 0, 'Reward overlay should render relic choices first.');
+    await page.click('#relicChoices [data-relic-id]');
+    await page.waitForFunction(() => window.HW_TEST_API.getRewardOverlayState().title === 'Choose Gear');
+    const equipmentRewardOverlay = await page.evaluate(() => window.HW_TEST_API.getRewardOverlayState());
+    assert(equipmentRewardOverlay.completedRewardSteps.includes('relic'), 'Reward overlay should mark the relic step complete before gear.');
+    assert(equipmentRewardOverlay.equipmentIds.length > 0, 'Reward overlay should render eligible equipment choices after relic selection.');
+    await page.click('#relicChoices [data-equipment-id]');
+    await page.waitForFunction(() => !window.HW_TEST_API.getRewardOverlayState().visible);
+    const selectedEquipmentOverlay = await page.evaluate(() => window.HW_TEST_API.getRewardOverlayState());
+    assert(selectedEquipmentOverlay.roomDepth === 3, 'Completing reward flow should advance to the next room.');
+    assert(Object.values(selectedEquipmentOverlay.equipment).some((id) => id && !Object.values(startingEquipment).includes(id)), 'Choosing gear should update one equipment slot.');
 
     const routeResult = await page.evaluate(async () => {
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

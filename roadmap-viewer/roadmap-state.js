@@ -282,7 +282,8 @@ window.HW_ROADMAP_STATE = {
                         "Made active equipment loadout application idempotent so replacement bonuses do not stack.",
                         "Added room-depth equipment reward cadence planning.",
                         "Added post-room reward-flow planning for relic/equipment sequencing.",
-                        "Wired eligible equipment choices into the post-room reward screen after relic selection."
+                        "Wired eligible equipment choices into the post-room reward screen after relic selection.",
+                        "Added browser smoke coverage for relic-to-equipment reward sequencing."
                     ],
                     "left": [
                         "Design loot acquisition.",
