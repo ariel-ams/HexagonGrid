@@ -2055,36 +2055,36 @@
         </div>
     </section>
 
-    <section class="relic-screen" id="relicScreen" aria-live="polite">
+    <section class="relic-screen" id="relicScreen" role="dialog" aria-modal="true" aria-labelledby="relicDialogTitle" aria-describedby="relicDialogCopy" aria-live="polite">
         <div class="relic-panel">
-            <h2 data-i18n="chooseRelic">Choose a Relic</h2>
-            <p data-i18n="chooseRelicCopy">The next chamber forms after the bee claims one reward.</p>
+            <h2 id="relicDialogTitle" data-i18n="chooseRelic">Choose a Relic</h2>
+            <p id="relicDialogCopy" data-i18n="chooseRelicCopy">The next chamber forms after the bee claims one reward.</p>
             <div class="relic-choices" id="relicChoices"></div>
         </div>
     </section>
 
-    <section class="relic-screen" id="campScreen" aria-live="polite">
+    <section class="relic-screen" id="campScreen" role="dialog" aria-modal="true" aria-labelledby="campDialogTitle" aria-describedby="campDialogCopy" aria-live="polite">
         <div class="relic-panel">
-            <h2>Between-Room Camp</h2>
-            <p>Spend supplies before choosing a relic and opening the next chamber.</p>
+            <h2 id="campDialogTitle">Between-Room Camp</h2>
+            <p id="campDialogCopy">Spend supplies before choosing a relic and opening the next chamber.</p>
             <div class="camp-actions" id="campActions"></div>
             <button id="campContinueButton" type="button">Choose Relic</button>
         </div>
     </section>
 
-    <section class="relic-screen" id="testScreen" aria-live="polite">
+    <section class="relic-screen" id="testScreen" role="dialog" aria-modal="true" aria-labelledby="testDialogTitle" aria-describedby="testDialogCopy" aria-live="polite">
         <div class="relic-panel">
-            <h2>Test Scenario</h2>
-            <p>Choose an object to build a focused interaction room.</p>
+            <h2 id="testDialogTitle">Test Scenario</h2>
+            <p id="testDialogCopy">Choose an object to build a focused interaction room.</p>
             <div class="test-object-list" id="testObjectList"></div>
             <button id="testBackButton" type="button" data-i18n="mainMenu">Main Menu</button>
         </div>
     </section>
 
-    <section class="relic-screen" id="settingsScreen" aria-live="polite">
+    <section class="relic-screen" id="settingsScreen" role="dialog" aria-modal="true" aria-labelledby="settingsDialogTitle" aria-describedby="settingsDialogCopy" aria-live="polite">
         <div class="relic-panel settings-panel">
-            <h2 data-i18n="settings">Settings</h2>
-            <p data-i18n="settingsCopy">Pause the run and adjust audio.</p>
+            <h2 id="settingsDialogTitle" data-i18n="settings">Settings</h2>
+            <p id="settingsDialogCopy" data-i18n="settingsCopy">Pause the run and adjust audio.</p>
             <div class="settings-grid">
                 <label>
                     <span data-i18n="musicVolume">Music Volume</span>

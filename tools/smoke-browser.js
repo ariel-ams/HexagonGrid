@@ -86,6 +86,14 @@ async function main() {
     assert((firstRoomPacing.counts.upgrade || 0) >= 1, 'Onboarding room should include shield upgrade.');
     await page.keyboard.press('Escape');
     await page.waitForSelector('#settingsScreen.visible');
+    const settingsDialogAttrs = await page.locator('#settingsScreen').evaluate((node) => ({
+        role: node.getAttribute('role'),
+        modal: node.getAttribute('aria-modal'),
+        labelledBy: node.getAttribute('aria-labelledby'),
+        describedBy: node.getAttribute('aria-describedby')
+    }));
+    assert(settingsDialogAttrs.role === 'dialog' && settingsDialogAttrs.modal === 'true', 'Settings overlay should expose modal dialog semantics.');
+    assert(settingsDialogAttrs.labelledBy === 'settingsDialogTitle' && settingsDialogAttrs.describedBy === 'settingsDialogCopy', 'Settings dialog should have accessible title and description references.');
     assert(await page.evaluate(() => document.activeElement?.id === 'settingsCloseButton'), 'Escape pause should focus the Resume button.');
     await page.keyboard.press('Tab');
     assert(await page.evaluate(() => document.activeElement?.id === 'musicVolumeInput'), 'Tab from Resume should wrap to the first settings control.');
