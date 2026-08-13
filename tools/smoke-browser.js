@@ -572,6 +572,26 @@ async function main() {
     assert(await page.locator('#campScreen .camp-action-cost').count() > 0, 'Market choices should show separated costs.');
     assert(await page.locator('#campScreen .camp-action-effect').count() > 0, 'Market choices should show separated effects.');
 
+    const bossPressure = await page.evaluate(() => {
+        window.HW_TEST_API.generateBossRoom();
+        const hives = window.HW_TEST_API.getCells().filter((cell) => cell.object === 'waspHive');
+        return {
+            hiveCount: hives.length,
+            spawnLimit: hives[0]?.spawnLimit,
+            firstSpawnMs: Math.round((hives[0]?.nextAuraAt || 0) - performance.now())
+        };
+    });
+    assert(bossPressure.hiveCount === 1, 'Boss room should keep a single readable hive threat.');
+    assert(bossPressure.spawnLimit === 1, 'Boss hive should spawn at most one reinforcement.');
+    assert(bossPressure.firstSpawnMs > 1700 && bossPressure.firstSpawnMs < 2600, 'Boss hive should threaten one reinforcement within its normal cadence.');
+
+    const completedRunState = await page.evaluate(() => {
+        window.HW_TEST_API.endRun('boss-defeated');
+        return window.HW_TEST_API.getState();
+    });
+    assert(completedRunState.ended === true, 'Test API should expose when a run has ended.');
+    assert(completedRunState.endReason === 'boss-defeated', 'Test API should expose why a run ended.');
+
     assert(!logs.some((line) => line.startsWith('pageerror:')), `Browser errors found:\n${logs.join('\n')}`);
     await browser.close();
     console.log('Browser smoke checks passed');

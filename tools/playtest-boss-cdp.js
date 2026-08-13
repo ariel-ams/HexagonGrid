@@ -137,6 +137,7 @@ async function runAttempt(client, attempt) {
                 return [];
             };
             const log = [];
+            let peakReinforcements = 0;
 
             for (let turn = 0; turn < ${MAX_TURNS}; turn += 1) {
                 const state = api.getState();
@@ -145,11 +146,24 @@ async function runAttempt(client, attempt) {
                 const queen = cells.find(cell => cell.object === 'queenSignaler');
                 const hives = cells.filter(cell => cell.object === 'waspHive');
                 const enemies = cells.filter(cell => cell.object && !['empty', 'entry', 'pollen', 'water', 'upgrade', 'stingUpgrade'].includes(cell.object));
+                peakReinforcements = Math.max(peakReinforcements, cells.filter(cell => cell.object === 'enemy').length);
+                if (state.ended) {
+                    return {
+                        attempt: ${attempt},
+                        result: state.endReason === 'death' ? 'dead' : 'won',
+                        turn,
+                        player,
+                        counts: api.getObjectCounts(),
+                        metrics: state.metrics,
+                        peakReinforcements,
+                        log
+                    };
+                }
                 if (!queen) {
-                    return { attempt: ${attempt}, result: 'won', turn, player, counts: api.getObjectCounts(), metrics: state.metrics, log };
+                    return { attempt: ${attempt}, result: 'won', turn, player, counts: api.getObjectCounts(), metrics: state.metrics, peakReinforcements, log };
                 }
                 if (player.health <= 0 || state.mode === 'ended') {
-                    return { attempt: ${attempt}, result: 'dead', turn, player, counts: api.getObjectCounts(), metrics: state.metrics, log };
+                    return { attempt: ${attempt}, result: 'dead', turn, player, counts: api.getObjectCounts(), metrics: state.metrics, peakReinforcements, log };
                 }
                 const target = nearest(hives.length ? hives : [queen], player);
                 const targetDistance = dist(player, target);
@@ -161,7 +175,7 @@ async function runAttempt(client, attempt) {
                     const next = path[Math.min(Math.max(1, player.movePoints), path.length) - 1];
                     if (!next) {
                         log.push({ turn, action: 'stuck', target: target.object, hp: player.health });
-                        return { attempt: ${attempt}, result: 'stuck', turn, player, counts: api.getObjectCounts(), metrics: state.metrics, log };
+                        return { attempt: ${attempt}, result: 'stuck', turn, player, counts: api.getObjectCounts(), metrics: state.metrics, peakReinforcements, log };
                     }
                     api.moveToCell(next.q, next.r);
                     log.push({ turn, action: 'moveToward', target: target.object, distance: targetDistance, hp: player.health });
@@ -171,7 +185,15 @@ async function runAttempt(client, attempt) {
             }
 
             const state = api.getState();
-            return { attempt: ${attempt}, result: 'timeout', player: state.player, counts: api.getObjectCounts(), metrics: state.metrics, log };
+            return {
+                attempt: ${attempt},
+                result: state.ended ? (state.endReason === 'death' ? 'dead' : 'won') : 'timeout',
+                player: state.player,
+                counts: api.getObjectCounts(),
+                metrics: state.metrics,
+                peakReinforcements,
+                log
+            };
         })()
     `);
 
@@ -221,6 +243,7 @@ async function runAttempt(client, attempt) {
                 health: report.player?.health,
                 attacks: report.metrics?.attacksMade,
                 kills: report.metrics?.enemiesKilled,
+                peakReinforcements: report.peakReinforcements,
                 damageBySource: report.metrics?.damageBySource,
                 counts: report.counts
             })), null, 2));

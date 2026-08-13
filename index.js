@@ -326,6 +326,7 @@ const game = {
     hover: null,
     runStartedAt: 0,
     ended: false,
+    endReason: null,
     mode: 'dungeon',
     dance: null,
     playerMotion: null,
@@ -1108,6 +1109,7 @@ function startRunState() {
     game.roomDepth = 1;
     game.runStartedAt = performance.now();
     game.ended = false;
+    game.endReason = null;
     game.mode = 'dungeon';
     game.runSeed = Date.now() >>> 0;
     game.rngState = game.runSeed;
@@ -1599,7 +1601,7 @@ function generateBossRoom() {
             nextAuraAt: object === 'queenSignaler'
                 ? performance.now() + 2200
                 : object === 'waspHive'
-                ? performance.now() + 3600
+                ? performance.now() + (getEnemyDef('waspHive')?.intervalMs || 2200)
                 : 0,
             hits: 0,
             isBoss: object === 'queenSignaler',
@@ -5482,6 +5484,7 @@ function getObjectAt(q, r) {
 function endRun(reason = 'final-exit') {
     if (game.ended) return;
     game.ended = true;
+    game.endReason = reason;
     danceSystem.applyRewards(reason);
     stopAllMusic();
     updateProgression();
@@ -5612,7 +5615,8 @@ function createReplaySnapshot() {
         cameraPan: { ...game.cameraPan },
         message: game.message,
         dance: game.dance ? JSON.parse(JSON.stringify(game.dance)) : null,
-        ended: game.ended
+        ended: game.ended,
+        endReason: game.endReason
     };
 }
 
@@ -5640,6 +5644,7 @@ function applyReplaySnapshot(snapshot) {
     game.message = snapshot.message;
     game.dance = snapshot.dance ? normalizeReplayDanceTiming(JSON.parse(JSON.stringify(snapshot.dance)), capturedAt, now) : null;
     game.ended = snapshot.ended;
+    game.endReason = snapshot.endReason || null;
     syncReplayAudio();
 }
 
@@ -6215,6 +6220,8 @@ window.HW_TEST_API = {
         })),
     getState: () => ({
         mode: game.mode,
+        ended: game.ended,
+        endReason: game.endReason,
         isTestScenario: game.isTestScenario,
         testPaused: game.testPaused,
         activeTestObject: game.activeTestObject,

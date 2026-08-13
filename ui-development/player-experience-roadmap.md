@@ -74,6 +74,8 @@ The second Iteration 2 sprint added the first direct resource counter in combat.
 
 The third Iteration 2 sprint added a reusable forced-movement behavior. Guard Wasp turn attacks now push the bee one empty hex farther away when landing space exists, without consuming player movement. Only one forced move resolves per enemy turn, the inspect panel labels the threat as `Push`/`Empuja`, and browser coverage verifies both displacement and learning copy.
 
+The fourth Iteration 2 sprint repaired the deterministic boss playtest contract by exposing `ended` and `endReason` through `HW_TEST_API`, including replay snapshots. A measured three-run baseline then showed 100% wins in 12-14 turns with no damage and no hive reinforcement. The boss hive now begins on its normal 2.2-second cadence instead of receiving an extra 1.4-second grace period, while retaining one hive and a one-spawn cap. The playtest report now tracks peak reinforcements as well as final cell counts; the follow-up produced one wasp in both measured runs but still no player damage, so the next boss slice should improve reinforcement placement or Queen commands rather than adding more hive quantity.
+
 Scope:
 
 - Convert more enemies into position puzzles:
