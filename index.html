@@ -1706,6 +1706,16 @@
             grid-column: 1 / -1;
         }
 
+        .settings-grid .theme-setting {
+            grid-column: 1 / -1;
+        }
+
+        .theme-description {
+            color: #4c2c1d;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
         @media (max-width: 980px) {
             .shell {
                 grid-template-columns: minmax(0, 1fr);
@@ -2041,15 +2051,10 @@
                                 <option value="es-419">Español Latinoamérica</option>
                             </select>
                         </label>
-                        <label>
-                            <span>Dungeon Theme</span>
-                            <select id="themeSelect">
-                                <option value="random">Random</option>
-                                <option value="forest">Forest</option>
-                                <option value="cave">Cave</option>
-                                <option value="waspHive">Wasp Hive</option>
-                                <option value="underground">Underground</option>
-                            </select>
+                        <label class="theme-setting">
+                            <span data-i18n="dungeonTheme">Dungeon Theme</span>
+                            <select id="themeSelect" aria-describedby="themeDescription"></select>
+                            <small class="theme-description" id="themeDescription"></small>
                         </label>
                     </div>
                 </section>

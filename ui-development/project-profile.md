@@ -28,7 +28,7 @@ Primary journey for the next iterations:
 
 - The project has smoke tests for data integrity, browser startup, HUD layout, inspect chips, market cards, lamp lighting, positional combat, and viewport fit.
 - The game is playable but still has high cognitive load when many HUD popups, cell details, and enemy telegraphs compete for attention.
-- The non-playable theme environment exists as a separate canvas layer conceptually, but the future mosaic system needs a clearer asset and placement contract before adding larger art pieces.
+- The non-playable theme environment has deterministic 1-4 hex placement and a stable debug contract. Final multi-hex art and transparent blend rows are still needed from the artist before alignment tuning can close.
 
 ## Mandatory UX Laws For Near-Term UI Work
 
@@ -36,4 +36,3 @@ Primary journey for the next iterations:
 - Fitts's Law: core controls and pause/settings must be easy to hit on desktop and touch.
 - Jakob's Law: route preview, pause/settings, cards, and inspect panel should use familiar patterns.
 - Goal-Gradient Effect: room objective, XP, and run progress should make the next useful action obvious.
-

@@ -112,6 +112,24 @@ async function main() {
         await page.evaluate(() => document.activeElement?.id === 'testDanceButton'),
         'Closing the Test dialog should return focus to its launcher.'
     );
+    await page.click('#optionsButton');
+    await page.selectOption('#themeSelect', 'cave');
+    assert(
+        (await page.locator('#themeDescription').textContent()).includes('Darker navigation'),
+        'Theme options should explain the selected run style in English.'
+    );
+    await page.evaluate(() => window.setLanguage('es-419'));
+    assert(
+        (await page.locator('#themeDescription').textContent()).includes('Salas oscuras'),
+        'Theme options should explain the selected run style in Latin American Spanish.'
+    );
+    assert(
+        await page.locator('#themeDescription').evaluate((node) => getComputedStyle(node).color === 'rgb(76, 44, 29)'),
+        'Theme description should use readable dark text on parchment.'
+    );
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'theme-options.png') });
+    await page.evaluate(() => window.setLanguage('en'));
+    await page.click('#optionsButton');
     await page.click('#newRunButton');
     await page.waitForFunction(() => window.HW_TEST_API && window.HW_TEST_API.getState().mode === 'dungeon');
     assert(await page.locator('#eventToast.visible').count() === 1, 'Top-center toast should appear after starting a run.');

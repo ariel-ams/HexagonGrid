@@ -295,6 +295,10 @@ function assertLocalizedTuple(section, id, expectedLength = 2) {
     });
 }
 
+['random', ...Object.keys(HW_PROGRESSION.DUNGEON_THEMES)].forEach((themeId) => {
+    assertLocalizedTuple('themes', themeId);
+});
+
 function assertBehaviorPayload(enemyId, behavior) {
     const object = behavior.object;
     if (behavior.type === 'pushPlayerOnAttack' && behavior.landingObject) {

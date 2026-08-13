@@ -24,6 +24,7 @@ const optionsPanel = document.getElementById('optionsPanel');
 const languageSelect = document.getElementById('languageSelect');
 const menuLanguageSelect = document.getElementById('menuLanguageSelect');
 const themeSelect = document.getElementById('themeSelect');
+const themeDescription = document.getElementById('themeDescription');
 const resetProgressionButton = document.getElementById('resetProgressionButton');
 const objectEditorSelect = document.getElementById('objectEditorSelect');
 const objectEditorFields = document.getElementById('objectEditorFields');
@@ -732,6 +733,20 @@ function renderStaticText() {
     document.querySelectorAll('[data-i18n]').forEach((node) => {
         node.textContent = t('ui', node.dataset.i18n);
     });
+    renderThemeOptions();
+}
+
+function renderThemeOptions() {
+    if (!themeSelect) return;
+    const localizedThemes = I18N[currentLanguage]?.themes || I18N.en.themes;
+    const themeIds = ['random', ...Object.keys(DUNGEON_THEMES || {})];
+    themeSelect.innerHTML = themeIds.map((themeId) => {
+        const [name] = localizedThemes[themeId] || [DUNGEON_THEMES?.[themeId]?.name || themeId];
+        return `<option value="${escapeAttr(themeId)}">${escapeHtml(name)}</option>`;
+    }).join('');
+    themeSelect.value = themeIds.includes(selectedThemeId) ? selectedThemeId : 'random';
+    const [, description = ''] = localizedThemes[themeSelect.value] || localizedThemes.random || [];
+    if (themeDescription) themeDescription.textContent = description;
 }
 
 function getEditableObjectIds() {
@@ -1322,6 +1337,7 @@ function setDungeonThemePreference(themeId) {
     selectedThemeId = themeId === 'random' || DUNGEON_THEMES?.[themeId] ? themeId : 'forest';
     localStorage.setItem(THEME_STORAGE_KEY, selectedThemeId);
     if (themeSelect) themeSelect.value = selectedThemeId;
+    renderThemeOptions();
     if (game.mode === 'menu' || game.ended) {
         game.dungeonTheme = selectedThemeId === 'random' ? null : DUNGEON_THEMES[selectedThemeId];
         applyDungeonTheme();

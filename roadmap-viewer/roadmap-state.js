@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-13",
-    "currentTaskId": "theme-surroundings",
+    "currentTaskId": "themes",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -161,12 +161,12 @@ window.HW_ROADMAP_STATE = {
         {
             "id": "world",
             "title": "World And Theme",
-            "status": "planned",
+            "status": "in_progress",
             "nodes": [
                 {
                     "id": "theme-surroundings",
                     "title": "Theme Surroundings",
-                    "status": "active",
+                    "status": "blocked",
                     "owner": "Codex + Artist",
                     "objective": "Use non-clickable mosaic art outside playable cells to make each theme feel distinct.",
                     "done": [
@@ -176,34 +176,37 @@ window.HW_ROADMAP_STATE = {
                         "Added browser and data evidence for zero playable overlap and stable placement."
                     ],
                     "left": [
-                        "Tune alignment and blending after final assets arrive."
+                        "Artist dependency: provide dedicated multi-hex surroundings art with a transparent blend row.",
+                        "Tune alignment and blending after those final assets arrive."
                     ],
                     "evidence": [
                         "SURROUNDING_MOSAIC_SYSTEM.md",
                         "PROCEDURAL_TILE_ART_REFERENCE.md",
                         "src/systems/theme-surroundings.js",
                         "tools/smoke-browser.js: stable placement fingerprint and no-overlap checks",
+                        "Asset audit: current theme blend rows are fully opaque",
                         "Next focus after completed Tactical Combat milestone"
                     ]
                 },
                 {
                     "id": "themes",
                     "title": "Dungeon Themes",
-                    "status": "planned",
+                    "status": "active",
                     "owner": "Codex + Artist",
                     "objective": "Let runs rotate through cave, forest, wasp hive, and underground moods with compatible enemies and items.",
                     "done": [
                         "Theme metadata exists in progression data.",
-                        "Theme eligibility smoke checks cover supplies and enemies."
+                        "Theme eligibility smoke checks cover supplies and enemies.",
+                        "Localized theme names and gameplay descriptions in Options for English and Latin American Spanish."
                     ],
                     "left": [
                         "Add full theme-specific boss and object pools.",
-                        "Create theme-specific surrounding art sheets.",
-                        "Expose theme selection or run rotation more clearly."
+                        "Create theme-specific surrounding art sheets."
                     ],
                     "evidence": [
                         "src/data/progression.js",
-                        "tools/smoke-data.js"
+                        "tools/smoke-data.js",
+                        "tools/smoke-browser.js: localized theme selector coverage"
                     ]
                 }
             ]

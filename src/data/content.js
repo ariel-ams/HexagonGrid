@@ -6,6 +6,7 @@ const I18N = {
             title: 'Honeycomb Wayfinder',
             objective: 'Guide the bee through misty honeycomb chambers. Start by collecting pollen, water, and shield, avoid danger rings, use the sting only when it is ready, spend supplies between rooms, then defeat the final boss.',
             language: 'Language',
+            dungeonTheme: 'Dungeon Theme',
             languageSettings: 'Language Settings',
             testingSettings: 'Testing',
             testingSettingsCopy: 'Reset saved bee progression to replay the first-run experience from level 1.',
@@ -69,6 +70,13 @@ const I18N = {
             ,musicVolume: 'Music Volume'
             ,effectsVolume: 'Effects Volume'
             ,resume: 'Resume'
+        },
+        themes: {
+            random: ['Rotating Theme', 'Choose a different available theme for each new run. Level 1 begins in the forest.'],
+            forest: ['Forest', 'Balanced learning rooms with common supplies, vines, wasps, and beetles.'],
+            cave: ['Cave', 'Darker navigation rooms with bats, burrow threats, fire, and reveal tools.'],
+            waspHive: ['Wasp Hive', 'Tighter combat rooms with wasp structures, commanders, wax blockers, and honey.'],
+            underground: ['Underground', 'Dense hazard rooms with roots, mites, leeches, ambushes, and scarce light.']
         },
         logs: {
             start: 'Start',
@@ -224,6 +232,7 @@ const I18N = {
             title: 'Guía del Panal',
             objective: 'Guía a la abeja por cámaras llenas de niebla. Empieza juntando polen, agua y escudo, evita los anillos de peligro, usa el aguijón solo cuando esté listo, gasta suministros entre salas y derrota al jefe final.',
             language: 'Idioma',
+            dungeonTheme: 'Tema del dungeon',
             languageSettings: 'Configuración de idioma',
             testingSettings: 'Pruebas',
             testingSettingsCopy: 'Reinicia el progreso guardado de la abeja para probar la primera experiencia desde nivel 1.',
@@ -287,6 +296,13 @@ const I18N = {
             ,musicVolume: 'Volumen de música'
             ,effectsVolume: 'Volumen de efectos'
             ,resume: 'Continuar'
+        },
+        themes: {
+            random: ['Tema rotativo', 'Elige un tema disponible diferente en cada partida nueva. El nivel 1 comienza en el bosque.'],
+            forest: ['Bosque', 'Salas equilibradas para aprender con suministros comunes, enredaderas, avispas y escarabajos.'],
+            cave: ['Cueva', 'Salas oscuras de navegación con murciélagos, amenazas bajo tierra, fuego y herramientas de revelado.'],
+            waspHive: ['Colmena de avispas', 'Salas de combate cerradas con estructuras de avispas, comandantes, bloqueos de cera y miel.'],
+            underground: ['Subterráneo', 'Salas densas con raíces, ácaros, sanguijuelas, emboscadas y poca luz.']
         },
         logs: {
             start: 'Inicio',
