@@ -12,6 +12,20 @@ function assert(condition, message) {
     }
 }
 
+async function assertDialogSemantics(page, selector, expected) {
+    const attrs = await page.locator(selector).evaluate((node) => ({
+        role: node.getAttribute('role'),
+        modal: node.getAttribute('aria-modal'),
+        labelledBy: node.getAttribute('aria-labelledby'),
+        describedBy: node.getAttribute('aria-describedby')
+    }));
+    assert(attrs.role === 'dialog' && attrs.modal === 'true', `${selector} should expose modal dialog semantics.`);
+    assert(
+        attrs.labelledBy === expected.labelledBy && attrs.describedBy === expected.describedBy,
+        `${selector} should reference its accessible title and description.`
+    );
+}
+
 async function main() {
     const browser = await chromium.launch({ headless: true, executablePath });
     const page = await browser.newPage({ viewport: { width: 1365, height: 768 } });
@@ -40,6 +54,10 @@ async function main() {
     });
     await page.click('#testDanceButton');
     await page.waitForSelector('#testScreen.visible');
+    await assertDialogSemantics(page, '#testScreen', {
+        labelledBy: 'testDialogTitle',
+        describedBy: 'testDialogCopy'
+    });
     const renderedTestObjects = await page.locator('#testObjectList [data-test-object]').evaluateAll((nodes) => (
         nodes.map((node) => node.getAttribute('data-test-object'))
     ));
@@ -86,14 +104,10 @@ async function main() {
     assert((firstRoomPacing.counts.upgrade || 0) >= 1, 'Onboarding room should include shield upgrade.');
     await page.keyboard.press('Escape');
     await page.waitForSelector('#settingsScreen.visible');
-    const settingsDialogAttrs = await page.locator('#settingsScreen').evaluate((node) => ({
-        role: node.getAttribute('role'),
-        modal: node.getAttribute('aria-modal'),
-        labelledBy: node.getAttribute('aria-labelledby'),
-        describedBy: node.getAttribute('aria-describedby')
-    }));
-    assert(settingsDialogAttrs.role === 'dialog' && settingsDialogAttrs.modal === 'true', 'Settings overlay should expose modal dialog semantics.');
-    assert(settingsDialogAttrs.labelledBy === 'settingsDialogTitle' && settingsDialogAttrs.describedBy === 'settingsDialogCopy', 'Settings dialog should have accessible title and description references.');
+    await assertDialogSemantics(page, '#settingsScreen', {
+        labelledBy: 'settingsDialogTitle',
+        describedBy: 'settingsDialogCopy'
+    });
     assert(await page.evaluate(() => document.activeElement?.id === 'settingsCloseButton'), 'Escape pause should focus the Resume button.');
     await page.keyboard.press('Tab');
     assert(await page.evaluate(() => document.activeElement?.id === 'musicVolumeInput'), 'Tab from Resume should wrap to the first settings control.');
@@ -115,6 +129,10 @@ async function main() {
     assert(equipmentTooltip && equipmentTooltip.includes('Future'), 'Side panel gear chips should expose equipment effect details in hover text.');
     const initialRewardOverlay = await page.evaluate(() => window.HW_TEST_API.openRewardFlowForTest({ roomDepth: 2, level: 2 }));
     assert(initialRewardOverlay.visible, 'Reward overlay should open between rooms.');
+    await assertDialogSemantics(page, '#relicScreen', {
+        labelledBy: 'relicDialogTitle',
+        describedBy: 'relicDialogCopy'
+    });
     assert(initialRewardOverlay.rewardFlowSteps.join(',') === 'relic,equipment', 'Reward overlay should sequence relic rewards before equipment rewards.');
     assert(initialRewardOverlay.title === 'Choose a Relic', 'Reward overlay should start on the relic step.');
     assert(initialRewardOverlay.relicIds.length > 0, 'Reward overlay should render relic choices first.');
@@ -433,6 +451,10 @@ async function main() {
         api.openMarketAt(player.q, player.r);
     });
     assert(await page.locator('#campScreen.visible').count() === 1, 'Market screen should open.');
+    await assertDialogSemantics(page, '#campScreen', {
+        labelledBy: 'campDialogTitle',
+        describedBy: 'campDialogCopy'
+    });
     assert(await page.locator('#campScreen .camp-action').count() > 0, 'Market should render buy choices.');
     assert(await page.locator('#campScreen .camp-action-cost').count() > 0, 'Market choices should show separated costs.');
     assert(await page.locator('#campScreen .camp-action-effect').count() > 0, 'Market choices should show separated effects.');

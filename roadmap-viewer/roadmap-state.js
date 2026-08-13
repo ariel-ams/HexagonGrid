@@ -118,7 +118,8 @@ window.HW_ROADMAP_STATE = {
                         "Improved relic reward-card hierarchy with rarity/depth kicker and separated effect copy.",
                         "Added Escape pause overlay focus coverage and allowed Escape to close settings while sliders are focused.",
                         "Trapped Tab focus inside the settings overlay so keyboard users stay in the pause modal.",
-                        "Added modal dialog semantics and accessible labels/descriptions to gameplay overlays."
+                        "Added modal dialog semantics and accessible labels/descriptions to gameplay overlays.",
+                        "Expanded browser smoke coverage for dialog semantics across reward, camp, test, and settings overlays."
                     ],
                     "left": [
                         "Keep popups from competing with HUD.",
