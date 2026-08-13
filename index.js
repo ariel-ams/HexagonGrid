@@ -35,6 +35,7 @@ const relicCopyNode = relicScreen?.querySelector('p');
 const relicChoicesNode = document.getElementById('relicChoices');
 const relicListNode = document.getElementById('relicList');
 const equipmentListNode = document.getElementById('equipmentList');
+const equipmentEffectsNode = document.getElementById('equipmentEffects');
 const campScreen = document.getElementById('campScreen');
 const campActionsNode = document.getElementById('campActions');
 const campContinueButton = document.getElementById('campContinueButton');
@@ -2461,12 +2462,26 @@ function renderEquipmentList() {
     });
     if (!details.length) {
         equipmentListNode.innerHTML = `<span class="equipment-empty">${t('ui', 'noneYet')}</span>`;
+        if (equipmentEffectsNode) equipmentEffectsNode.innerHTML = '';
         return;
     }
     equipmentListNode.innerHTML = details.map((item) => (
         `<span class="equipment-chip" title="${escapeAttr(formatEquipmentChipTooltip(item))}">
             <strong>${escapeHtml(item.slotDef?.name || item.slot)}</strong>
             <span>${escapeHtml(item.equipment?.name || t('ui', 'noneYet'))}</span>
+        </span>`
+    )).join('');
+    renderEquipmentEffectSummary();
+}
+
+function renderEquipmentEffectSummary() {
+    if (!equipmentEffectsNode) return;
+    const effects = equipmentSystem.createEquipmentEffectTotals(game.equipment, {
+        language: currentLanguage
+    });
+    equipmentEffectsNode.innerHTML = effects.map((effect) => (
+        `<span class="equipment-effect-chip" title="${escapeAttr(effect.description || '')}">
+            ${escapeHtml(effect.label)}
         </span>`
     )).join('');
 }

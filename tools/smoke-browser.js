@@ -91,6 +91,7 @@ async function main() {
     assert(startingEquipment.sting === 'barbedSting', 'New runs should equip the starter sting.');
     assert(startingEquipment.wings === 'scoutWings', 'New runs should equip the starter wings.');
     assert(await page.locator('#equipmentList .equipment-chip').count() === 5, 'Side panel should show one equipped gear chip per slot.');
+    assert(await page.locator('#equipmentEffects .equipment-effect-chip').count() > 0, 'Side panel should summarize equipped gear effects.');
     const equipmentTooltip = await page.locator('#equipmentList .equipment-chip').first().getAttribute('title');
     assert(equipmentTooltip && equipmentTooltip.includes('Future'), 'Side panel gear chips should expose equipment effect details in hover text.');
     const initialRewardOverlay = await page.evaluate(() => window.HW_TEST_API.openRewardFlowForTest({ roomDepth: 2, level: 2 }));

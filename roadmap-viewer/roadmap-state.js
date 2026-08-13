@@ -285,7 +285,8 @@ window.HW_ROADMAP_STATE = {
                         "Wired eligible equipment choices into the post-room reward screen after relic selection.",
                         "Added browser smoke coverage for relic-to-equipment reward sequencing.",
                         "Added compact equipped-gear visibility in the side stats panel.",
-                        "Added equipped-gear hover details for effect summaries."
+                        "Added equipped-gear hover details for effect summaries.",
+                        "Added aggregate equipped-gear effect chips to the side stats panel."
                     ],
                     "left": [
                         "Design loot acquisition.",
