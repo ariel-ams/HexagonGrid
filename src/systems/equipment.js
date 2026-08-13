@@ -156,6 +156,7 @@ function localizeEquipmentContent(entity, language = 'en') {
 
 function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     const slotDefs = new Map(equipmentSlots.map((slot) => [slot.id, slot]));
+    const activeEffectTypes = Object.keys(EQUIPMENT_EFFECT_HANDLERS);
 
     function createEquipmentEffectSummaries(equipment, { language = 'en' } = {}) {
         return (equipment?.effects || []).map((effect) => ({
@@ -231,6 +232,37 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
                 || Math.abs(b.delta) - Math.abs(a.delta)
                 || a.type.localeCompare(b.type)
             ));
+    }
+
+    function createActiveEquipmentBonuses(loadout = {}) {
+        const bonuses = Object.fromEntries(activeEffectTypes.map((type) => [type, 0]));
+        getEquippedItems(loadout).forEach((equipment) => {
+            equipment.effects?.forEach((effect) => {
+                if (Object.hasOwn(bonuses, effect.type)) {
+                    bonuses[effect.type] += effect.amount;
+                }
+            });
+        });
+        return bonuses;
+    }
+
+    function subtractActiveEquipmentBonuses(player, bonuses = {}, options = {}) {
+        if (bonuses.maxHealth) {
+            player.maxHealth -= bonuses.maxHealth;
+            player.health = Math.min(player.health, player.maxHealth);
+        }
+        if (bonuses.maxShield) {
+            player.maxShield -= bonuses.maxShield;
+            player.upgrades = Math.min(player.upgrades, player.maxShield);
+        }
+        if (bonuses.attackRange) {
+            player.attackRange -= bonuses.attackRange;
+        }
+        if (bonuses.maxMovePoints) {
+            player.maxMovePoints -= bonuses.maxMovePoints;
+            player.movePoints = Math.min(player.movePoints, player.maxMovePoints);
+            options.onMovePointsChanged?.(player);
+        }
     }
 
     function createStartingEquipment() {
@@ -415,7 +447,9 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     function applyLoadout(player, loadout, options = {}) {
         if (!player) return;
+        subtractActiveEquipmentBonuses(player, player.equipmentBonuses, options);
         player.equipment = { ...(loadout || {}) };
+        player.equipmentBonuses = createActiveEquipmentBonuses(loadout);
         getEquippedItems(loadout).forEach((equipment) => {
             equipment.effects?.forEach((effect) => {
                 EQUIPMENT_EFFECT_HANDLERS[effect.type]?.(effect, { player, options });
@@ -425,6 +459,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     return {
         applyLoadout,
+        createActiveEquipmentBonuses,
         createEquipmentEffectDeltas,
         createEquipmentEffectSummaries,
         createEquipmentEffectTotals,

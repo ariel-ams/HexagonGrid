@@ -465,6 +465,14 @@ const activeEffectTotals = equipmentSystem.createEquipmentEffectTotals({
     wings: null
 });
 assert(activeEffectTotals.some((effect) => effect.type === 'maxShield' && effect.amount === 3 && effect.itemIds.length === 2 && effect.isActive), 'Equipment effect totals should combine matching active effects');
+const activeBonuses = equipmentSystem.createActiveEquipmentBonuses({
+    helmet: 'resinCrown',
+    jacket: 'petalJacket',
+    abdomen: null,
+    sting: 'longSting',
+    wings: 'wideWings'
+});
+assert(activeBonuses.maxShield === 1 && activeBonuses.maxHealth === 1 && activeBonuses.attackRange === 1 && activeBonuses.maxMovePoints === 1, 'Equipment system should summarize active stat bonuses');
 const emptyLoadoutDetails = equipmentSystem.createEquipmentLoadoutDetails(emptyLoadout, { language: 'en' });
 assert(emptyLoadoutDetails.every((details) => details.isEmpty && !details.equipment && details.effects.length === 0), 'Equipment loadout details should mark empty slots');
 Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {
@@ -671,6 +679,30 @@ equipmentSystem.applyLoadout(testPlayer, {
 });
 assert(testPlayer.equipment?.sting === 'barbedSting', 'Equipment system should mirror applied loadout on player state');
 assert(testPlayer.maxHealth === 7 && testPlayer.maxShield === 5 && testPlayer.attackRange === 1 && testPlayer.maxMovePoints === 2, 'Future equipment effects should not change active combat stats yet');
+equipmentSystem.applyLoadout(testPlayer, {
+    helmet: 'resinCrown',
+    jacket: 'petalJacket',
+    abdomen: 'nectarPouch',
+    sting: 'longSting',
+    wings: 'wideWings'
+});
+assert(testPlayer.maxHealth === 8 && testPlayer.maxShield === 6 && testPlayer.attackRange === 2 && testPlayer.maxMovePoints === 3, 'Active equipment effects should apply to player stats');
+equipmentSystem.applyLoadout(testPlayer, {
+    helmet: 'resinCrown',
+    jacket: 'petalJacket',
+    abdomen: 'nectarPouch',
+    sting: 'longSting',
+    wings: 'wideWings'
+});
+assert(testPlayer.maxHealth === 8 && testPlayer.maxShield === 6 && testPlayer.attackRange === 2 && testPlayer.maxMovePoints === 3, 'Reapplying the same equipment loadout should not stack active bonuses');
+equipmentSystem.applyLoadout(testPlayer, {
+    helmet: 'waxScoutHelmet',
+    jacket: 'leafJacket',
+    abdomen: 'nectarPouch',
+    sting: 'barbedSting',
+    wings: 'scoutWings'
+});
+assert(testPlayer.maxHealth === 7 && testPlayer.maxShield === 5 && testPlayer.attackRange === 1 && testPlayer.maxMovePoints === 2, 'Replacing active gear with starter gear should remove previous active bonuses');
 
 Object.entries(HW_CONTENT.SPRITE_DEFS)
     .filter(([, definition]) => definition.src)
