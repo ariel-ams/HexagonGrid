@@ -116,7 +116,8 @@ window.HW_ROADMAP_STATE = {
                         "Bottom life/shield and movement orbs improved fast-read status.",
                         "Top-center toast replaced scattered warning messages.",
                         "Improved relic reward-card hierarchy with rarity/depth kicker and separated effect copy.",
-                        "Added Escape pause overlay focus coverage and allowed Escape to close settings while sliders are focused."
+                        "Added Escape pause overlay focus coverage and allowed Escape to close settings while sliders are focused.",
+                        "Trapped Tab focus inside the settings overlay so keyboard users stay in the pause modal."
                     ],
                     "left": [
                         "Keep popups from competing with HUD.",
@@ -131,7 +132,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-browser.js",
                         "npm test",
                         "roadmap hygiene: current focus follows the latest UI readability sprint",
-                        "src/systems/menu-controller.js"
+                        "src/systems/menu-controller.js",
+                        "index.js"
                     ]
                 }
             ]

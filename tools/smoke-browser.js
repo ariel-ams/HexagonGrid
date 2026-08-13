@@ -87,7 +87,11 @@ async function main() {
     await page.keyboard.press('Escape');
     await page.waitForSelector('#settingsScreen.visible');
     assert(await page.evaluate(() => document.activeElement?.id === 'settingsCloseButton'), 'Escape pause should focus the Resume button.');
-    await page.focus('#musicVolumeInput');
+    await page.keyboard.press('Tab');
+    assert(await page.evaluate(() => document.activeElement?.id === 'musicVolumeInput'), 'Tab from Resume should wrap to the first settings control.');
+    await page.keyboard.press('Shift+Tab');
+    assert(await page.evaluate(() => document.activeElement?.id === 'settingsCloseButton'), 'Shift+Tab from the first settings control should wrap to Resume.');
+    await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.querySelector('#settingsScreen.visible'));
     assert(await page.evaluate(() => document.activeElement?.id === 'settingsToggle'), 'Closing settings should return focus to the Settings button.');

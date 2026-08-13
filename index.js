@@ -5792,6 +5792,29 @@ function closeSettingsOverlay() {
     menuController.closeSettingsOverlay();
 }
 
+function getSettingsFocusableElements() {
+    return [musicVolumeInput, effectsVolumeInput, settingsCloseButton].filter((node) => (
+        node && !node.disabled && node.offsetParent !== null
+    ));
+}
+
+function trapSettingsFocus(event) {
+    if (event.key !== 'Tab' || !settingsScreen?.classList.contains('visible')) return;
+    const focusable = getSettingsFocusableElements();
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
+}
+
 function getToastTone(title = '', message = '') {
     const text = `${title} ${message}`.toLowerCase();
     if (text.includes('damage') || text.includes('daño') || text.includes('game over') || text.includes('fin de partida') || text.includes('blocked') || text.includes('bloqueada')) {
@@ -6585,6 +6608,7 @@ testObjectListNode.addEventListener('click', (event) => {
     }
 });
 window.addEventListener('keydown', (event) => {
+    trapSettingsFocus(event);
     if (event.key !== 'Escape') return;
     if (settingsScreen?.classList.contains('visible')) {
         event.preventDefault();

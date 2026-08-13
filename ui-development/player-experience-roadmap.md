@@ -144,7 +144,7 @@ Acceptance checks:
 - More readable relic economy: first pass improved reward-card hierarchy with rarity/depth kicker and separated effect copy; future work should add stronger icons, comparison values, and lower choice overload.
 - Audio polish: boss music, object-specific pickup/attack cues, reduced overlap on track starts.
 - Object encyclopedia from discovered/tested content.
-- Optional accessibility pass: first pass added Escape pause/settings focus coverage, including closing settings while sliders are focused; future work should expand keyboard navigation beyond menus.
+- Optional accessibility pass: first pass added Escape pause/settings focus coverage, focus return, and Tab trapping inside the pause modal; future work should expand keyboard navigation beyond menus.
 
 ## Roadmap Evidence Pattern
 
