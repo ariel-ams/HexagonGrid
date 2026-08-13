@@ -95,10 +95,10 @@ window.HW_ROADMAP_STATE = {
                         "Boss fight uses hive pressure instead of only long-range reach.",
                         "Added a direct water counter that extinguishes Crawling Fire without spending a sting attack.",
                         "Resource-cost popups now use utility colors instead of danger red.",
-                        "Added reusable pushPlayerOnAttack forced movement and assigned it to Guard Wasp."
+                        "Added reusable pushPlayerOnAttack forced movement and assigned it to Guard Wasp.",
+                        "Measured and tuned boss hive pressure: one toward-player reinforcement now deals 2 visible damage in deterministic runs."
                     ],
                     "left": [
-                        "Tune boss pressure through playtest evidence.",
                         "Add another lane or flank behavior that combines with Guard Wasp displacement."
                     ],
                     "evidence": [
@@ -109,7 +109,9 @@ window.HW_ROADMAP_STATE = {
                         "node tools/smoke-browser.js: Crawling Fire water counter passed",
                         ".codex-video-frames/tactical-water-counter.png",
                         "node tools/smoke-browser.js: Guard Wasp push and inspect warning passed",
-                        ".codex-video-frames/guard-wasp-push.png"
+                        ".codex-video-frames/guard-wasp-push.png",
+                        "tools/playtest-boss-cdp.js: 3 wins in 11-12 turns, peak reinforcement 1, Wasp Attack damage 2",
+                        ".codex-video-frames/wasp-hive-pressure-spawn.png"
                     ]
                 },
                 {

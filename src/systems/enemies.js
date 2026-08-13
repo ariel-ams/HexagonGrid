@@ -206,6 +206,10 @@ function createEnemySystem(context) {
             .map((direction) => helpers.getCell(enemyCell.q + direction.q, enemyCell.r + direction.r))
             .filter((cell) => cell && cell.object === 'empty' && !(cell.q === game.player.q && cell.r === game.player.r))
             .sort((a, b) => {
+                if (behavior.preferTowardPlayer) {
+                    return helpers.hexDistance(a.q, a.r, game.player.q, game.player.r)
+                        - helpers.hexDistance(b.q, b.r, game.player.q, game.player.r);
+                }
                 if (behavior.preferAwayFromPlayer) {
                     return helpers.hexDistance(b.q, b.r, game.player.q, game.player.r)
                         - helpers.hexDistance(a.q, a.r, game.player.q, game.player.r);

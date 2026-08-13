@@ -157,7 +157,7 @@ Existing behavior types:
 - `refogAura`: hides revealed cells again.
 - `stealResourceAura`: steals a resource.
 - `fleeFromPlayer`: moves away after stealing.
-- `spawnEnemyAura`: spawns another enemy nearby.
+- `spawnEnemyAura`: spawns another enemy nearby. Set `preferTowardPlayer: true` for pressure spawns or `preferAwayFromPlayer: true` for defensive/fleeing spawns.
 - `spawnTerrainAura`: spreads terrain or hazard cells nearby.
 - `markCellsAura`: marks nearby cells for delayed danger.
 - `chargeLane`: marks a short line in the enemy's facing direction with delayed danger cells.

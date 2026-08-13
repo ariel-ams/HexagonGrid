@@ -5,7 +5,8 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const sandbox = {
     window: {},
-    console
+    console,
+    performance: { now: () => 1000 }
 };
 sandbox.window.window = sandbox.window;
 
@@ -90,6 +91,39 @@ assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behav
 assert(sandbox.window.HW_INSPECT_STATS?.createInspectStatsSystem, 'Expected inspect stats system');
 assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_OBJECTIVES, 'Expected room objective metadata');
 assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_TEMPLATE_DEFS, 'Expected room template metadata');
+
+const hiveCell = { q: 0, r: 0, object: 'waspHive', revealed: true };
+const hiveSpawnCells = [
+    { q: 1, r: 0, object: 'empty' },
+    { q: 1, r: -1, object: 'empty' },
+    { q: 0, r: -1, object: 'empty' },
+    { q: -1, r: 0, object: 'empty' },
+    { q: -1, r: 1, object: 'empty' },
+    { q: 0, r: 1, object: 'empty' }
+];
+const hiveTestGame = {
+    player: { q: 2, r: 0 },
+    cells: [hiveCell, ...hiveSpawnCells]
+};
+const hiveEnemySystem = sandbox.window.HW_ENEMIES.createEnemySystem({
+    game: hiveTestGame,
+    enemyDefs: HW_CONTENT.ENEMY_DEFS,
+    directions: [
+        { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
+        { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }
+    ],
+    helpers: {
+        getCell: (q, r) => hiveTestGame.cells.find((cell) => cell.q === q && cell.r === r),
+        hexDistance: (aq, ar, bq, br) => Math.max(Math.abs(aq - bq), Math.abs(ar - br), Math.abs((-aq - ar) - (-bq - br))),
+        seededRandom: () => 0.5,
+        addLog: () => {},
+        recordReplayEvent: () => {},
+        addStatPopups: () => {},
+        applyDamage: () => {}
+    }
+});
+hiveEnemySystem.handleTimedThreat(hiveCell, HW_CONTENT.ENEMY_DEFS.waspHive, 1000);
+assert(hiveSpawnCells.find((cell) => cell.q === 1 && cell.r === 0).object === 'enemy', 'Wasp hives should spawn reinforcements on the open cell nearest the bee.');
 
 Object.values(HW_ART.UI_ART_DEFS).forEach(assertFile);
 Object.values(HW_ART.TILE_ART_DEFS).forEach(assertFile);

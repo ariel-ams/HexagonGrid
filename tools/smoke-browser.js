@@ -420,6 +420,34 @@ async function main() {
     assert(guardPush.player.q !== guardPush.destination.q || guardPush.player.r !== guardPush.destination.r, 'Forced movement should visibly change the bee position.');
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'guard-wasp-push.png') });
 
+    const hivePressureSpawn = await page.evaluate(() => {
+        const api = window.HW_TEST_API;
+        const distance = (a, b) => {
+            const dq = a.q - b.q;
+            const dr = a.r - b.r;
+            return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
+        };
+        api.startTestScenario('waspHive');
+        const player = api.getState().player;
+        const hive = api.getCells().find((cell) => cell.object === 'waspHive');
+        const candidates = api.getCells().filter((cell) => (
+            cell.object === 'empty'
+            && distance(cell, hive) === 1
+            && (cell.q !== player.q || cell.r !== player.r)
+        ));
+        const nearestDistance = Math.min(...candidates.map((cell) => distance(cell, player)));
+        const triggered = api.triggerEnemyTelegraph(hive.q, hive.r);
+        const spawned = api.getCells().find((cell) => cell.object === 'enemy');
+        return {
+            triggered,
+            spawnedDistance: spawned ? distance(spawned, player) : null,
+            nearestDistance
+        };
+    });
+    assert(hivePressureSpawn.triggered, 'Wasp Hive test scenario should trigger its reinforcement behavior.');
+    assert(hivePressureSpawn.spawnedDistance === hivePressureSpawn.nearestDistance, 'Wasp Hive should place its reinforcement on the nearest legal cell to the bee.');
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'wasp-hive-pressure-spawn.png') });
+
     const stagChargeLane = await page.evaluate(() => {
         const api = window.HW_TEST_API;
         const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];

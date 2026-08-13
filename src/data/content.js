@@ -722,7 +722,7 @@ const ENEMY_DEFS = {
         range: 2,
         behavior: 'Living hive. After a warning pulse, releases a wasp into a nearby empty cell.',
         lesson: 'Clear it before fighting other threats or the room slowly fills with wasps.',
-        behaviors: [{ type: 'spawnEnemyAura', object: 'enemy', spawnDelayMs: 1600, preferAwayFromPlayer: true }, { type: 'damageAura', fallbackOnly: true }]
+        behaviors: [{ type: 'spawnEnemyAura', object: 'enemy', spawnDelayMs: 1600, preferTowardPlayer: true }, { type: 'damageAura', fallbackOnly: true }]
     },
     crawlingFire: {
         name: 'Crawling Fire',
