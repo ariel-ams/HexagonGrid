@@ -436,6 +436,17 @@ assert(starterLoadoutDetails.length === HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equi
 assert(starterLoadoutDetails.every((details) => !details.isEmpty && details.equipment && details.slotDef), 'Equipment loadout details should include equipped gear and slot metadata');
 assert(starterLoadoutDetails.some((details) => details.slot === 'helmet' && details.slotDef.name === 'Casco' && details.equipment.name === 'Casco explorador de cera'), 'Equipment loadout details should localize equipped starter gear');
 assert(starterLoadoutDetails.every((details) => details.rarityLabel && details.effects.length > 0), 'Equipment loadout details should include rarity labels and effect summaries');
+const starterEffectTotals = equipmentSystem.createEquipmentEffectTotals(starterLoadout, { language: 'es-419' });
+assert(starterEffectTotals.length === HW_CONTENT.EQUIPMENT_SLOTS.length, 'Equipment effect totals should summarize starter gear effects');
+assert(starterEffectTotals.some((effect) => effect.type === 'futureMovePoint' && effect.amount === 1 && effect.itemNames.includes('Alas exploradoras')), 'Equipment effect totals should localize item names and aggregate effect amounts');
+const activeEffectTotals = equipmentSystem.createEquipmentEffectTotals({
+    helmet: 'resinCrown',
+    jacket: 'amberJacket',
+    abdomen: null,
+    sting: null,
+    wings: null
+});
+assert(activeEffectTotals.some((effect) => effect.type === 'maxShield' && effect.amount === 3 && effect.itemIds.length === 2 && effect.isActive), 'Equipment effect totals should combine matching active effects');
 const emptyLoadoutDetails = equipmentSystem.createEquipmentLoadoutDetails(emptyLoadout, { language: 'en' });
 assert(emptyLoadoutDetails.every((details) => details.isEmpty && !details.equipment && details.effects.length === 0), 'Equipment loadout details should mark empty slots');
 Object.values(HW_CONTENT.EQUIPMENT_DEFS).forEach((equipment) => {

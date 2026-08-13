@@ -1,5 +1,5 @@
 window.HW_ROADMAP_STATE = {
-    "updatedAt": "2026-08-12",
+    "updatedAt": "2026-08-13",
     "currentTaskId": "content-scaling",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
@@ -275,7 +275,8 @@ window.HW_ROADMAP_STATE = {
                         "Added a level-4 rare equipment reward tier with one piece per slot.",
                         "Added planned asset paths and artist request coverage for wearable gear.",
                         "Added smoke coverage tying wearable planned asset paths to artist request rows.",
-                        "Added a wearable content manifest section and smoke coverage for it."
+                        "Added a wearable content manifest section and smoke coverage for it.",
+                        "Added equipped effect total summaries for future inventory/stat UI."
                     ],
                     "left": [
                         "Design loot acquisition.",

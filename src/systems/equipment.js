@@ -167,6 +167,32 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
         }));
     }
 
+    function createEquipmentEffectTotals(loadout = {}, { language = 'en' } = {}) {
+        const totals = new Map();
+        getEquippedItems(loadout).forEach((equipment) => {
+            equipment.effects?.forEach((effect) => {
+                const current = totals.get(effect.type) || {
+                    type: effect.type,
+                    amount: 0,
+                    itemIds: [],
+                    itemNames: [],
+                    isActive: Boolean(EQUIPMENT_EFFECT_HANDLERS[effect.type]),
+                    isFuture: !EQUIPMENT_EFFECT_HANDLERS[effect.type]
+                };
+                current.amount += effect.amount;
+                current.itemIds.push(equipment.id);
+                current.itemNames.push(localizeEquipmentContent(equipment, language).name);
+                totals.set(effect.type, current);
+            });
+        });
+        return Array.from(totals.values())
+            .map((effect) => ({
+                ...effect,
+                ...getEquipmentEffectCopy(effect, language)
+            }))
+            .sort((a, b) => a.type.localeCompare(b.type));
+    }
+
     function createStartingEquipment() {
         return Object.fromEntries(equipmentSlots.map((slot) => [slot.id, null]));
     }
@@ -359,6 +385,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
     return {
         applyLoadout,
         createEquipmentEffectSummaries,
+        createEquipmentEffectTotals,
         createEquipmentLoadoutDetails,
         createEquipmentRewardOffer,
         createEquipmentRewardChoiceDetails,
