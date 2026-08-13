@@ -1331,6 +1331,52 @@
             background: rgba(255, 238, 181, 0.92);
         }
 
+        .equipment-reward-card {
+            min-height: 220px;
+        }
+
+        .equipment-card-kicker,
+        .equipment-current {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .equipment-deltas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .equipment-delta {
+            display: inline-grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px;
+            align-items: center;
+            padding: 4px 7px;
+            border-radius: 999px;
+            border: 1px solid rgba(92, 44, 22, 0.25);
+            background: rgba(255, 255, 255, 0.36);
+            font-size: 12px;
+        }
+
+        .equipment-delta strong {
+            font-size: 12px;
+        }
+
+        .equipment-delta-up strong {
+            color: #1d6a36;
+        }
+
+        .equipment-delta-down strong {
+            color: #8b2f25;
+        }
+
+        .equipment-delta-same strong {
+            color: #5c4a28;
+        }
+
         .settings-panel {
             width: min(560px, 100%);
             color: #2c170a;

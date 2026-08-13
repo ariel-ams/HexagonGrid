@@ -277,7 +277,8 @@ window.HW_ROADMAP_STATE = {
                         "Added smoke coverage tying wearable planned asset paths to artist request rows.",
                         "Added a wearable content manifest section and smoke coverage for it.",
                         "Added equipped effect total summaries for future inventory/stat UI.",
-                        "Added equipment effect delta summaries for future reward comparison UI."
+                        "Added equipment effect delta summaries for future reward comparison UI.",
+                        "Added shared equipment reward-card rendering with effect delta chips."
                     ],
                     "left": [
                         "Design loot acquisition.",
@@ -292,7 +293,9 @@ window.HW_ROADMAP_STATE = {
                         "npm test",
                         "index.js",
                         "tools/smoke-browser.js",
-                        "CONTENT_MANIFEST_CHECKLIST.md"
+                        "CONTENT_MANIFEST_CHECKLIST.md",
+                        "src/systems/choice-ui.js",
+                        "index.html"
                     ]
                 },
                 {

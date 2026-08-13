@@ -39,6 +39,48 @@ function createChoiceUi(context) {
         )).join('');
     }
 
+    function formatDelta(delta) {
+        const amount = Number(delta?.delta) || 0;
+        if (amount > 0) return `+${amount}`;
+        return `${amount}`;
+    }
+
+    function renderEquipmentDelta(delta) {
+        const directionClass = delta.direction === 'down'
+            ? 'equipment-delta-down'
+            : delta.direction === 'up'
+            ? 'equipment-delta-up'
+            : 'equipment-delta-same';
+        return `<span class="equipment-delta ${directionClass}">
+            <strong>${escapeHtml(formatDelta(delta))}</strong>
+            <span>${escapeHtml(delta.label || delta.type)}</span>
+        </span>`;
+    }
+
+    function renderEquipmentRewardOffer(node, offer, labels = {}) {
+        const choices = offer?.choices || [];
+        if (!choices.length) {
+            node.innerHTML = `<button class="relic-card equipment-reward-card" type="button" data-equipment-id="skip" disabled>
+                <strong>${escapeHtml(offer?.label || labels.emptyTitle || 'No gear choices')}</strong>
+                <span>${escapeHtml(offer?.description || labels.emptyCopy || '')}</span>
+            </button>`;
+            return;
+        }
+        node.innerHTML = choices.map((choice) => {
+            const deltas = (choice.effectDeltas || []).filter((delta) => delta.changed);
+            const current = choice.current
+                ? `<span class="equipment-current">${escapeHtml(labels.replaces || 'Replaces')}: ${escapeHtml(choice.current.name)}</span>`
+                : `<span class="equipment-current">${escapeHtml(labels.emptySlot || 'Empty slot')}</span>`;
+            return `<button class="relic-card equipment-reward-card" type="button" data-equipment-id="${escapeAttr(choice.equipment.id)}">
+                <span class="equipment-card-kicker">${escapeHtml(choice.slotDef?.name || choice.slot)} &middot; ${escapeHtml(choice.rarityLabel || choice.rarity)}</span>
+                <strong>${escapeHtml(choice.equipment.name)}</strong>
+                <span>${escapeHtml(choice.equipment.description)}</span>
+                ${current}
+                <span class="equipment-deltas">${deltas.map(renderEquipmentDelta).join('')}</span>
+            </button>`;
+        }).join('');
+    }
+
     function renderObjectTests(node, entries) {
         node.innerHTML = entries.map((entry) => (
             `<button class="test-object" type="button" data-test-object="${escapeAttr(entry.id)}">
@@ -62,6 +104,7 @@ function createChoiceUi(context) {
     return {
         preview,
         renderCampActions,
+        renderEquipmentRewardOffer,
         renderObjectTests,
         renderRelicChoices
     };

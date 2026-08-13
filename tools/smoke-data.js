@@ -30,6 +30,7 @@ runBrowserScript('src/data/art.js');
 runBrowserScript('src/data/progression.js');
 runBrowserScript('src/systems/run-summary.js');
 runBrowserScript('src/systems/equipment.js');
+runBrowserScript('src/systems/choice-ui.js');
 runBrowserScript('src/systems/cell-interactions.js');
 runBrowserScript('src/systems/items.js');
 runBrowserScript('src/systems/enemies.js');
@@ -72,6 +73,7 @@ assert(contentManifestChecklist.includes('plannedAsset'), 'Wearable checklist sh
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
 assert(sandbox.window.HW_EQUIPMENT?.hasEquipmentEffectHandler, 'Expected equipment effect metadata');
+assert(sandbox.window.HW_CHOICE_UI?.createChoiceUi, 'Expected choice UI system');
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
 assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behavior handler metadata');
@@ -418,6 +420,22 @@ const equipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
     equipmentSlots: HW_CONTENT.EQUIPMENT_SLOTS,
     equipmentDefs: HW_CONTENT.EQUIPMENT_DEFS
 });
+const choiceUi = sandbox.window.HW_CHOICE_UI.createChoiceUi({
+    escapeHtml: (value) => String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[char])),
+    escapeAttr: (value) => String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[char]))
+});
 assert(equipmentSystem.getLocalizedSlot('helmet', 'es-419')?.name === 'Casco', 'Equipment system should localize slot display text');
 assert(equipmentSystem.getLocalizedEquipment('longSting', 'es-419')?.name === 'Aguijon largo', 'Equipment system should localize gear display text');
 assert(equipmentSystem.getLocalizedRarity('common', 'es-419')?.label === 'Comun', 'Equipment system should localize rarity labels');
@@ -483,6 +501,14 @@ assert(rewardOffer.available && rewardOffer.status === 'available', 'Equipment r
 assert(rewardOffer.label === 'Recompensa lista', 'Equipment reward offer should localize available status');
 assert(rewardOffer.totalAvailable >= rewardOffer.choices.length, 'Equipment reward offer should report available pool size');
 assert(rewardOffer.choices.every((details) => details.equipment && details.slotDef && details.effects.length > 0), 'Equipment reward offer should include localized choice details');
+const equipmentRewardNode = { innerHTML: '' };
+choiceUi.renderEquipmentRewardOffer(equipmentRewardNode, rewardOffer, {
+    replaces: 'Reemplaza',
+    emptySlot: 'Ranura vacia'
+});
+assert((equipmentRewardNode.innerHTML.match(/data-equipment-id=/g) || []).length === rewardOffer.choices.length, 'Choice UI should render one button per equipment reward');
+assert(equipmentRewardNode.innerHTML.includes('equipment-delta-up') || equipmentRewardNode.innerHTML.includes('equipment-delta-down'), 'Choice UI should render effect delta chips for equipment rewards');
+assert(equipmentRewardNode.innerHTML.includes('Reemplaza'), 'Choice UI should render replacement copy for equipment rewards');
 const emptyRewardOffer = equipmentSystem.createEquipmentRewardOffer({
     playerLevel: 1,
     loadout: starterLoadout,
@@ -491,6 +517,9 @@ const emptyRewardOffer = equipmentSystem.createEquipmentRewardOffer({
 });
 assert(!emptyRewardOffer.available && emptyRewardOffer.status === 'noChoices', 'Equipment reward offer should explain when no gear is available');
 assert(emptyRewardOffer.label === 'No gear choices', 'Equipment reward offer should localize empty status');
+const emptyEquipmentRewardNode = { innerHTML: '' };
+choiceUi.renderEquipmentRewardOffer(emptyEquipmentRewardNode, emptyRewardOffer);
+assert(emptyEquipmentRewardNode.innerHTML.includes('disabled'), 'Choice UI should render empty equipment rewards as disabled');
 const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadout, rewardChoices[0].id);
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');
