@@ -38,6 +38,7 @@ runBrowserScript('src/systems/items.js');
 runBrowserScript('src/systems/enemies.js');
 runBrowserScript('src/systems/inspect-stats.js');
 runBrowserScript('src/systems/room-templates.js');
+runBrowserScript('src/systems/theme-surroundings.js');
 
 const { HW_CONTENT, HW_ART, HW_PROGRESSION } = sandbox.window;
 const languageIds = ['en', 'es-419'];
@@ -91,6 +92,30 @@ assert(sandbox.window.HW_ENEMIES?.hasEnemyBehaviorHandler, 'Expected enemy behav
 assert(sandbox.window.HW_INSPECT_STATS?.createInspectStatsSystem, 'Expected inspect stats system');
 assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_OBJECTIVES, 'Expected room objective metadata');
 assert(sandbox.window.HW_ROOM_TEMPLATES?.ROOM_TEMPLATE_DEFS, 'Expected room template metadata');
+assert(sandbox.window.HW_THEME_SURROUNDINGS?.createThemeSurroundingsSystem, 'Expected theme surroundings system');
+
+const surroundingsSystem = sandbox.window.HW_THEME_SURROUNDINGS.createThemeSurroundingsSystem({
+    cellKey: (q, r) => `${q},${r}`
+});
+const surroundingsCells = [];
+for (let q = 0; q < 8; q++) {
+    for (let r = 0; r < 8; r++) surroundingsCells.push({ q, r });
+}
+surroundingsSystem.decorateCells(surroundingsCells, {
+    playable: new Set(),
+    seed: 0,
+    baseRows: 5,
+    columns: 6
+});
+const surroundingsSummary = surroundingsSystem.summarize(surroundingsCells);
+assert(
+    [1, 2, 3, 4].every((size) => surroundingsSummary.pieceSizes.includes(size)),
+    'Theme surroundings should support deterministic 1-4 hex pieces'
+);
+assert(
+    new Set(surroundingsCells.map((cell) => `${cell.q},${cell.r}`)).size === surroundingsCells.length,
+    'Theme surroundings should not overlap occupied environment coordinates'
+);
 
 const hiveCell = { q: 0, r: 0, object: 'waspHive', revealed: true };
 const hiveSpawnCells = [

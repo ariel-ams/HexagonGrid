@@ -171,16 +171,18 @@ window.HW_ROADMAP_STATE = {
                     "objective": "Use non-clickable mosaic art outside playable cells to make each theme feel distinct.",
                     "done": [
                         "Created surrounding mosaic system design notes.",
-                        "Separated environment concept from playable cell rendering."
+                        "Separated environment concept from playable cell rendering.",
+                        "Defined and implemented deterministic connected 1-4 hex piece placement.",
+                        "Added browser and data evidence for zero playable overlap and stable placement."
                     ],
                     "left": [
-                        "Define final art placement contract for 1-4 hex pieces.",
-                        "Add browser debug evidence for no playable overlaps.",
                         "Tune alignment and blending after final assets arrive."
                     ],
                     "evidence": [
                         "SURROUNDING_MOSAIC_SYSTEM.md",
                         "PROCEDURAL_TILE_ART_REFERENCE.md",
+                        "src/systems/theme-surroundings.js",
+                        "tools/smoke-browser.js: stable placement fingerprint and no-overlap checks",
                         "Next focus after completed Tactical Combat milestone"
                     ]
                 },

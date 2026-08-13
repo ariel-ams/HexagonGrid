@@ -241,6 +241,16 @@ async function main() {
     assert(activeThemeMeta.blendRow >= activeThemeMeta.baseRows, 'Theme tile sheets should reserve the last row for edge blending when available.');
     assert(themeTileDebug.overlapsPlayable === 0, 'Theme environment should not replace playable cell backgrounds.');
     assert(themeTileDebug.environmentCells > themeTileDebug.playableCells, 'Theme environment should fill non-playable surroundings around the room.');
+    assert(
+        [1, 2, 3, 4].every((size) => themeTileDebug.pieceSizes.includes(size)),
+        'Theme environment should place deterministic 1-4 hex mosaic pieces.'
+    );
+    const repeatedThemeTileDebug = await page.evaluate(() => window.HW_TEST_API.getThemeTileDebug());
+    assert(
+        repeatedThemeTileDebug.placementFingerprint === themeTileDebug.placementFingerprint,
+        'Theme environment placement should remain stable between renders.'
+    );
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'theme-surroundings.png') });
 
     await page.evaluate(() => {
         const api = window.HW_TEST_API;

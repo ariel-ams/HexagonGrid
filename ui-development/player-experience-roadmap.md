@@ -111,6 +111,8 @@ Acceptance checks:
 
 Goal: make themes visually distinct without changing playable-cell readability.
 
+The first Iteration 3 sprint moved surrounding placement into `src/systems/theme-surroundings.js`. The environment is now partitioned into deterministic connected 1-4 hex pieces with stable anchors, shared material metadata, and a single-cell fallback wherever a piece block touches playable space. Browser and data smoke checks verify all supported piece sizes, zero playable overlap, and a stable placement fingerprint across repeated renders.
+
 Scope:
 
 - Implement the non-clickable surrounding mosaic described in `SURROUNDING_MOSAIC_SYSTEM.md`.

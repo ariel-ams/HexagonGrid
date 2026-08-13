@@ -68,6 +68,19 @@ Each theme should eventually define a manifest like this:
 
 `cells` are local offsets from the piece anchor. The renderer places the whole piece as one visual object, but each occupied hex is reserved so pieces do not overlap.
 
+## Current Placement Contract
+
+The runtime currently divides world coordinates into stable 2 x 2 axial blocks. Each block is deterministically partitioned from the run seed into one of four layouts:
+
+- one connected 4-hex piece,
+- one connected 3-hex piece plus one 1-hex filler,
+- two connected 2-hex pieces,
+- one connected 2-hex piece plus two 1-hex fillers.
+
+Every environment cell receives `environmentPieceId`, `environmentPieceSize`, `environmentPieceAnchor`, `themeTileRow`, and `themeTileVariant`. Cells in the same piece share material and variant metadata. If a block touches any playable coordinate, its remaining environment coordinates fall back to 1-hex fillers so an art piece never crosses into `game.cells`.
+
+This partition is coordinate-based rather than viewport-based. Panning or redrawing therefore cannot change already visible placement. The current 6 x 6 theme sheets render one frame per occupied hex; future dedicated multi-hex sheets can use the same piece ids, anchors, and sizes without changing generation or interaction rules.
+
 ## Generation Algorithm
 
 1. Build an environment field around the current viewport and cave bounds.
@@ -81,6 +94,8 @@ Each theme should eventually define a manifest like this:
 5. Reject a piece if any occupied coordinate overlaps a playable cell or an already placed piece.
 6. Store placed pieces by axial coordinate so camera panning shows stable art.
 7. Draw edge blend overlays only where adjacent occupied hexes use different socket/material types.
+
+The first implementation uses stable 2 x 2 blocks as the chunk unit. Larger cached chunks remain an optimization option if final surroundings art needs broader compositions.
 
 ## Rendering Rules
 

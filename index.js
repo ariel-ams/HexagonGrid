@@ -161,6 +161,7 @@ const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
 const rendererTools = window.HW_RENDERER.createRendererTools();
+const themeSurroundingsSystem = window.HW_THEME_SURROUNDINGS.createThemeSurroundingsSystem({ cellKey });
 const assetLoader = {
     total: 0,
     complete: 0,
@@ -3289,7 +3290,7 @@ function drawThemeEnvironmentLayer(board) {
     ctx.save();
     environmentCells.forEach((cell) => {
         const { x, y, size } = hexToPixel(cell.q, cell.r);
-        drawThemeEnvironmentCell(cell, x, y, size, sheet, 0.18);
+        drawThemeEnvironmentCell(cell, x, y, size, sheet, 0.11);
     });
     const environmentMap = new Map(environmentCells.map((cell) => [cellKey(cell.q, cell.r), cell]));
     environmentCells.forEach((cell) => {
@@ -3329,7 +3330,13 @@ function getVisibleEnvironmentCells(board) {
         }
     }
 
-    return cells;
+    const meta = getThemeTileSheet()?.meta;
+    return themeSurroundingsSystem.decorateCells(cells, {
+        playable,
+        seed: game.runSeed,
+        baseRows: meta?.baseRows || 5,
+        columns: meta?.columns || 6
+    });
 }
 
 function getEnvironmentTileRow(q, r) {
@@ -3399,7 +3406,7 @@ function drawThemeBlendEdge(image, meta, x, y, size, directionIndex) {
     ctx.lineTo(innerA.x, innerA.y);
     ctx.closePath();
     ctx.clip();
-    rendererTools.drawSheetTile(ctx, image, meta, x, y, size, meta.blendRow, directionIndex % meta.columns, 0.06);
+    rendererTools.drawSheetTile(ctx, image, meta, x, y, size, meta.blendRow, directionIndex % meta.columns, 0.045);
     ctx.restore();
 }
 
@@ -6263,11 +6270,15 @@ window.HW_TEST_API = {
         const environmentCells = getVisibleEnvironmentCells(board);
         const environmentMap = new Map(environmentCells.map((cell) => [cellKey(cell.q, cell.r), cell]));
         const playableKeys = new Set(game.cells.map((cell) => cellKey(cell.q, cell.r)));
+        const pieceSummary = themeSurroundingsSystem.summarize(environmentCells);
         return {
             themeId: getCurrentTheme()?.id || null,
             loadedSheets: Object.keys(themeTileSheetAssets).filter((key) => themeTileSheetAssets[key]),
             meta: JSON.parse(JSON.stringify(themeTileSheetMeta)),
             environmentCells: environmentCells.length,
+            pieceCount: pieceSummary.pieceCount,
+            pieceSizes: pieceSummary.pieceSizes,
+            placementFingerprint: pieceSummary.placementFingerprint,
             playableCells: game.cells.length,
             overlapsPlayable: environmentCells.filter((cell) => playableKeys.has(cellKey(cell.q, cell.r))).length,
             rows: [...new Set(environmentCells.map((cell) => cell.themeTileRow).filter((row) => row != null))],
