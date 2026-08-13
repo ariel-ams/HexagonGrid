@@ -34,6 +34,7 @@ const relicTitleNode = relicScreen?.querySelector('h2');
 const relicCopyNode = relicScreen?.querySelector('p');
 const relicChoicesNode = document.getElementById('relicChoices');
 const relicListNode = document.getElementById('relicList');
+const equipmentListNode = document.getElementById('equipmentList');
 const campScreen = document.getElementById('campScreen');
 const campActionsNode = document.getElementById('campActions');
 const campContinueButton = document.getElementById('campContinueButton');
@@ -638,6 +639,7 @@ function setLanguage(language) {
     renderStaticText();
     renderObjectEditor();
     renderRelics();
+    renderEquipmentList();
     renderStats();
     renderCooldown();
     renderLog();
@@ -1168,6 +1170,7 @@ function startRunState() {
     endScreen.classList.remove('visible');
     replayControls.classList.remove('visible');
     renderRelics();
+    renderEquipmentList();
 }
 
 function testDanceRun() {
@@ -1806,6 +1809,7 @@ function equipItem(equipmentId) {
     if (!equipped) return false;
     game.equipment = equipped.loadout;
     applyEquipmentLoadout(game.player);
+    renderEquipmentList();
     renderMessage();
     draw();
     return true;
@@ -2429,6 +2433,7 @@ function chooseEquipmentReward(id) {
     if (!reward) return;
     game.equipment = reward.loadout;
     applyEquipmentLoadout(game.player);
+    renderEquipmentList();
     addLog(
         currentLanguage === 'es-419' ? 'Equipo elegido' : 'Gear Chosen',
         `${reward.equipment.name}: ${reward.equipment.description}`
@@ -2447,6 +2452,23 @@ function renderRelics() {
         const relic = getRelic(id);
         return `<span class="relic-chip">${relic?.name || id}</span>`;
     }).join('');
+}
+
+function renderEquipmentList() {
+    if (!equipmentListNode) return;
+    const details = equipmentSystem.createEquipmentLoadoutDetails(game.equipment, {
+        language: currentLanguage
+    });
+    if (!details.length) {
+        equipmentListNode.innerHTML = `<span class="equipment-empty">${t('ui', 'noneYet')}</span>`;
+        return;
+    }
+    equipmentListNode.innerHTML = details.map((item) => (
+        `<span class="equipment-chip" title="${escapeAttr(item.equipment?.description || item.slotDef?.description || '')}">
+            <strong>${escapeHtml(item.slotDef?.name || item.slot)}</strong>
+            <span>${escapeHtml(item.equipment?.name || t('ui', 'noneYet'))}</span>
+        </span>`
+    )).join('');
 }
 
 function generateDanceRoom() {
@@ -6543,6 +6565,7 @@ setDungeonThemePreference(selectedThemeId);
 applyAudioSettings();
 renderStats();
 renderRelics();
+renderEquipmentList();
 resizeCanvas();
 requestAnimationFrame(animate);
 

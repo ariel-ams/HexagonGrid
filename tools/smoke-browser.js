@@ -90,6 +90,7 @@ async function main() {
     assert(startingEquipment.abdomen === 'nectarPouch', 'New runs should equip the starter abdomen guard.');
     assert(startingEquipment.sting === 'barbedSting', 'New runs should equip the starter sting.');
     assert(startingEquipment.wings === 'scoutWings', 'New runs should equip the starter wings.');
+    assert(await page.locator('#equipmentList .equipment-chip').count() === 5, 'Side panel should show one equipped gear chip per slot.');
     const initialRewardOverlay = await page.evaluate(() => window.HW_TEST_API.openRewardFlowForTest({ roomDepth: 2, level: 2 }));
     assert(initialRewardOverlay.visible, 'Reward overlay should open between rooms.');
     assert(initialRewardOverlay.rewardFlowSteps.join(',') === 'relic,equipment', 'Reward overlay should sequence relic rewards before equipment rewards.');

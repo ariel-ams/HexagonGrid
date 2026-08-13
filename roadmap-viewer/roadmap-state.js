@@ -283,7 +283,8 @@ window.HW_ROADMAP_STATE = {
                         "Added room-depth equipment reward cadence planning.",
                         "Added post-room reward-flow planning for relic/equipment sequencing.",
                         "Wired eligible equipment choices into the post-room reward screen after relic selection.",
-                        "Added browser smoke coverage for relic-to-equipment reward sequencing."
+                        "Added browser smoke coverage for relic-to-equipment reward sequencing.",
+                        "Added compact equipped-gear visibility in the side stats panel."
                     ],
                     "left": [
                         "Design loot acquisition.",

@@ -45,6 +45,7 @@ Adding content
 
 - Use `../CONTENT_MANIFEST_CHECKLIST.md` as the definition of ready for a new object, enemy, hazard, relic, theme, sprite, audio cue, or wearable before editing data tables.
 - Wearable gear has its own checklist section for slot, localization, progression tier, planned art, and reward-readiness coverage.
+- The side stats panel renders a compact gear list with one chip per equipment slot, so new reward choices are visible after selection even before a full inventory screen exists.
 - New placeholder sprites should use an empty `src` plus a short `fallback` label in `SPRITE_DEFS`. The renderer will draw the text fallback until final art is available.
 - Every new game object must also be reachable from the Test page. Add the object to `OBJECTS` and its behavior data first; the test list is generated from those definitions.
 - If the object needs a special setup to demonstrate its mechanic clearly, add that support in `seedTestSupportCells()` and `getTestScenarioMessage()` in `../index.js`.
