@@ -49,6 +49,7 @@ const equipmentRarities = new Set(['starter', 'common', 'rare', 'epic', 'legenda
 const equipmentEffectTypes = sandbox.window.HW_EQUIPMENT.EQUIPMENT_EFFECT_TYPES || [];
 const artSpriteRequests = fs.readFileSync(path.join(root, 'ART_SPRITE_REQUESTS.md'), 'utf8');
 const contentManifestChecklist = fs.readFileSync(path.join(root, 'CONTENT_MANIFEST_CHECKLIST.md'), 'utf8');
+const gameDesignDocument = fs.readFileSync(path.join(root, 'GAME_DESIGN_DOCUMENT.md'), 'utf8');
 const roomWeightTokens = new Set(['discovery']);
 const roomTemplateKeys = new Set([
     'minLevel',
@@ -75,6 +76,9 @@ assert(artSpriteRequests.includes('## Wearable Gear Format'), 'Artist request no
 assert(artSpriteRequests.includes('assets/equipment/'), 'Wearable artist notes should point to assets/equipment paths');
 assert(artSpriteRequests.includes('4 x 1'), 'Wearable artist notes should define 4 x 1 idle strip format');
 assert(artSpriteRequests.includes('transparent PNG'), 'Wearable artist notes should request transparent PNG assets');
+assert(gameDesignDocument.includes('### 9.7 Equipment Loot'), 'Game design document needs equipment loot acquisition rules');
+assert(gameDesignDocument.includes('Reward choices are filtered by player level'), 'Equipment loot design should document level filtering');
+assert(gameDesignDocument.includes('replaces the existing item in the same slot'), 'Equipment loot design should document slot replacement');
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
 assert(sandbox.window.HW_EQUIPMENT?.hasEquipmentEffectHandler, 'Expected equipment effect metadata');

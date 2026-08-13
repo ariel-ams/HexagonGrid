@@ -386,6 +386,38 @@ Current damage:
 
 Damage passes through shield first.
 
+### 9.7 Equipment Loot
+
+Purpose:
+
+- Give the bee longer-term build identity across a run.
+- Make room completion rewards matter after the immediate relic choice.
+- Prepare the game for future visual loot without making content authors edit core gameplay code.
+
+Current slots:
+
+- Helmet.
+- Jacket.
+- Abdomen gear.
+- Sting.
+- Wings.
+
+Acquisition rules:
+
+- New runs begin with one starter item in each slot so the equipment UI always has a readable baseline.
+- Equipment rewards are offered between rooms after relic choices when the room-depth cadence says a gear reward is available.
+- Reward choices are filtered by player level and never include items already equipped.
+- Reward cards show up to three choices, using rarity weight to keep common replacements frequent and rare upgrades occasional.
+- Choosing a reward replaces the existing item in the same slot.
+- Applying the loadout is idempotent: replacing gear recalculates bonuses instead of stacking stale bonuses.
+- If no eligible unequipped gear exists, the equipment reward step is skipped.
+
+Design purpose:
+
+- Let the player build toward movement, attack range, scouting, survival, or resource-storage identity.
+- Keep early choices understandable by unlocking common gear before rare gear.
+- Give artists and content authors a stable slot and sprite contract before the full inventory screen exists.
+
 ## 10. Enemies
 
 ### 10.1 Wasp

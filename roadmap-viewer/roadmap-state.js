@@ -287,10 +287,10 @@ window.HW_ROADMAP_STATE = {
                         "Added compact equipped-gear visibility in the side stats panel.",
                         "Added equipped-gear hover details for effect summaries.",
                         "Added aggregate equipped-gear effect chips to the side stats panel.",
-                        "Added wearable gear sprite format guidance for final artist handoff."
+                        "Added wearable gear sprite format guidance for final artist handoff.",
+                        "Documented equipment loot acquisition rules for starter gear, cadence, level filtering, rarity weighting, and slot replacement."
                     ],
                     "left": [
-                        "Design loot acquisition.",
                         "Request final wearable sprites and icons."
                     ],
                     "evidence": [
@@ -305,7 +305,8 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/choice-ui.js",
                         "index.html",
                         "src/systems/reward-flow.js",
-                        "CONTENT_AUTHORING_GUIDE.md"
+                        "CONTENT_AUTHORING_GUIDE.md",
+                        "GAME_DESIGN_DOCUMENT.md"
                     ]
                 },
                 {
