@@ -636,16 +636,31 @@ async function main() {
     assert(await page.locator('#campScreen .camp-action').count() > 0, 'Market should render buy choices.');
     assert(await page.locator('#campScreen .camp-action-cost').count() > 0, 'Market choices should show separated costs.');
     assert(await page.locator('#campScreen .camp-action-effect').count() > 0, 'Market choices should show separated effects.');
+    await page.click('#campContinueButton');
+    await page.waitForFunction(() => !document.querySelector('#campScreen.visible'));
 
     const bossPressure = await page.evaluate(() => {
+        window.HW_TEST_API.setDungeonTheme('cave');
         window.HW_TEST_API.generateBossRoom();
         const hives = window.HW_TEST_API.getCells().filter((cell) => cell.object === 'waspHive');
+        const state = window.HW_TEST_API.getState();
+        const configuredObjects = new Set(state.bossEncounter?.roomObjects.map((entry) => entry.object) || []);
+        const ambientObjects = window.HW_TEST_API.getCells()
+            .filter((cell) => !cell.isBoss && cell.object !== 'entry' && cell.object !== state.bossEncounter?.support)
+            .map((cell) => cell.object);
         return {
             hiveCount: hives.length,
             spawnLimit: hives[0]?.spawnLimit,
-            firstSpawnMs: Math.round((hives[0]?.nextAuraAt || 0) - performance.now())
+            firstSpawnMs: Math.round((hives[0]?.nextAuraAt || 0) - performance.now()),
+            bossEncounter: state.bossEncounter,
+            disallowedAmbientObjects: ambientObjects.filter((object) => !configuredObjects.has(object))
         };
     });
+    assert(bossPressure.bossEncounter?.themeId === 'cave', 'Boss room should use the active theme encounter profile.');
+    assert(bossPressure.bossEncounter?.boss === 'queenSignaler', 'Theme encounter should expose its configured boss.');
+    assert(bossPressure.bossEncounter?.support === 'waspHive', 'Theme encounter should expose its configured support threat.');
+    assert(bossPressure.disallowedAmbientObjects.length === 0, 'Boss room ambient objects should come from the active theme encounter pool.');
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'themed-boss-room.png') });
     assert(bossPressure.hiveCount === 1, 'Boss room should keep a single readable hive threat.');
     assert(bossPressure.spawnLimit === 1, 'Boss hive should spawn at most one reinforcement.');
     assert(bossPressure.firstSpawnMs > 1700 && bossPressure.firstSpawnMs < 2600, 'Boss hive should threaten one reinforcement within its normal cadence.');

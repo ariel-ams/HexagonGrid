@@ -115,6 +115,8 @@ The first Iteration 3 sprint moved surrounding placement into `src/systems/theme
 
 The second Iteration 3 sprint made dungeon-theme selection understandable before a run. The Options menu now localizes every theme name and its gameplay identity in English and Latin American Spanish, keeps the chosen description attached to the select control, and has browser/data coverage for both languages. An asset audit found the supplied sheets' blend rows are fully opaque, so final transparent edge tuning remains an explicit artist dependency while theme gameplay work continues.
 
+The third Iteration 3 sprint moved final-room composition into each theme's data. Every theme now defines a boss, support threat, and weighted ambient object pool; runtime boss placement, approach clearing, delayed engagement, anti-kite pressure, and debug state consume that encounter profile. The existing Queen Signaler plus one Wasp Hive balance remains consistent, while forest, cave, wasp hive, and underground final rooms now draw supplies and hazards only from their own authored pools.
+
 Scope:
 
 - Implement the non-clickable surrounding mosaic described in `SURROUNDING_MOSAIC_SYSTEM.md`.

@@ -70,6 +70,8 @@ assert(HW_ART?.HUD_ICON_ROWS, 'HW_ART.HUD_ICON_ROWS was not registered');
 assert(HW_PROGRESSION?.ROOM_PROFILES?.length >= 5, 'Expected at least 5 room profiles');
 assert(HW_PROGRESSION?.XP_REWARDS?.room > 0, 'Room XP reward must be positive');
 assert(HW_PROGRESSION?.DUNGEON_THEMES?.forest, 'Expected dungeon theme definitions');
+assert(!HW_CONTENT.I18N.en.messages.bossStart.includes('hives'), 'English boss objective should describe the single support hive');
+assert(!HW_CONTENT.I18N['es-419'].messages.bossStart.includes('colmenas'), 'Spanish boss objective should describe the single support hive');
 assert(HW_CONTENT?.EQUIPMENT_SLOTS?.length >= 5, 'Expected wearable equipment slots');
 assert(HW_CONTENT?.EQUIPMENT_DEFS, 'Expected wearable equipment definitions');
 assert(contentManifestChecklist.includes('## Wearable'), 'Content manifest checklist needs a wearable section');
@@ -260,6 +262,18 @@ Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {
         assert(theme.items.includes(objectId), `Theme ${themeId} must include core supply ${objectId}`);
     });
     if (theme.boardBackground) assertFile(theme.boardBackground);
+    assert(theme.bossEncounter, `Theme ${themeId} needs boss encounter metadata`);
+    assert(HW_CONTENT.ENEMY_DEFS[theme.bossEncounter.boss], `Theme ${themeId} boss encounter needs a valid boss enemy`);
+    assert(HW_CONTENT.ENEMY_DEFS[theme.bossEncounter.support], `Theme ${themeId} boss encounter needs a valid support enemy`);
+    assert(Array.isArray(theme.bossEncounter.roomObjects) && theme.bossEncounter.roomObjects.length > 0, `Theme ${themeId} boss encounter needs ambient room objects`);
+    theme.bossEncounter.roomObjects.forEach((entry) => {
+        assert(HW_CONTENT.OBJECTS[entry.object], `Theme ${themeId} boss room references missing object ${entry.object}`);
+        assert(entry.weight > 0, `Theme ${themeId} boss room object ${entry.object} needs positive weight`);
+        assert(
+            entry.object === 'empty' || theme.items.includes(entry.object) || theme.hazards.includes(entry.object),
+            `Theme ${themeId} boss room object ${entry.object} must belong to its item or hazard pool`
+        );
+    });
 
     HW_PROGRESSION.ROOM_PROFILES
         .filter((profile) => profile.depth >= 3 && profile.maxEnemies > 0)

@@ -375,6 +375,7 @@ const game = {
     activeTestObject: null,
     settingsPaused: false,
     bossEngaged: false,
+    bossEncounter: null,
     pathPreview: null,
     pathCache: {},
     autoPath: [],
@@ -975,6 +976,19 @@ function getCurrentTheme() {
     return game.dungeonTheme || DUNGEON_THEMES?.forest || Object.values(DUNGEON_THEMES || {})[0] || null;
 }
 
+function getBossEncounter() {
+    const theme = getCurrentTheme();
+    const fallback = DUNGEON_THEMES?.forest?.bossEncounter || {
+        boss: 'queenSignaler',
+        support: 'waspHive',
+        roomObjects: [{ object: 'empty', weight: 1 }]
+    };
+    return {
+        themeId: theme?.id || 'forest',
+        ...(theme?.bossEncounter || fallback)
+    };
+}
+
 function isObjectAllowedByTheme(object) {
     const theme = getCurrentTheme();
     if (!theme || ['empty', 'entry', 'exit', 'finalExit', 'wall'].includes(object)) return true;
@@ -1169,6 +1183,7 @@ function startRunState() {
     game.activeTestObject = null;
     game.settingsPaused = false;
     game.bossEngaged = false;
+    game.bossEncounter = null;
     game.pathPreview = null;
     game.pathCache = {};
     game.autoPath = [];
@@ -1567,6 +1582,13 @@ function generateBossRoom() {
     game.roomProfile = ROOM_PROFILES[ROOM_PROFILES.length - 1];
     game.roomObjective = null;
     game.bossEngaged = false;
+    const bossEncounter = getBossEncounter();
+    game.bossEncounter = {
+        ...bossEncounter,
+        roomObjects: bossEncounter.roomObjects.map((entry) => ({ ...entry }))
+    };
+    const bossObject = bossEncounter.boss;
+    const supportObject = bossEncounter.support;
     const cave = generateCaveDungeon({
         targetCells: Math.max(game.roomProfile.targetCells, 154),
         depth: FINAL_ROOM,
@@ -1587,21 +1609,14 @@ function generateBossRoom() {
         const object = q === game.entryCell.q && r === game.entryCell.r
             ? 'entry'
             : q === bossPosition.q && r === bossPosition.r
-            ? 'queenSignaler'
+            ? bossObject
             : isSpawner
-            ? 'waspHive'
+            ? supportObject
             : bossDistance <= 2
             ? 'empty'
             : bossDistance <= 3
             ? 'empty'
-            : chooseWeightedObject([
-                { object: 'empty', weight: 55 },
-                { object: 'pollen', weight: 9 },
-                { object: 'water', weight: 9 },
-                { object: 'stingUpgrade', weight: 5 },
-                { object: 'burningCell', weight: 3 },
-                { object: 'vine', weight: 3 }
-            ], 'empty');
+            : chooseWeightedObject(bossEncounter.roomObjects, 'empty');
         game.cells.push({
             q,
             r,
@@ -1615,15 +1630,15 @@ function generateBossRoom() {
             themeTileRow: getThemeTileRow(q, r, roomIndex),
             themeTileVariant: getThemeTileVariant(q, r),
             nextAttackAt: 0,
-            nextAuraAt: object === 'queenSignaler'
-                ? performance.now() + 2200
-                : object === 'waspHive'
-                ? performance.now() + (getEnemyDef('waspHive')?.intervalMs || 2200)
+            nextAuraAt: object === bossObject
+                ? performance.now() + (getEnemyDef(bossObject)?.intervalMs || 2200)
+                : object === supportObject
+                ? performance.now() + (getEnemyDef(supportObject)?.intervalMs || 2200)
                 : 0,
             hits: 0,
-            isBoss: object === 'queenSignaler',
-            spawnLimit: object === 'waspHive' ? 1 : 0,
-            suppressFallbackDamage: object === 'waspHive'
+            isBoss: object === bossObject,
+            spawnLimit: object === supportObject ? 1 : 0,
+            suppressFallbackDamage: object === supportObject
         });
     });
     const boss = game.cells.find((cell) => cell.isBoss);
@@ -1673,18 +1688,20 @@ function getCellsAtDistance(center, distance) {
 }
 
 function clearBossApproachRoute(bossPosition, hivePosition) {
+    const bossObject = game.bossEncounter?.boss || 'queenSignaler';
+    const supportObject = game.bossEncounter?.support || 'waspHive';
     const anchorPoints = [game.entryCell, hivePosition, bossPosition].filter(Boolean);
     for (let index = 0; index < anchorPoints.length - 1; index += 1) {
         const path = findRoomPathBetween(anchorPoints[index], anchorPoints[index + 1]);
         path.forEach((step) => {
             const cell = getCell(step.q, step.r);
-            if (!cell || cell.isBoss || cell.object === 'entry' || cell.object === 'queenSignaler' || cell.object === 'waspHive') return;
+            if (!cell || cell.isBoss || cell.object === 'entry' || cell.object === bossObject || cell.object === supportObject) return;
             cell.object = 'empty';
         });
     }
     getCellsAtDistance(bossPosition, 1).forEach((position) => {
         const cell = getCell(position.q, position.r);
-        if (cell && cell.object !== 'queenSignaler' && cell.object !== 'waspHive') {
+        if (cell && cell.object !== bossObject && cell.object !== supportObject) {
             cell.object = 'empty';
         }
     });
@@ -3200,7 +3217,7 @@ function tickSpecialEnemyTelegraphs() {
 
 function shouldDelayBossThreat(enemyCell) {
     if (game.roomDepth < FINAL_ROOM || game.bossEngaged) return false;
-    if (enemyCell.object !== 'queenSignaler' && enemyCell.object !== 'waspHive') return false;
+    if (!enemyCell.isBoss && enemyCell.object !== game.bossEncounter?.support) return false;
     const boss = game.cells.find((cell) => cell.isBoss);
     if (!boss) return false;
     const distanceToBoss = hexDistance(game.player.q, game.player.r, boss.q, boss.r);
@@ -3236,7 +3253,7 @@ function resolveBossAntiKite(reason) {
     game.metrics.repeatedAttackRetreatPatterns += 1;
     const now = performance.now();
     game.cells
-        .filter((cell) => cell.object === 'waspHive')
+        .filter((cell) => cell.object === (game.bossEncounter?.support || 'waspHive'))
         .forEach((hive) => {
             hive.nextAuraAt = Math.min(hive.nextAuraAt || now + 900, now + 250);
             hive.signalBuffUntil = now + 700;
@@ -4876,7 +4893,7 @@ function attackEnemyCell(cell) {
         game.objectiveProgress.kills += 1;
         awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
         applyEnemyKillRelics(cell);
-        if (targetObject === 'waspHive' && game.roomDepth >= FINAL_ROOM) {
+        if (targetObject === (game.bossEncounter?.support || 'waspHive') && game.roomDepth >= FINAL_ROOM) {
             clearBossHiveSummons(cell);
         }
         if (cell.isBoss) {
@@ -6262,6 +6279,7 @@ window.HW_TEST_API = {
             id: getCurrentTheme().id,
             name: getCurrentTheme().name
         } : null,
+        bossEncounter: game.bossEncounter ? JSON.parse(JSON.stringify(game.bossEncounter)) : null,
         equipment: { ...game.equipment },
         entryCell: game.entryCell ? { ...game.entryCell } : null,
         exitCell: game.exitCell ? { ...game.exitCell } : null,

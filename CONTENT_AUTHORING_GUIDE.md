@@ -349,12 +349,15 @@ Each theme defines:
 - `enemies`: enemy ids allowed to appear in that theme.
 - `items`: pickup, utility, and trader ids allowed to appear in that theme.
 - `hazards`: terrain/blocker ids allowed to appear in that theme.
+- `bossEncounter`: the final-room `boss`, one `support` threat, and weighted `roomObjects` used outside the clear approach lanes.
+
+`bossEncounter.roomObjects` uses `{ object, weight }` entries. Every object must be `empty` or already belong to the same theme's `items` or `hazards` list. Boss and support ids must reference enemy definitions. The current themes deliberately retain the tuned Queen Signaler plus one Wasp Hive structure while varying the surrounding supplies and hazards; replacing either enemy later also requires a focused boss playtest.
 
 The main menu Options panel can force a theme or leave it on `Random`. Room generation still respects player level and `ROOM_PROFILES`; the theme is an additional filter, so a late enemy will not appear early just because the theme allows it.
 
 When adding a new theme, make sure it has at least one valid enemy for mid/late profiles and enough basic supplies (`pollen`, `water`, `upgrade`, and `stingUpgrade`) unless the theme deliberately changes the economy.
 
-The data smoke test verifies that room profile references exist, spawn weights point to usable content, theme object references have unlock levels, board background files exist, core supplies are present, and each theme has at least one eligible enemy in mid/late room profiles.
+The data smoke test verifies that room profile references exist, spawn weights point to usable content, theme object references have unlock levels, board background files exist, core supplies are present, boss encounter references and weights are valid, and each theme has at least one eligible enemy in mid/late room profiles.
 
 ## Adding Wearable Gear
 

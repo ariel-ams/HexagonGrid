@@ -92,7 +92,7 @@ const I18N = {
         messages: {
             startRun: 'Scout the dungeon, spend movement carefully, and use exits to crawl deeper.',
             enteredChamber: 'Entered chamber {room}.',
-            bossStart: 'Final chamber: defeat the Queen Signaler while its hives keep calling wasps.',
+            bossStart: 'Final chamber: defeat the Queen Signaler while its hive keeps calling wasps.',
             bossDefeated: 'The final boss fell. The run is complete.',
             danceFailed: 'The path to food faded. {percent}% complete.',
             runComplete: 'The run is complete.',
@@ -318,7 +318,7 @@ const I18N = {
         messages: {
             startRun: 'Explora el dungeon, administra tus movimientos y usa las salidas para avanzar.',
             enteredChamber: 'Entraste a la cámara {room}.',
-            bossStart: 'Cámara final: derrota a la Señaladora Reina mientras sus colmenas siguen llamando avispas.',
+            bossStart: 'Cámara final: derrota a la Señaladora Reina mientras su colmena sigue llamando avispas.',
             bossDefeated: 'El jefe final cayó. La ruta está completa.',
             danceFailed: 'La ruta hacia la comida se desvaneció. {percent}% completado.',
             runComplete: 'La run está completa.',

@@ -213,7 +213,19 @@ const DUNGEON_THEMES = {
             'flowerMap',
             'royalNectar'
         ],
-        hazards: ['vine', 'waxDoor', 'stickyTrap']
+        hazards: ['vine', 'waxDoor', 'stickyTrap'],
+        bossEncounter: {
+            boss: 'queenSignaler',
+            support: 'waspHive',
+            roomObjects: [
+                { object: 'empty', weight: 55 },
+                { object: 'pollen', weight: 10 },
+                { object: 'water', weight: 10 },
+                { object: 'stingUpgrade', weight: 5 },
+                { object: 'vine', weight: 4 },
+                { object: 'glowPollen', weight: 3 }
+            ]
+        }
     },
     cave: {
         id: 'cave',
@@ -249,7 +261,20 @@ const DUNGEON_THEMES = {
             'compassPollen',
             'nectarCache'
         ],
-        hazards: ['vine', 'burningCell', 'burrowWarningCell']
+        hazards: ['vine', 'burningCell', 'burrowWarningCell'],
+        bossEncounter: {
+            boss: 'queenSignaler',
+            support: 'waspHive',
+            roomObjects: [
+                { object: 'empty', weight: 52 },
+                { object: 'pollen', weight: 8 },
+                { object: 'water', weight: 12 },
+                { object: 'stingUpgrade', weight: 5 },
+                { object: 'burningCell', weight: 5 },
+                { object: 'glowPollen', weight: 3 },
+                { object: 'cleanWater', weight: 3 }
+            ]
+        }
     },
     waspHive: {
         id: 'waspHive',
@@ -284,7 +309,20 @@ const DUNGEON_THEMES = {
             'sunShard',
             'flowerMap'
         ],
-        hazards: ['vine', 'waxDoor', 'bomberMarkedCell']
+        hazards: ['vine', 'waxDoor', 'bomberMarkedCell'],
+        bossEncounter: {
+            boss: 'queenSignaler',
+            support: 'waspHive',
+            roomObjects: [
+                { object: 'empty', weight: 50 },
+                { object: 'pollen', weight: 10 },
+                { object: 'water', weight: 8 },
+                { object: 'stingUpgrade', weight: 6 },
+                { object: 'honeyDrop', weight: 5 },
+                { object: 'smokePuff', weight: 3 },
+                { object: 'vine', weight: 3 }
+            ]
+        }
     },
     underground: {
         id: 'underground',
@@ -318,7 +356,20 @@ const DUNGEON_THEMES = {
             'nectarCache',
             'waxDoor'
         ],
-        hazards: ['vine', 'stickyTrap', 'waxDoor', 'burrowWarningCell']
+        hazards: ['vine', 'stickyTrap', 'waxDoor', 'burrowWarningCell'],
+        bossEncounter: {
+            boss: 'queenSignaler',
+            support: 'waspHive',
+            roomObjects: [
+                { object: 'empty', weight: 52 },
+                { object: 'pollen', weight: 9 },
+                { object: 'water', weight: 10 },
+                { object: 'stingUpgrade', weight: 5 },
+                { object: 'stickyTrap', weight: 4 },
+                { object: 'vine', weight: 4 },
+                { object: 'glowPollen', weight: 3 }
+            ]
+        }
     }
 };
 

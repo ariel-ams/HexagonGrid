@@ -1,6 +1,7 @@
 Honeycomb Wayfinder source layout
 
 - `data/content.js`: localized text, object data, enemy data, relic data, sprite definitions, HUD icon rows, spawn weights, room pacing, and default balance values.
+- `data/progression.js`: player levels, room profiles, dungeon themes, theme-specific boss encounter pools, and unlock levels.
 - `systems/hud.js`: compact board HUD rendering, icon fallbacks, hover helper popups, and pulse tracking.
 - `systems/items.js`: data-driven item effects such as resource gains, healing, reveal effects, timer pauses, and cell transforms, with an exported effect-handler registry for content smoke coverage.
 - `systems/enemies.js`: enemy behavior handlers such as auras, refogging, stealing, fleeing, spawning, fire spread, and telegraphed attacks, with exported behavior metadata for content smoke coverage.
