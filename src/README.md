@@ -5,6 +5,7 @@ Honeycomb Wayfinder source layout
 - `systems/items.js`: data-driven item effects such as resource gains, healing, reveal effects, timer pauses, and cell transforms, with an exported effect-handler registry for content smoke coverage.
 - `systems/enemies.js`: enemy behavior handlers such as auras, refogging, stealing, fleeing, spawning, fire spread, and telegraphed attacks, with exported behavior metadata for content smoke coverage.
 - `systems/choice-ui.js`: shared markup for camp, trader, relic, equipment reward, and object-test choices.
+- `systems/modal-focus.js`: shared initial focus, Tab trapping, and focus restoration for modal game overlays.
 - `systems/inspect-ui.js`: DOM rendering for the persistent inspect panel and its stat chips.
 - `systems/inspect-stats.js`: visibility, enemy, object effect, terrain, and route-risk metadata that turns content data into inspect stat chips.
 - `systems/equipment.js`: wearable slot loadout helpers for empty/starter gear, loadout slot details, active bonus summaries, idempotent loadout application, equipped effect totals and deltas, localized slot/item/rarity/effect copy, player-level availability, reward availability, localized reward cadence plans/offers, weighted reward choices, reward selection, bundled reward replacement, slot display, rarity, reward weight, and effect comparison details, lookup, effects, and slot replacement.

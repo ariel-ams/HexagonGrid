@@ -223,6 +223,7 @@ let replaySystem = null;
 let pathfindingSystem = null;
 let roomTemplateSystem = null;
 let menuController = null;
+let modalFocusManager = null;
 let replaySpeed = 1;
 let toastHideTimer = null;
 
@@ -556,6 +557,13 @@ danceSystem = window.HW_DANCE.createDanceSystem({
     }
 });
 
+modalFocusManager = window.HW_MODAL_FOCUS.createModalFocusManager([
+    settingsScreen,
+    relicScreen,
+    campScreen,
+    testScreen
+]);
+
 menuController = window.HW_MENU_CONTROLLER.createMenuController({
     nodes: {
         optionsPanel,
@@ -567,7 +575,8 @@ menuController = window.HW_MENU_CONTROLLER.createMenuController({
         endScreen,
         settingsScreen,
         settingsToggle,
-        settingsCloseButton
+        settingsCloseButton,
+        testLauncher: testDanceButton
     },
     game,
     getLanguage: () => currentLanguage,
@@ -575,6 +584,7 @@ menuController = window.HW_MENU_CONTROLLER.createMenuController({
     startGameplayMusic,
     applyAudioSettings,
     audioSystem,
+    modalFocusManager,
     renderTestObjectList,
     renderMessage,
     onTestPauseLabel: (paused) => {
@@ -2115,6 +2125,7 @@ function openCampChoice() {
     campContinueButton.textContent = currentLanguage === 'es-419' ? 'Elegir reliquia' : 'Choose Relic';
     renderCampChoices();
     campScreen.classList.add('visible');
+    modalFocusManager.focusFirst(campScreen, '[data-camp-action]:not([disabled]), #campContinueButton');
     draw();
 }
 
@@ -2178,6 +2189,7 @@ function openTraderMarket(cell) {
     renderCampChoices();
     campContinueButton.textContent = currentLanguage === 'es-419' ? 'Cerrar mercado' : 'Close Market';
     campScreen.classList.add('visible');
+    modalFocusManager.focusFirst(campScreen, '[data-camp-action]:not([disabled]), #campContinueButton');
 }
 
 function chooseTraderMarketActions() {
@@ -2396,9 +2408,11 @@ function renderNextRewardStep() {
     }
     if (step.type === 'equipment') {
         renderEquipmentChoices(step);
+        modalFocusManager.focusFirst(relicScreen, '[data-equipment-id]');
         return;
     }
     renderRelicChoices();
+    modalFocusManager.focusFirst(relicScreen, '[data-relic-id]');
 }
 
 function advanceFromRewardFlow() {
@@ -5792,29 +5806,6 @@ function closeSettingsOverlay() {
     menuController.closeSettingsOverlay();
 }
 
-function getSettingsFocusableElements() {
-    return [musicVolumeInput, effectsVolumeInput, settingsCloseButton].filter((node) => (
-        node && !node.disabled && node.offsetParent !== null
-    ));
-}
-
-function trapSettingsFocus(event) {
-    if (event.key !== 'Tab' || !settingsScreen?.classList.contains('visible')) return;
-    const focusable = getSettingsFocusableElements();
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-        return;
-    }
-    if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-    }
-}
-
 function getToastTone(title = '', message = '') {
     const text = `${title} ${message}`.toLowerCase();
     if (text.includes('damage') || text.includes('daño') || text.includes('game over') || text.includes('fin de partida') || text.includes('blocked') || text.includes('bloqueada')) {
@@ -6608,11 +6599,16 @@ testObjectListNode.addEventListener('click', (event) => {
     }
 });
 window.addEventListener('keydown', (event) => {
-    trapSettingsFocus(event);
+    modalFocusManager.trapFocus(event);
     if (event.key !== 'Escape') return;
     if (settingsScreen?.classList.contains('visible')) {
         event.preventDefault();
         closeSettingsOverlay();
+        return;
+    }
+    if (testScreen?.classList.contains('visible')) {
+        event.preventDefault();
+        closeTestMenu();
         return;
     }
     if (event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;

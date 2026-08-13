@@ -120,11 +120,12 @@ window.HW_ROADMAP_STATE = {
                         "Trapped Tab focus inside the settings overlay so keyboard users stay in the pause modal.",
                         "Added modal dialog semantics and accessible labels/descriptions to gameplay overlays.",
                         "Expanded browser smoke coverage for dialog semantics across reward, camp, test, and settings overlays.",
-                        "Added a next-action field to roadmap node details so selected work shows the immediate follow-up."
+                        "Added a next-action field to roadmap node details so selected work shows the immediate follow-up.",
+                        "Added shared modal focus management for Test, Settings, Camp, and Reward overlays, including initial focus, Tab trapping, reward-step focus, and launcher focus return.",
+                        "Escape now dismisses the Test menu and returns focus to its launcher, while required Camp and Reward choices remain modal."
                     ],
                     "left": [
                         "Keep popups from competing with HUD.",
-                        "Improve keyboard/focus checks for menu overlays.",
                         "Add richer inspect graphics for damage, cost, and rewards."
                     ],
                     "evidence": [
@@ -140,7 +141,9 @@ window.HW_ROADMAP_STATE = {
                         "index.html",
                         "roadmap-viewer/index.html",
                         "roadmap-viewer/roadmap-viewer.js",
-                        "tools/smoke-roadmap-browser.js"
+                        "tools/smoke-roadmap-browser.js",
+                        "node tools/smoke-browser.js: modal keyboard flow passed",
+                        "node tools/smoke-browser.js: Test Escape dismissal passed"
                     ]
                 }
             ]

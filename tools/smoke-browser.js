@@ -58,6 +58,28 @@ async function main() {
         labelledBy: 'testDialogTitle',
         describedBy: 'testDialogCopy'
     });
+    assert(
+        await page.evaluate(() => document.activeElement?.hasAttribute('data-test-object')),
+        'Opening the Test dialog should focus the first test scenario.'
+    );
+    await page.keyboard.press('Shift+Tab');
+    assert(
+        await page.evaluate(() => document.activeElement?.id === 'testBackButton'),
+        'Shift+Tab from the first Test choice should wrap to Main Menu.'
+    );
+    await page.keyboard.press('Tab');
+    assert(
+        await page.evaluate(() => document.activeElement?.hasAttribute('data-test-object')),
+        'Tab from Main Menu should wrap to the first Test choice.'
+    );
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('#testScreen.visible'));
+    assert(
+        await page.evaluate(() => document.activeElement?.id === 'testDanceButton'),
+        'Escape should close the Test dialog and return focus to its launcher.'
+    );
+    await page.click('#testDanceButton');
+    await page.waitForSelector('#testScreen.visible');
     const renderedTestObjects = await page.locator('#testObjectList [data-test-object]').evaluateAll((nodes) => (
         nodes.map((node) => node.getAttribute('data-test-object'))
     ));
@@ -86,6 +108,10 @@ async function main() {
     await page.waitForSelector('#testScreen.visible');
     await page.click('#testBackButton');
     await page.waitForFunction(() => !document.querySelector('#testScreen.visible'));
+    assert(
+        await page.evaluate(() => document.activeElement?.id === 'testDanceButton'),
+        'Closing the Test dialog should return focus to its launcher.'
+    );
     await page.click('#newRunButton');
     await page.waitForFunction(() => window.HW_TEST_API && window.HW_TEST_API.getState().mode === 'dungeon');
     assert(await page.locator('#eventToast.visible').count() === 1, 'Top-center toast should appear after starting a run.');
@@ -136,6 +162,10 @@ async function main() {
     assert(initialRewardOverlay.rewardFlowSteps.join(',') === 'relic,equipment', 'Reward overlay should sequence relic rewards before equipment rewards.');
     assert(initialRewardOverlay.title === 'Choose a Relic', 'Reward overlay should start on the relic step.');
     assert(initialRewardOverlay.relicIds.length > 0, 'Reward overlay should render relic choices first.');
+    assert(
+        await page.evaluate(() => document.activeElement?.hasAttribute('data-relic-id')),
+        'Opening the Reward dialog should focus the first relic choice.'
+    );
     assert(await page.locator('#relicChoices .relic-card-kicker').count() === initialRewardOverlay.relicIds.length, 'Relic cards should show rarity/depth kicker text.');
     assert(await page.locator('#relicChoices .relic-card-effect').count() === initialRewardOverlay.relicIds.length, 'Relic cards should separate effect copy from the title.');
     await page.click('#relicChoices [data-relic-id]');
@@ -143,6 +173,10 @@ async function main() {
     const equipmentRewardOverlay = await page.evaluate(() => window.HW_TEST_API.getRewardOverlayState());
     assert(equipmentRewardOverlay.completedRewardSteps.includes('relic'), 'Reward overlay should mark the relic step complete before gear.');
     assert(equipmentRewardOverlay.equipmentIds.length > 0, 'Reward overlay should render eligible equipment choices after relic selection.');
+    assert(
+        await page.evaluate(() => document.activeElement?.hasAttribute('data-equipment-id')),
+        'Advancing the Reward dialog should focus the first gear choice.'
+    );
     await page.click('#relicChoices [data-equipment-id]');
     await page.waitForFunction(() => !window.HW_TEST_API.getRewardOverlayState().visible);
     const selectedEquipmentOverlay = await page.evaluate(() => window.HW_TEST_API.getRewardOverlayState());

@@ -9,6 +9,7 @@ function createMenuController(context) {
         startGameplayMusic,
         applyAudioSettings,
         audioSystem,
+        modalFocusManager,
         renderTestObjectList,
         renderMessage,
         onTestPauseLabel
@@ -24,11 +25,13 @@ function createMenuController(context) {
             ? 'Elige un objeto para crear una sala enfocada en esa interaccion.'
             : 'Choose an object to build a focused interaction room.';
         nodes.testScreen.classList.add('visible');
+        modalFocusManager.focusFirst(nodes.testScreen, '[data-test-object]');
     }
 
     function closeTestMenu() {
         nodes.testScreen.classList.remove('visible');
         nodes.startScreen.classList.remove('hidden');
+        modalFocusManager.restoreFocus(nodes.testLauncher);
     }
 
     function returnToTestList() {
@@ -42,6 +45,7 @@ function createMenuController(context) {
         renderTestObjectList();
         nodes.startScreen.classList.add('hidden');
         nodes.testScreen.classList.add('visible');
+        modalFocusManager.focusFirst(nodes.testScreen, '[data-test-object]');
     }
 
     function toggleTestPause() {
@@ -75,14 +79,14 @@ function createMenuController(context) {
         applyAudioSettings();
         nodes.settingsScreen?.classList.add('visible');
         audioSystem.pauseAll();
-        nodes.settingsCloseButton?.focus();
+        modalFocusManager.focusFirst(nodes.settingsScreen, '#settingsCloseButton');
     }
 
     function closeSettingsOverlay() {
         game.settingsPaused = false;
         nodes.settingsScreen?.classList.remove('visible');
         audioSystem.resumeActive();
-        nodes.settingsToggle?.focus();
+        modalFocusManager.restoreFocus(nodes.settingsToggle);
     }
 
     function toggleOptions() {
