@@ -2464,11 +2464,21 @@ function renderEquipmentList() {
         return;
     }
     equipmentListNode.innerHTML = details.map((item) => (
-        `<span class="equipment-chip" title="${escapeAttr(item.equipment?.description || item.slotDef?.description || '')}">
+        `<span class="equipment-chip" title="${escapeAttr(formatEquipmentChipTooltip(item))}">
             <strong>${escapeHtml(item.slotDef?.name || item.slot)}</strong>
             <span>${escapeHtml(item.equipment?.name || t('ui', 'noneYet'))}</span>
         </span>`
     )).join('');
+}
+
+function formatEquipmentChipTooltip(item) {
+    const parts = [
+        item.slotDef?.name,
+        item.equipment?.name,
+        item.equipment?.description,
+        ...(item.effects || []).map((effect) => effect.label)
+    ].filter(Boolean);
+    return parts.join(' - ');
 }
 
 function generateDanceRoom() {
@@ -6178,6 +6188,10 @@ window.HW_TEST_API = {
         game.mode = 'dungeon';
         openRelicChoice();
         return window.HW_TEST_API.getRewardOverlayState();
+    },
+    restartRunForTest: () => {
+        createGrid();
+        return window.HW_TEST_API.getState();
     },
     getRewardOverlayState: () => ({
         visible: relicScreen.classList.contains('visible'),

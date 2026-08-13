@@ -91,6 +91,8 @@ async function main() {
     assert(startingEquipment.sting === 'barbedSting', 'New runs should equip the starter sting.');
     assert(startingEquipment.wings === 'scoutWings', 'New runs should equip the starter wings.');
     assert(await page.locator('#equipmentList .equipment-chip').count() === 5, 'Side panel should show one equipped gear chip per slot.');
+    const equipmentTooltip = await page.locator('#equipmentList .equipment-chip').first().getAttribute('title');
+    assert(equipmentTooltip && equipmentTooltip.includes('Future'), 'Side panel gear chips should expose equipment effect details in hover text.');
     const initialRewardOverlay = await page.evaluate(() => window.HW_TEST_API.openRewardFlowForTest({ roomDepth: 2, level: 2 }));
     assert(initialRewardOverlay.visible, 'Reward overlay should open between rooms.');
     assert(initialRewardOverlay.rewardFlowSteps.join(',') === 'relic,equipment', 'Reward overlay should sequence relic rewards before equipment rewards.');
@@ -106,6 +108,11 @@ async function main() {
     const selectedEquipmentOverlay = await page.evaluate(() => window.HW_TEST_API.getRewardOverlayState());
     assert(selectedEquipmentOverlay.roomDepth === 3, 'Completing reward flow should advance to the next room.');
     assert(Object.values(selectedEquipmentOverlay.equipment).some((id) => id && !Object.values(startingEquipment).includes(id)), 'Choosing gear should update one equipment slot.');
+    await page.evaluate(() => {
+        window.HW_TEST_API.setProgressionLevel(1);
+        window.HW_TEST_API.restartRunForTest();
+    });
+    await page.waitForFunction(() => window.HW_TEST_API.getState().roomTemplate === 'onboardingPath');
 
     const routeResult = await page.evaluate(async () => {
         const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
