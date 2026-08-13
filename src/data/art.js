@@ -16,9 +16,10 @@ const TILE_ART_DEFS = {
 };
 
 const THEME_TILE_SHEET_DEFS = {
-    forest: 'assets/tiles/themes/forest-cells.png',
-    cave: 'assets/tiles/themes/cave-cells.png',
-    waspHive: 'assets/tiles/themes/wasp-hive-cells.png'
+    forest: 'assets/tiles/themes/forest-surroundings.png',
+    cave: 'assets/tiles/themes/cave-surroundings.png',
+    waspHive: 'assets/tiles/themes/wasp-hive-surroundings.png',
+    underground: 'assets/tiles/themes/underground-surroundings.png'
 };
 
 const HUD_ICON_ROWS = {

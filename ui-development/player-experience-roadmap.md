@@ -119,6 +119,8 @@ The third Iteration 3 sprint moved final-room composition into each theme's data
 
 The fourth Iteration 3 sprint corrected boss durability before alternate boss identities are introduced. Theme encounter data now owns `hitsRequired`, the generated boss uses that value as runtime health, and final-room attacks follow the normal multi-hit interaction path instead of forcing the first successful sting to end the run. Data and browser smoke checks require multi-hit boss metadata and verify that the Queen Signaler survives the opening sting.
 
+The fifth Iteration 3 sprint unlocked a playable surroundings bridge without changing playable cells. `npm run themes:surroundings` now derives transparent first-pass sheets for forest, cave, wasp hive, and underground, all four themes are wired through centralized art metadata, and browser coverage verifies that every sheet loads, renders non-playable environment cells, and preserves zero overlap with gameplay coordinates. Dedicated multi-hex compositions and final atmosphere tuning remain an art-and-performance polish pass rather than a blocker for using the feature.
+
 Scope:
 
 - Implement the non-clickable surrounding mosaic described in `SURROUNDING_MOSAIC_SYSTEM.md`.

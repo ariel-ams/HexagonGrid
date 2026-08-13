@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build:roadmap": "node tools/build-roadmap-viewer.js",
+    "themes:surroundings": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/generate-theme-surroundings.ps1",
     "roadmap:update": "node tools/update-roadmap-state.js",
     "test:roadmap": "node tools/smoke-roadmap-viewer.js && node tools/smoke-roadmap-browser.js",
     "test": "node tools/smoke-data.js && node tools/smoke-roadmap-viewer.js && node tools/smoke-roadmap-browser.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"

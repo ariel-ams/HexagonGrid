@@ -106,8 +106,9 @@ async function assertGameplayLayout(page, viewport) {
 
 async function assertCrowdedFeedbackLayout(page) {
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('queenSignaler'));
-    await page.waitForSelector('#eventToast.visible');
     await page.waitForFunction(() => document.querySelectorAll('#statsHud .hud-pill').length >= 6);
+    await page.evaluate(() => window.HW_TEST_API.startTestScenario('queenSignaler'));
+    await page.waitForSelector('#eventToast.visible');
     const { toast, stats, timers } = await layoutSnapshot(page);
     assert(toast && stats, 'Crowded feedback layout should expose toast and stat HUD bounds.');
     assert(!overlaps(toast, stats), 'Toast should move below wrapped stat icons in crowded rooms.');

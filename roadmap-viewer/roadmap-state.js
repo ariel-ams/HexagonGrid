@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-13",
-    "currentTaskId": "themes",
+    "currentTaskId": "theme-surroundings",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -166,18 +166,20 @@ window.HW_ROADMAP_STATE = {
                 {
                     "id": "theme-surroundings",
                     "title": "Theme Surroundings",
-                    "status": "blocked",
+                    "status": "in_progress",
                     "owner": "Codex + Artist",
                     "objective": "Use non-clickable mosaic art outside playable cells to make each theme feel distinct.",
                     "done": [
                         "Created surrounding mosaic system design notes.",
                         "Separated environment concept from playable cell rendering.",
                         "Defined and implemented deterministic connected 1-4 hex piece placement.",
-                        "Added browser and data evidence for zero playable overlap and stable placement."
+                        "Added browser and data evidence for zero playable overlap and stable placement.",
+                        "Added automatic generation pipeline for theme surroundings sheets via npm run themes:surroundings.",
+                        "Generated transparent bridge sheets are wired for all four themes with passing placement and viewport verification."
                     ],
                     "left": [
-                        "Artist dependency: provide dedicated multi-hex surroundings art with a transparent blend row.",
-                        "Tune alignment and blending after those final assets arrive."
+                        "Replace generated bridge sheets with dedicated multi-hex surroundings compositions when final artist assets arrive.",
+                        "Tune atmosphere contrast and loading cost after dedicated art is available."
                     ],
                     "evidence": [
                         "SURROUNDING_MOSAIC_SYSTEM.md",
@@ -185,7 +187,16 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/theme-surroundings.js",
                         "tools/smoke-browser.js: stable placement fingerprint and no-overlap checks",
                         "Asset audit: current theme blend rows are fully opaque",
-                        "Next focus after completed Tactical Combat milestone"
+                        "Next focus after completed Tactical Combat milestone",
+                        ".codex-video-frames/theme-surroundings.png",
+                        "tools/generate-theme-surroundings.ps1",
+                        "assets/tiles/themes/forest-surroundings.png",
+                        "assets/tiles/themes/cave-surroundings.png",
+                        "assets/tiles/themes/wasp-hive-surroundings.png",
+                        "assets/tiles/themes/underground-surroundings.png",
+                        "npm run themes:surroundings",
+                        "tools/smoke-browser.js: all four themes load surroundings with zero playable overlap",
+                        "tools/smoke-ui-layout.js: desktop and mobile HUD layout remains readable with surroundings enabled"
                     ]
                 },
                 {
@@ -199,7 +210,8 @@ window.HW_ROADMAP_STATE = {
                         "Theme eligibility smoke checks cover supplies and enemies.",
                         "Localized theme names and gameplay descriptions in Options for English and Latin American Spanish.",
                         "Data-driven boss, support, and ambient final-room pools for every theme.",
-                        "Theme-authored multi-hit boss durability with first-hit survival coverage."
+                        "Theme-authored multi-hit boss durability with first-hit survival coverage.",
+                        "Assets for all active themes now use generated surrounding sheets and are wired into the theme tile map with surrounding-only rendering checks passing."
                     ],
                     "left": [
                         "Design and balance alternate boss identities beyond the current Queen Signaler encounter.",
@@ -209,7 +221,10 @@ window.HW_ROADMAP_STATE = {
                         "src/data/progression.js",
                         "tools/smoke-data.js",
                         "tools/smoke-browser.js: localized theme selector and themed boss-room coverage",
-                        "npm test: boss durability data and browser smoke coverage"
+                        "npm test: boss durability data and browser smoke coverage",
+                        ".codex-video-frames/theme-surroundings.png",
+                        "npm run themes:surroundings",
+                        "npm test"
                     ]
                 }
             ]

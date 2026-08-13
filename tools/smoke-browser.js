@@ -268,6 +268,27 @@ async function main() {
         repeatedThemeTileDebug.placementFingerprint === themeTileDebug.placementFingerprint,
         'Theme environment placement should remain stable between renders.'
     );
+    const themeSurroundingsCoverage = await page.evaluate(() => {
+        const themeIds = ['forest', 'cave', 'waspHive', 'underground'];
+        return themeIds.map((themeId) => {
+            window.HW_TEST_API.setDungeonTheme(themeId);
+            const debug = window.HW_TEST_API.getThemeTileDebug();
+            return {
+                themeId,
+                activeThemeId: debug.themeId,
+                sheetLoaded: debug.loadedSheets.includes(themeId),
+                environmentCells: debug.environmentCells,
+                overlapsPlayable: debug.overlapsPlayable
+            };
+        });
+    });
+    themeSurroundingsCoverage.forEach((coverage) => {
+        assert(coverage.activeThemeId === coverage.themeId, `Theme ${coverage.themeId} should become the active surroundings theme.`);
+        assert(coverage.sheetLoaded, `Theme ${coverage.themeId} should load its surroundings sheet.`);
+        assert(coverage.environmentCells > 0, `Theme ${coverage.themeId} should render non-playable surroundings.`);
+        assert(coverage.overlapsPlayable === 0, `Theme ${coverage.themeId} surroundings should not overlap playable cells.`);
+    });
+    await page.evaluate(() => window.HW_TEST_API.setDungeonTheme('forest'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'theme-surroundings.png') });
 
     await page.evaluate(() => {

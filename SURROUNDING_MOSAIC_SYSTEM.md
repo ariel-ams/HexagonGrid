@@ -33,6 +33,32 @@ row 4: accent pieces
 row 5: transparent edge blend overlays
 ```
 
+## Unlock Path
+
+To move this item from blocked to shippable in a sprint:
+
+1. Add or verify a theme base sheet in `assets/tiles/themes/<theme-id>-cells.png`.
+2. Use the generator to create a first-pass surroundings sheet:
+
+```powershell
+npm run themes:surroundings
+```
+
+3. Set `THEME_TILE_SHEET_DEFS.<theme-id>` to the generated file (for example `forest-surroundings.png`).
+4. Validate with the existing theme-surface checks:
+
+```powershell
+npm test
+```
+
+5. Capture `.codex-video-frames/theme-surroundings.png` from the browser smoke run and confirm:
+   - no overlap with playable cells,
+   - stable piece assignment when panning,
+   - blend overlays only on material boundaries,
+   - no impact on pathfinding/hit detection.
+
+After those checks pass, the feature is unlock-ready; final polish can then replace generated placeholders with dedicated surround art when it arrives (especially dedicated blend overlays and transparent row variants).
+
 ## Data Model
 
 Each theme should eventually define a manifest like this:

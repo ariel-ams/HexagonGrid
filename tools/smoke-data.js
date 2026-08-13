@@ -66,6 +66,10 @@ assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
 assert(HW_ART?.UI_ART_DEFS, 'HW_ART.UI_ART_DEFS was not registered');
 assert(HW_ART?.TILE_ART_DEFS, 'HW_ART.TILE_ART_DEFS was not registered');
 assert(HW_ART?.THEME_TILE_SHEET_DEFS, 'HW_ART.THEME_TILE_SHEET_DEFS was not registered');
+['forest', 'cave', 'waspHive', 'underground'].forEach((themeId) => {
+    const sheetPath = HW_ART.THEME_TILE_SHEET_DEFS[themeId];
+    assert(sheetPath?.endsWith('-surroundings.png'), `Theme ${themeId} should use a generated surroundings sheet`);
+});
 assert(HW_ART?.HUD_ICON_ROWS, 'HW_ART.HUD_ICON_ROWS was not registered');
 assert(HW_PROGRESSION?.ROOM_PROFILES?.length >= 5, 'Expected at least 5 room profiles');
 assert(HW_PROGRESSION?.XP_REWARDS?.room > 0, 'Room XP reward must be positive');
