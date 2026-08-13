@@ -664,6 +664,27 @@ async function main() {
     assert(bossPressure.hiveCount === 1, 'Boss room should keep a single readable hive threat.');
     assert(bossPressure.spawnLimit === 1, 'Boss hive should spawn at most one reinforcement.');
     assert(bossPressure.firstSpawnMs > 1700 && bossPressure.firstSpawnMs < 2600, 'Boss hive should threaten one reinforcement within its normal cadence.');
+    const bossDurability = await page.evaluate(() => {
+        const boss = window.HW_TEST_API.getCells().find((cell) => cell.isBoss);
+        const neighbor = window.HW_TEST_API.getCells().find((cell) => (
+            cell.object === 'empty'
+            && Math.max(
+                Math.abs(cell.q - boss.q),
+                Math.abs(cell.r - boss.r),
+                Math.abs((cell.q + cell.r) - (boss.q + boss.r))
+            ) === 1
+        ));
+        window.HW_TEST_API.setPlayerPosition(neighbor.q, neighbor.r);
+        window.HW_TEST_API.setTacticalState({ movePoints: 2, maxMovePoints: 2, actionAvailable: true });
+        window.HW_TEST_API.moveToCell(boss.q, boss.r);
+        return {
+            state: window.HW_TEST_API.getState(),
+            boss: window.HW_TEST_API.getCellData(boss.q, boss.r)
+        };
+    });
+    assert(!bossDurability.state.ended, 'Boss should survive the first successful sting.');
+    assert(bossDurability.boss?.hits === 1, 'Boss should record the first successful sting.');
+    assert(bossDurability.boss?.bossHp === bossDurability.state.bossEncounter?.hitsRequired, 'Boss runtime durability should match its theme encounter profile.');
 
     const completedRunState = await page.evaluate(() => {
         window.HW_TEST_API.endRun('boss-defeated');

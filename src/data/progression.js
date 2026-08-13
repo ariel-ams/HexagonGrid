@@ -217,6 +217,7 @@ const DUNGEON_THEMES = {
         bossEncounter: {
             boss: 'queenSignaler',
             support: 'waspHive',
+            hitsRequired: 3,
             roomObjects: [
                 { object: 'empty', weight: 55 },
                 { object: 'pollen', weight: 10 },
@@ -265,6 +266,7 @@ const DUNGEON_THEMES = {
         bossEncounter: {
             boss: 'queenSignaler',
             support: 'waspHive',
+            hitsRequired: 3,
             roomObjects: [
                 { object: 'empty', weight: 52 },
                 { object: 'pollen', weight: 8 },
@@ -313,6 +315,7 @@ const DUNGEON_THEMES = {
         bossEncounter: {
             boss: 'queenSignaler',
             support: 'waspHive',
+            hitsRequired: 3,
             roomObjects: [
                 { object: 'empty', weight: 50 },
                 { object: 'pollen', weight: 10 },
@@ -360,6 +363,7 @@ const DUNGEON_THEMES = {
         bossEncounter: {
             boss: 'queenSignaler',
             support: 'waspHive',
+            hitsRequired: 3,
             roomObjects: [
                 { object: 'empty', weight: 52 },
                 { object: 'pollen', weight: 9 },

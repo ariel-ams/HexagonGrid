@@ -265,6 +265,7 @@ Object.entries(HW_PROGRESSION.DUNGEON_THEMES).forEach(([themeId, theme]) => {
     assert(theme.bossEncounter, `Theme ${themeId} needs boss encounter metadata`);
     assert(HW_CONTENT.ENEMY_DEFS[theme.bossEncounter.boss], `Theme ${themeId} boss encounter needs a valid boss enemy`);
     assert(HW_CONTENT.ENEMY_DEFS[theme.bossEncounter.support], `Theme ${themeId} boss encounter needs a valid support enemy`);
+    assert(Number.isInteger(theme.bossEncounter.hitsRequired) && theme.bossEncounter.hitsRequired > 1, `Theme ${themeId} boss encounter needs multi-hit durability`);
     assert(Array.isArray(theme.bossEncounter.roomObjects) && theme.bossEncounter.roomObjects.length > 0, `Theme ${themeId} boss encounter needs ambient room objects`);
     theme.bossEncounter.roomObjects.forEach((entry) => {
         assert(HW_CONTENT.OBJECTS[entry.object], `Theme ${themeId} boss room references missing object ${entry.object}`);

@@ -198,7 +198,8 @@ window.HW_ROADMAP_STATE = {
                         "Theme metadata exists in progression data.",
                         "Theme eligibility smoke checks cover supplies and enemies.",
                         "Localized theme names and gameplay descriptions in Options for English and Latin American Spanish.",
-                        "Data-driven boss, support, and ambient final-room pools for every theme."
+                        "Data-driven boss, support, and ambient final-room pools for every theme.",
+                        "Theme-authored multi-hit boss durability with first-hit survival coverage."
                     ],
                     "left": [
                         "Design and balance alternate boss identities beyond the current Queen Signaler encounter.",
@@ -207,7 +208,8 @@ window.HW_ROADMAP_STATE = {
                     "evidence": [
                         "src/data/progression.js",
                         "tools/smoke-data.js",
-                        "tools/smoke-browser.js: localized theme selector and themed boss-room coverage"
+                        "tools/smoke-browser.js: localized theme selector and themed boss-room coverage",
+                        "npm test: boss durability data and browser smoke coverage"
                     ]
                 }
             ]

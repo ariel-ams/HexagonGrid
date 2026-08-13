@@ -1643,7 +1643,7 @@ function generateBossRoom() {
     });
     const boss = game.cells.find((cell) => cell.isBoss);
     if (boss) {
-        boss.bossHp = 1;
+        boss.bossHp = bossEncounter.hitsRequired;
     }
     initializePositionalEnemies();
     clearBossApproachRoute(bossPosition, spawnerPositions[0]);
@@ -4806,9 +4806,6 @@ function moveTo(cell) {
     }
 
     const interaction = resolveInteraction(targetObject, cell);
-    if (cell.isBoss && game.roomDepth >= FINAL_ROOM) {
-        interaction.consume = true;
-    }
     const actionObject = !collectOnMove && !isFreeWalkoverObject(targetObject);
     if (actionObject && !consumeAction(`interact:${targetObject}`)) {
         showBlockedAction(cell, currentLanguage === 'es-419' ? 'Ya usaste tu acción este turno.' : 'You already used your action this turn.');
@@ -4880,9 +4877,6 @@ function attackEnemyCell(cell) {
     audioSystem.playEffect('sting');
     addAttackEffect(game.player.q, game.player.r, cell.q, cell.r, cell.object, 'melee');
     const interaction = resolveInteraction(targetObject, cell);
-    if (cell.isBoss && game.roomDepth >= FINAL_ROOM) {
-        interaction.consume = true;
-    }
     game.message = interaction.message;
     addLog(OBJECTS[targetObject].name, interaction.message);
     addStatPopups(cell.q, cell.r, interaction.deltas);

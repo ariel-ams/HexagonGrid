@@ -349,9 +349,9 @@ Each theme defines:
 - `enemies`: enemy ids allowed to appear in that theme.
 - `items`: pickup, utility, and trader ids allowed to appear in that theme.
 - `hazards`: terrain/blocker ids allowed to appear in that theme.
-- `bossEncounter`: the final-room `boss`, one `support` threat, and weighted `roomObjects` used outside the clear approach lanes.
+- `bossEncounter`: the final-room `boss`, one `support` threat, `hitsRequired`, and weighted `roomObjects` used outside the clear approach lanes.
 
-`bossEncounter.roomObjects` uses `{ object, weight }` entries. Every object must be `empty` or already belong to the same theme's `items` or `hazards` list. Boss and support ids must reference enemy definitions. The current themes deliberately retain the tuned Queen Signaler plus one Wasp Hive structure while varying the surrounding supplies and hazards; replacing either enemy later also requires a focused boss playtest.
+`bossEncounter.roomObjects` uses `{ object, weight }` entries. Every object must be `empty` or already belong to the same theme's `items` or `hazards` list. Boss and support ids must reference enemy definitions. `hitsRequired` is a positive integer greater than one and becomes the runtime boss health for that theme; keep it low enough that positioning remains the challenge instead of turning the boss into an HP wall. The current themes use three successful stings for the Queen Signaler plus one Wasp Hive structure while varying the surrounding supplies and hazards; replacing either enemy later also requires a focused boss playtest.
 
 The main menu Options panel can force a theme or leave it on `Random`. Room generation still respects player level and `ROOM_PROFILES`; the theme is an additional filter, so a late enemy will not appear early just because the theme allows it.
 

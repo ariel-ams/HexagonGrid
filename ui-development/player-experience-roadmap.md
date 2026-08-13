@@ -117,6 +117,8 @@ The second Iteration 3 sprint made dungeon-theme selection understandable before
 
 The third Iteration 3 sprint moved final-room composition into each theme's data. Every theme now defines a boss, support threat, and weighted ambient object pool; runtime boss placement, approach clearing, delayed engagement, anti-kite pressure, and debug state consume that encounter profile. The existing Queen Signaler plus one Wasp Hive balance remains consistent, while forest, cave, wasp hive, and underground final rooms now draw supplies and hazards only from their own authored pools.
 
+The fourth Iteration 3 sprint corrected boss durability before alternate boss identities are introduced. Theme encounter data now owns `hitsRequired`, the generated boss uses that value as runtime health, and final-room attacks follow the normal multi-hit interaction path instead of forcing the first successful sting to end the run. Data and browser smoke checks require multi-hit boss metadata and verify that the Queen Signaler survives the opening sting.
+
 Scope:
 
 - Implement the non-clickable surrounding mosaic described in `SURROUNDING_MOSAIC_SYSTEM.md`.
