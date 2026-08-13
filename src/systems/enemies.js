@@ -332,6 +332,13 @@ function createEnemySystem(context) {
         game.player.r = target.r;
         target.visited = true;
         target.revealed = true;
+        const pushBehavior = getBehavior(enemyCell.object, 'pushPlayerOnAttack');
+        if (pushBehavior?.landingObject) {
+            target.object = pushBehavior.landingObject;
+            target.detonateAt = performance.now() + (pushBehavior.landingDelayMs || 1600);
+            target.detonateDamage = pushBehavior.landingDamage || 1;
+            target.sourceEnemy = enemyCell.object;
+        }
         helpers.startPlayerMotion?.(previous.q, previous.r, target.q, target.r);
         helpers.revealAroundPlayer?.();
         const enemy = enemyDefs[enemyCell.object];
@@ -339,7 +346,15 @@ function createEnemySystem(context) {
             ? `${enemy.name} empujó a la abeja fuera de posición.`
             : `${enemy.name} pushed the bee out of position.`;
         helpers.addLog(enemy.name, message);
-        helpers.recordReplayEvent('enemyMove', { enemy: enemyCell.object, q: enemyCell.q, r: enemyCell.r, effect: 'pushPlayer', toQ: target.q, toR: target.r });
+        helpers.recordReplayEvent('enemyMove', {
+            enemy: enemyCell.object,
+            q: enemyCell.q,
+            r: enemyCell.r,
+            effect: 'pushPlayer',
+            toQ: target.q,
+            toR: target.r,
+            landingObject: pushBehavior?.landingObject || null
+        });
         return true;
     }
 

@@ -5338,13 +5338,16 @@ function updateTerrainEffects() {
         }
 
         if (cell.object === 'bomberMarkedCell' && cell.detonateAt && now >= cell.detonateAt) {
+            const sourceEnemy = cell.sourceEnemy || 'combBomber';
+            const sourceName = getEnemyDef(sourceEnemy)?.name || 'Comb Bomber';
             if (cell.q === game.player.q && cell.r === game.player.r) {
-                applyDamage(cell.detonateDamage || 1, cell.q, cell.r, 'Comb Bomber Blast');
+                applyDamage(cell.detonateDamage || 1, cell.q, cell.r, `${sourceName} Blast`);
             }
             cell.object = 'empty';
             cell.detonateAt = 0;
             cell.detonateDamage = 0;
-            recordReplayEvent('enemySpecial', { enemy: 'combBomber', q: cell.q, r: cell.r, effect: 'detonate' });
+            cell.sourceEnemy = null;
+            recordReplayEvent('enemySpecial', { enemy: sourceEnemy, q: cell.q, r: cell.r, effect: 'detonate' });
         }
     });
 }

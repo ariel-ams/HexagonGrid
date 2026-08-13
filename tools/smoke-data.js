@@ -272,6 +272,12 @@ function assertLocalizedTuple(section, id, expectedLength = 2) {
 
 function assertBehaviorPayload(enemyId, behavior) {
     const object = behavior.object;
+    if (behavior.type === 'pushPlayerOnAttack' && behavior.landingObject) {
+        assert(HW_CONTENT.OBJECTS[behavior.landingObject], `Enemy ${enemyId} ${behavior.type} must reference a valid landing object`);
+        assert(behavior.landingDelayMs > 0, `Enemy ${enemyId} ${behavior.type} landing delay must be positive`);
+        assert(behavior.landingDamage > 0, `Enemy ${enemyId} ${behavior.type} landing damage must be positive`);
+        return;
+    }
     if (behavior.type === 'spawnEnemyAura') {
         assert(object && HW_CONTENT.ENEMY_DEFS[object], `Enemy ${enemyId} ${behavior.type} must reference a valid enemy object`);
         return;

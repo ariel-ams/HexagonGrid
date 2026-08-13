@@ -193,7 +193,7 @@ const I18N = {
             broodWasp: ['Brood Wasp', 'Spawns mite swarms if left alive too long.', 'Prioritize it before the room fills with small threats.'],
             stagBeetle: ['Stag Beetle', 'Heavy blocker. Its antlers guard the front and it marks a charge lane through chokepoints.', 'Step out of the marked lane, then circle around its facing before attacking.'],
             falseFlower: ['False Flower', 'Looks like pollen until close, then bites with a hidden aura.', 'Inspect rewards carefully when the route feels too generous.'],
-            guardWasp: ['Guard Wasp', 'Stationary guard. Its larger aura reaches 2 cells and pushes the bee away when it hits.', 'Check the landing space before entering its zone.'],
+            guardWasp: ['Guard Wasp', 'Stationary guard. Its larger aura reaches 2 cells, pushes the bee away, and marks the landing cell.', 'Move sideways after the push before the landing marker detonates.'],
             sleepingBat: ['Sleeping Bat', 'Sleeps until the bee gets close, then wakes and pursues.', 'Skirt around it unless the reward is worth waking it.'],
             honeyLeech: ['Honey Leech', 'Stationary drain. Chews through shield first, then health.', 'Shield is not permanent safety near this enemy.'],
             waspHive: ['Wasp Hive', 'Living hive. After a warning pulse, releases a wasp into a nearby empty cell.', 'Clear it before fighting other threats or the room slowly fills with wasps.'],
@@ -411,7 +411,7 @@ const I18N = {
             broodWasp: ['Avispa nodriza', 'Genera enjambres de ácaros si la ignoras demasiado.', 'Priorízala antes de que la sala se llene de amenazas pequeñas.'],
             stagBeetle: ['Escarabajo ciervo', 'Bloqueador pesado. Sus cuernos guardan el frente y marca un carril de carga en los pasillos.', 'Sal del carril marcado, luego rodea su direccion antes de atacar.'],
             falseFlower: ['Flor falsa', 'Parece polen hasta que te acercas, luego muerde con un aura oculta.', 'Inspecciona las recompensas cuando la ruta parezca demasiado generosa.'],
-            guardWasp: ['Avispa guardia', 'Guardia fija. Su aura llega a 2 celdas y empuja a la abeja cuando golpea.', 'Revisa dónde aterrizarás antes de entrar en su zona.'],
+            guardWasp: ['Avispa guardia', 'Guardia fija. Su aura llega a 2 celdas, empuja a la abeja y marca la celda de aterrizaje.', 'Muévete hacia un lado después del empujón antes de que explote la marca.'],
             sleepingBat: ['Murciélago dormido', 'Duerme hasta que la abeja se acerca, luego despierta y persigue.', 'Rodéalo salvo que la recompensa valga despertarlo.'],
             honeyLeech: ['Sanguijuela de miel', 'Drenaje fijo. Come escudo primero y luego salud.', 'El escudo no es seguridad permanente cerca de este enemigo.'],
             waspHive: ['Colmena de avispas', 'Colmena viva. Tras una advertencia, libera una avispa en una celda vacía cercana.', 'Destrúyela antes de pelear con otras amenazas o la sala se llenará de avispas.'],
@@ -683,9 +683,9 @@ const ENEMY_DEFS = {
         attack: 2,
         intervalMs: 1200,
         range: 2,
-        behavior: 'Stationary guard. Its larger aura reaches 2 cells and pushes the bee away when it hits.',
-        lesson: 'Check the landing space before entering its zone.',
-        behaviors: [{ type: 'damageAura' }, { type: 'pushPlayerOnAttack' }]
+        behavior: 'Stationary guard. Its larger aura reaches 2 cells, pushes the bee away, and marks the landing cell.',
+        lesson: 'Move sideways after the push before the landing marker detonates.',
+        behaviors: [{ type: 'damageAura' }, { type: 'pushPlayerOnAttack', landingObject: 'bomberMarkedCell', landingDelayMs: 1800, landingDamage: 1 }]
     },
     sleepingBat: {
         name: 'Sleeping Bat',

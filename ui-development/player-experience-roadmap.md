@@ -78,6 +78,8 @@ The fourth Iteration 2 sprint repaired the deterministic boss playtest contract 
 
 The fifth Iteration 2 sprint made hive reinforcement placement tactical instead of random-safe. `spawnEnemyAura` now supports `preferTowardPlayer`, Wasp Hives use it, and both data and browser smoke tests verify the nearest legal spawn cell. Three measured boss runs still ended in 11-12 turns, but the single reinforcement now dealt exactly 2 visible Wasp Attack damage in every run instead of zero, creating pressure without increasing hive or spawn counts.
 
+The sixth Iteration 2 sprint completed the current positional-combat milestone. Guard Wasp pushes can now define a delayed landing hazard through data; the Guard Wasp marks the bee's landing cell for a one-damage blast with a 1.8-second response window. The warning preserves Guard Wasp damage attribution, replay metadata records the landing effect, localized inspect copy teaches the sideways escape, and browser evidence verifies the complete push-to-warning sequence.
+
 Scope:
 
 - Convert more enemies into position puzzles:

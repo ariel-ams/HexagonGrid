@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-13",
-    "currentTaskId": "tactical-combat",
+    "currentTaskId": "theme-surroundings",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -85,7 +85,7 @@ window.HW_ROADMAP_STATE = {
                 {
                     "id": "tactical-combat",
                     "title": "Tactical Combat Loop",
-                    "status": "active",
+                    "status": "done",
                     "owner": "Codex",
                     "objective": "Make enemies position puzzles first and HP bags second.",
                     "done": [
@@ -96,11 +96,10 @@ window.HW_ROADMAP_STATE = {
                         "Added a direct water counter that extinguishes Crawling Fire without spending a sting attack.",
                         "Resource-cost popups now use utility colors instead of danger red.",
                         "Added reusable pushPlayerOnAttack forced movement and assigned it to Guard Wasp.",
-                        "Measured and tuned boss hive pressure: one toward-player reinforcement now deals 2 visible damage in deterministic runs."
+                        "Measured and tuned boss hive pressure: one toward-player reinforcement now deals 2 visible damage in deterministic runs.",
+                        "Guard Wasp pushes now mark the landing cell with a delayed one-damage warning and a 1.8-second response window."
                     ],
-                    "left": [
-                        "Add another lane or flank behavior that combines with Guard Wasp displacement."
-                    ],
+                    "left": [],
                     "evidence": [
                         "src/systems/tactical-combat.js",
                         "src/systems/enemy-turns.js",
@@ -111,7 +110,8 @@ window.HW_ROADMAP_STATE = {
                         "node tools/smoke-browser.js: Guard Wasp push and inspect warning passed",
                         ".codex-video-frames/guard-wasp-push.png",
                         "tools/playtest-boss-cdp.js: 3 wins in 11-12 turns, peak reinforcement 1, Wasp Attack damage 2",
-                        ".codex-video-frames/wasp-hive-pressure-spawn.png"
+                        ".codex-video-frames/wasp-hive-pressure-spawn.png",
+                        "node tools/smoke-browser.js: Guard Wasp landing warning passed"
                     ]
                 },
                 {
@@ -166,7 +166,7 @@ window.HW_ROADMAP_STATE = {
                 {
                     "id": "theme-surroundings",
                     "title": "Theme Surroundings",
-                    "status": "planned",
+                    "status": "active",
                     "owner": "Codex + Artist",
                     "objective": "Use non-clickable mosaic art outside playable cells to make each theme feel distinct.",
                     "done": [
@@ -180,7 +180,8 @@ window.HW_ROADMAP_STATE = {
                     ],
                     "evidence": [
                         "SURROUNDING_MOSAIC_SYSTEM.md",
-                        "PROCEDURAL_TILE_ART_REFERENCE.md"
+                        "PROCEDURAL_TILE_ART_REFERENCE.md",
+                        "Next focus after completed Tactical Combat milestone"
                     ]
                 },
                 {

@@ -151,7 +151,7 @@ Existing behavior types:
 - `damageAura`: timed damage while the bee is in range.
 - `biteAdjacent`: timed adjacent attack for bats.
 - `moveTowardPlayer`: moves toward the bee after player movement.
-- `pushPlayerOnAttack`: pushes the bee to an empty adjacent cell farther from the attacker after turn damage lands.
+- `pushPlayerOnAttack`: pushes the bee to an empty adjacent cell farther from the attacker after turn damage lands. Optional `landingObject`, `landingDelayMs`, and `landingDamage` fields turn the destination into a delayed positional warning.
 - `moveEverySteps`: moves on a cadence.
 - `wakeOnRange`: activates when the bee gets close.
 - `refogAura`: hides revealed cells again.

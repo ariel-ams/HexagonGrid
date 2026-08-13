@@ -409,15 +409,24 @@ async function main() {
         const destination = { q: 0, r: 1 };
         api.moveToCell(destination.q, destination.r);
         const player = api.getState().player;
+        const landing = api.getCellData(player.q, player.r);
         return {
             destination,
             player: { q: player.q, r: player.r },
             distanceBefore: distance(destination, guard),
-            distanceAfter: distance(player, guard)
+            distanceAfter: distance(player, guard),
+            landingObject: landing.object,
+            landingDamage: landing.detonateDamage,
+            landingSource: landing.sourceEnemy,
+            landingDelay: Math.round((landing.detonateAt || 0) - performance.now())
         };
     });
     assert(guardPush.distanceAfter > guardPush.distanceBefore, 'Guard Wasp attacks should push the bee one cell farther away.');
     assert(guardPush.player.q !== guardPush.destination.q || guardPush.player.r !== guardPush.destination.r, 'Forced movement should visibly change the bee position.');
+    assert(guardPush.landingObject === 'bomberMarkedCell', 'Guard Wasp should mark the pushed landing cell as delayed danger.');
+    assert(guardPush.landingDamage === 1, 'Guard Wasp landing warning should deal one damage if ignored.');
+    assert(guardPush.landingSource === 'guardWasp', 'Guard Wasp landing warning should preserve its damage source.');
+    assert(guardPush.landingDelay > 1400, 'Guard Wasp landing warning should leave a clear response window.');
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'guard-wasp-push.png') });
 
     const hivePressureSpawn = await page.evaluate(() => {
