@@ -124,6 +124,49 @@ body {
     flex-wrap: wrap;
 }
 
+.timeline-legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    color: #fff5cf;
+    list-style: none;
+    font-size: 0.82rem;
+    font-weight: 900;
+}
+
+.timeline-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 245, 207, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 245, 207, 0.08);
+}
+
+.timeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--backlog);
+    box-shadow: 0 0 0 3px rgba(255, 245, 207, 0.08);
+}
+
+.timeline-dot.done {
+    background: var(--done);
+}
+
+.timeline-dot.now {
+    background: var(--active);
+}
+
+.timeline-dot.later {
+    background: var(--planned);
+}
+
 .status-filter {
     min-height: 38px;
     padding: 0 12px;
@@ -221,6 +264,10 @@ body {
     background: rgba(255, 245, 207, 0.08);
 }
 
+.detail-meta .wide {
+    grid-column: 1 / -1;
+}
+
 .detail-meta dt {
     color: var(--honey);
     font-size: 0.72rem;
@@ -267,6 +314,7 @@ body {
 
 .roadmap-node {
     width: 220px;
+    min-height: 126px;
     padding: 12px;
     border: 2px solid var(--node-color);
     border-radius: 8px;
@@ -303,6 +351,13 @@ body {
 
 .roadmap-node-status {
     color: var(--node-color);
+}
+
+.roadmap-node-lane {
+    margin: 8px 0 0;
+    color: #d3bf8b;
+    font-size: 0.78rem;
+    font-weight: 800;
 }
 
 .react-flow__node {
@@ -357,6 +412,10 @@ body {
 
     .status-filters {
         justify-content: flex-start;
+    }
+
+    .timeline-legend {
+        flex-wrap: wrap;
     }
 
     .roadmap-layout {

@@ -32,10 +32,22 @@ async function main() {
 
     const nodeCount = await page.locator('.react-flow__node').count();
     assert(nodeCount >= 6, 'Roadmap viewer should render the roadmap nodes.');
+    assert(await page.locator('.timeline-legend li').count() === 3, 'Roadmap viewer should show Done, Now, and Later timeline groups.');
     assert(await page.locator('#statusFilters [data-status-filter]').count() >= 5, 'Roadmap viewer should render status filter buttons.');
+    const timelineGroups = await page.evaluate(() => window.HW_ROADMAP_VIEWER.getTimelineGroups());
+    assert(timelineGroups.map((group) => group.id).join(',') === 'done,now,later', 'Timeline groups should read left-to-right as done, now, later.');
+    const nodePositions = await page.evaluate(() => window.HW_ROADMAP_VIEWER.getNodePositions());
+    const doneX = nodePositions.filter((node) => node.phaseId === 'done').map((node) => node.x);
+    const nowX = nodePositions.filter((node) => node.phaseId === 'now').map((node) => node.x);
+    const laterX = nodePositions.filter((node) => node.phaseId === 'later').map((node) => node.x);
+    assert(doneX.length && nowX.length && laterX.length, 'Roadmap should include done, now, and later columns.');
+    assert(Math.max(...doneX) < Math.min(...nowX), 'Done nodes should be placed before active/in-progress nodes.');
+    assert(Math.max(...nowX) < Math.min(...laterX), 'Active/in-progress nodes should be placed before future nodes.');
     await page.locator('.react-flow__node').first().click();
     const detailTitle = await page.locator('#detailTitle').textContent();
     assert(detailTitle && detailTitle.trim() !== 'Select a node', 'Selecting a node should update the detail panel.');
+    assert(await page.locator('#detailPhase').textContent().then((text) => text.trim().length > 0 && text.trim() !== '-'), 'Selecting a node should show its timeline phase.');
+    assert(await page.locator('#detailProgress').textContent().then((text) => text.includes('done') && text.includes('left')), 'Selecting a node should show done/left progress counts.');
     await page.locator('#statusFilters [data-status-filter="active"]').click();
     await page.waitForFunction(() => window.HW_ROADMAP_VIEWER?.getActiveStatus?.() === 'active');
     const activeNodeIds = await page.evaluate(() => window.HW_ROADMAP_VIEWER.getVisibleNodeIds());

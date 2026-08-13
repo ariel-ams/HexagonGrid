@@ -24,9 +24,14 @@
 
         <section class="roadmap-filter-bar" aria-label="Roadmap status filters">
             <div>
-                <p class="eyebrow">Status View</p>
+                <p class="eyebrow">Timeline View</p>
                 <p id="statusSummary">Showing all roadmap nodes.</p>
             </div>
+            <ol class="timeline-legend" aria-label="Roadmap chronology">
+                <li><span class="timeline-dot done"></span>Done</li>
+                <li><span class="timeline-dot now"></span>Now</li>
+                <li><span class="timeline-dot later"></span>Later</li>
+            </ol>
             <div id="statusFilters" class="status-filters" role="group" aria-label="Filter roadmap nodes by status"></div>
         </section>
 
@@ -44,6 +49,18 @@
                     <div>
                         <dt>Owner</dt>
                         <dd id="detailOwner">-</dd>
+                    </div>
+                    <div>
+                        <dt>Timeline</dt>
+                        <dd id="detailPhase">-</dd>
+                    </div>
+                    <div>
+                        <dt>Lane</dt>
+                        <dd id="detailLane">-</dd>
+                    </div>
+                    <div class="wide">
+                        <dt>Progress</dt>
+                        <dd id="detailProgress">-</dd>
                     </div>
                 </dl>
                 <section>

@@ -5,8 +5,8 @@ const root = path.resolve(__dirname, '..');
 
 esbuild.build({
     absWorkingDir: root,
-    entryPoints: ['././roadmap-viewer/roadmap-viewer.js'],
-    outfile: 'roadmap-viewer/dist/roadmap-viewer.bundle.js',
+    entryPoints: [path.join(root, 'roadmap-viewer', 'roadmap-viewer.js')],
+    outfile: path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.js'),
     bundle: true,
     format: 'iife',
     platform: 'browser',

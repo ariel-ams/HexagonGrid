@@ -30866,6 +30866,20 @@
     blocked: "Blocked"
   };
   var FILTER_OPTIONS = ["all", "active", "in_progress", "planned", "backlog", "done", "blocked"];
+  var TIMELINE_GROUPS = [
+    { id: "done", label: "Done", statuses: ["done"], x: 40 },
+    { id: "now", label: "Now", statuses: ["active", "in_progress"], x: 390 },
+    { id: "later", label: "Later", statuses: ["planned", "backlog", "blocked"], x: 740 }
+  ];
+  var TIMELINE_GROUP_BY_STATUS = TIMELINE_GROUPS.reduce((groups, group) => {
+    group.statuses.forEach((status) => {
+      groups[status] = group;
+    });
+    return groups;
+  }, {});
+  function getTimelineGroup(status) {
+    return TIMELINE_GROUP_BY_STATUS[status] || TIMELINE_GROUPS[TIMELINE_GROUPS.length - 1];
+  }
   function flattenRoadmap(roadmap2) {
     return roadmap2.lanes.flatMap((lane, laneIndex) => lane.nodes.map((node, nodeIndex) => ({
       ...node,
@@ -30876,55 +30890,48 @@
     })));
   }
   function buildFlowElements(roadmap2) {
-    const nodes = [];
     const edges = [];
-    const laneGap = 300;
-    const nodeGap = 180;
-    const startX = 40;
+    const nodeGap = 172;
     const startY = 40;
-    roadmap2.lanes.forEach((lane, laneIndex) => {
-      lane.nodes.forEach((roadmapNode, nodeIndex) => {
-        const id2 = roadmapNode.id;
-        const isCurrent = id2 === roadmap2.currentTaskId;
-        nodes.push({
-          id: id2,
-          type: "roadmapNode",
-          position: {
-            x: startX + laneIndex * laneGap,
-            y: startY + nodeIndex * nodeGap
-          },
-          data: {
-            ...roadmapNode,
-            laneTitle: lane.title,
-            isCurrent
-          }
+    const phaseCounts = {};
+    const orderedNodes = [...flattenRoadmap(roadmap2)].sort((a, b) => {
+      const phaseA = TIMELINE_GROUPS.findIndex((group) => group.id === getTimelineGroup(a.status).id);
+      const phaseB = TIMELINE_GROUPS.findIndex((group) => group.id === getTimelineGroup(b.status).id);
+      if (phaseA !== phaseB) return phaseA - phaseB;
+      if (a.laneIndex !== b.laneIndex) return a.laneIndex - b.laneIndex;
+      return a.nodeIndex - b.nodeIndex;
+    });
+    const nodes = orderedNodes.map((roadmapNode) => {
+      const timelineGroup = getTimelineGroup(roadmapNode.status);
+      const phaseIndex = phaseCounts[timelineGroup.id] || 0;
+      phaseCounts[timelineGroup.id] = phaseIndex + 1;
+      const isCurrent = roadmapNode.id === roadmap2.currentTaskId;
+      return {
+        id: roadmapNode.id,
+        type: "roadmapNode",
+        position: {
+          x: timelineGroup.x,
+          y: startY + phaseIndex * nodeGap
+        },
+        data: {
+          ...roadmapNode,
+          phaseId: timelineGroup.id,
+          phaseLabel: timelineGroup.label,
+          isCurrent
+        }
+      };
+    });
+    orderedNodes.forEach((roadmapNode, index2) => {
+      const target = orderedNodes[index2 + 1]?.id;
+      if (target) {
+        edges.push({
+          id: `${roadmapNode.id}-${target}`,
+          source: roadmapNode.id,
+          target,
+          type: "smoothstep",
+          animated: target === roadmap2.currentTaskId || roadmapNode.id === roadmap2.currentTaskId,
+          markerEnd: { type: MarkerType.ArrowClosed }
         });
-        if (nodeIndex > 0) {
-          const source = lane.nodes[nodeIndex - 1].id;
-          edges.push({
-            id: `${source}-${id2}`,
-            source,
-            target: id2,
-            type: "smoothstep",
-            animated: isCurrent,
-            markerEnd: { type: MarkerType.ArrowClosed }
-          });
-        }
-      });
-      if (laneIndex > 0) {
-        const previousLane = roadmap2.lanes[laneIndex - 1];
-        const source = previousLane.nodes[previousLane.nodes.length - 1]?.id;
-        const target = lane.nodes[0]?.id;
-        if (source && target) {
-          edges.push({
-            id: `${source}-${target}`,
-            source,
-            target,
-            type: "smoothstep",
-            animated: target === roadmap2.currentTaskId,
-            markerEnd: { type: MarkerType.ArrowClosed }
-          });
-        }
       }
     });
     return { nodes, edges };
@@ -30944,9 +30951,10 @@
       import_react3.default.createElement(
         "div",
         { className: "roadmap-node-meta" },
-        import_react3.default.createElement("span", null, data.laneTitle),
+        import_react3.default.createElement("span", null, data.phaseLabel),
         import_react3.default.createElement("span", { className: "roadmap-node-status" }, STATUS_LABELS[data.status] || data.status)
       ),
+      import_react3.default.createElement("p", { className: "roadmap-node-lane" }, data.laneTitle),
       import_react3.default.createElement(Handle, { type: "source", position: Position.Right })
     );
   }
@@ -30969,6 +30977,9 @@
     setText("detailObjective", selected2?.objective || "Click a roadmap node to see what is done, what is left, and which files provide evidence.");
     setText("detailStatus", selected2 ? STATUS_LABELS[selected2.status] || selected2.status : "-");
     setText("detailOwner", selected2?.owner || "-");
+    setText("detailPhase", selected2?.phaseLabel || "-");
+    setText("detailLane", selected2?.laneTitle || "-");
+    setText("detailProgress", selected2 ? `${selected2.done?.length || 0} done, ${selected2.left?.length || 0} left${selected2.isCurrent ? " - current focus" : ""}` : "-");
     renderList("detailDone", selected2?.done);
     renderList("detailLeft", selected2?.left);
     renderList("detailEvidence", selected2?.evidence);
@@ -31009,11 +31020,11 @@
   function RoadmapApp({ roadmap: roadmap2 }) {
     const flow = useReactFlow();
     const allNodes = (0, import_react3.useMemo)(() => flattenRoadmap(roadmap2), [roadmap2]);
-    const currentNode = allNodes.find((node) => node.id === roadmap2.currentTaskId) || allNodes[0];
-    const [selected2, setSelected] = (0, import_react3.useState)(currentNode);
     const [activeStatus, setActiveStatus] = (0, import_react3.useState)("all");
     const statusCounts = (0, import_react3.useMemo)(() => getStatusCounts(allNodes), [allNodes]);
     const flowElements = (0, import_react3.useMemo)(() => buildFlowElements(roadmap2), [roadmap2]);
+    const currentNode = flowElements.nodes.find((node) => node.id === roadmap2.currentTaskId)?.data || flowElements.nodes[0]?.data || allNodes[0];
+    const [selected2, setSelected] = (0, import_react3.useState)(currentNode);
     const visibleNodeIds = (0, import_react3.useMemo)(() => new Set(allNodes.filter((node) => activeStatus === "all" || node.status === activeStatus).map((node) => node.id)), [activeStatus, allNodes]);
     const nodes = (0, import_react3.useMemo)(() => flowElements.nodes.filter((node) => visibleNodeIds.has(node.id)), [flowElements.nodes, visibleNodeIds]);
     const edges = (0, import_react3.useMemo)(() => flowElements.edges.filter((edge) => visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)), [flowElements.edges, visibleNodeIds]);
@@ -31030,9 +31041,9 @@
     }, [selected2]);
     (0, import_react3.useEffect)(() => {
       if (!selected2 || visibleNodeIds.has(selected2.id)) return;
-      const nextSelected = allNodes.find((node) => visibleNodeIds.has(node.id)) || currentNode;
+      const nextSelected = flowElements.nodes.find((node) => visibleNodeIds.has(node.id))?.data || currentNode;
       setSelected(nextSelected);
-    }, [allNodes, currentNode, selected2, visibleNodeIds]);
+    }, [currentNode, flowElements.nodes, selected2, visibleNodeIds]);
     (0, import_react3.useEffect)(() => {
       renderStatusFilters({
         activeStatus,
@@ -31050,9 +31061,16 @@
         getSelected: () => selected2,
         getActiveStatus: () => activeStatus,
         getVisibleNodeIds: () => nodes.map((node) => node.id),
+        getTimelineGroups: () => TIMELINE_GROUPS.map(({ id: id2, label, statuses }) => ({ id: id2, label, statuses })),
+        getNodePositions: () => flowElements.nodes.map((node) => ({
+          id: node.id,
+          phaseId: node.data.phaseId,
+          x: node.position.x,
+          y: node.position.y
+        })),
         fitGraph
       };
-    }, [activeStatus, fitGraph, nodes, roadmap2, selected2]);
+    }, [activeStatus, fitGraph, flowElements.nodes, nodes, roadmap2, selected2]);
     (0, import_react3.useEffect)(() => {
       const fitButton = document.getElementById("fitButton");
       if (!fitButton) return void 0;
