@@ -30,6 +30,7 @@ runBrowserScript('src/data/art.js');
 runBrowserScript('src/data/progression.js');
 runBrowserScript('src/systems/run-summary.js');
 runBrowserScript('src/systems/equipment.js');
+runBrowserScript('src/systems/reward-flow.js');
 runBrowserScript('src/systems/choice-ui.js');
 runBrowserScript('src/systems/cell-interactions.js');
 runBrowserScript('src/systems/items.js');
@@ -73,6 +74,7 @@ assert(contentManifestChecklist.includes('plannedAsset'), 'Wearable checklist sh
 assert(sandbox.window.HW_RUN_SUMMARY?.createRunSummarySystem, 'Expected run summary system');
 assert(sandbox.window.HW_EQUIPMENT?.createEquipmentSystem, 'Expected equipment system');
 assert(sandbox.window.HW_EQUIPMENT?.hasEquipmentEffectHandler, 'Expected equipment effect metadata');
+assert(sandbox.window.HW_REWARD_FLOW?.createRewardFlowSystem, 'Expected reward flow system');
 assert(sandbox.window.HW_CHOICE_UI?.createChoiceUi, 'Expected choice UI system');
 assert(sandbox.window.HW_CELL_INTERACTIONS?.createCellInteractionSystem, 'Expected cell interaction system');
 assert(sandbox.window.HW_ITEMS?.hasItemEffectHandler, 'Expected item effect handler metadata');
@@ -420,6 +422,9 @@ const equipmentSystem = sandbox.window.HW_EQUIPMENT.createEquipmentSystem({
     equipmentSlots: HW_CONTENT.EQUIPMENT_SLOTS,
     equipmentDefs: HW_CONTENT.EQUIPMENT_DEFS
 });
+const rewardFlowSystem = sandbox.window.HW_REWARD_FLOW.createRewardFlowSystem({
+    equipmentSystem
+});
 const choiceUi = sandbox.window.HW_CHOICE_UI.createChoiceUi({
     escapeHtml: (value) => String(value).replace(/[&<>"']/g, (char) => ({
         '&': '&amp;',
@@ -561,6 +566,31 @@ const laterRewardPlan = equipmentSystem.createEquipmentRewardPlan({
     cadence: 2
 });
 assert(laterRewardPlan.status === 'waiting' && laterRewardPlan.nextEligibleDepth === 4, 'Equipment reward plan should compute the next cadence reward depth');
+const relicRewardChoice = Object.values(HW_CONTENT.RELICS)[0];
+const rewardFlowPlan = rewardFlowSystem.createPostRoomRewardPlan({
+    roomDepth: 2,
+    playerLevel: 2,
+    loadout: starterLoadout,
+    relicChoices: [relicRewardChoice],
+    equipmentOptions: { count: 3 },
+    rng: () => 0,
+    language: 'en'
+});
+assert(rewardFlowPlan.hasRewards, 'Reward flow should report available post-room rewards');
+assert(rewardFlowPlan.steps.map((step) => step.id).join(',') === 'relic,equipment', 'Reward flow should sequence relic choices before equipment rewards');
+assert(rewardFlowPlan.relic.available && rewardFlowPlan.relic.count === 1, 'Reward flow should include relic choices');
+assert(rewardFlowPlan.equipment.available && rewardFlowPlan.equipment.choices.length === 3, 'Reward flow should include eligible equipment choices');
+assert(rewardFlowSystem.getNextRewardStep(rewardFlowPlan)?.id === 'relic', 'Reward flow should start with relic selection');
+assert(rewardFlowSystem.getNextRewardStep(rewardFlowPlan, ['relic'])?.id === 'equipment', 'Reward flow should continue to equipment after relic selection');
+assert(rewardFlowSystem.getNextRewardStep(rewardFlowPlan, ['relic', 'equipment']) === null, 'Reward flow should finish after all reward steps are complete');
+const waitingFlowPlan = rewardFlowSystem.createPostRoomRewardPlan({
+    roomDepth: 1,
+    playerLevel: 2,
+    loadout: starterLoadout,
+    relicChoices: [],
+    language: 'es-419'
+});
+assert(!waitingFlowPlan.hasRewards && waitingFlowPlan.equipment.status === 'waiting', 'Reward flow should stay empty when no relics and equipment cadence is waiting');
 const emptyChoiceDetails = equipmentSystem.getEquipmentChoiceDetails(emptyLoadout, rewardChoices[0].id);
 assert(emptyChoiceDetails?.equipment?.id === rewardChoices[0].id, 'Equipment choice details should include the candidate item');
 assert(emptyChoiceDetails.slotDef?.id === emptyChoiceDetails.slot, 'Equipment choice details should include the slot definition');

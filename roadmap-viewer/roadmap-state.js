@@ -280,7 +280,8 @@ window.HW_ROADMAP_STATE = {
                         "Added equipment effect delta summaries for future reward comparison UI.",
                         "Added shared equipment reward-card rendering with effect delta chips.",
                         "Made active equipment loadout application idempotent so replacement bonuses do not stack.",
-                        "Added room-depth equipment reward cadence planning."
+                        "Added room-depth equipment reward cadence planning.",
+                        "Added post-room reward-flow planning for relic/equipment sequencing."
                     ],
                     "left": [
                         "Design loot acquisition.",
@@ -297,7 +298,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-browser.js",
                         "CONTENT_MANIFEST_CHECKLIST.md",
                         "src/systems/choice-ui.js",
-                        "index.html"
+                        "index.html",
+                        "src/systems/reward-flow.js"
                     ]
                 },
                 {
