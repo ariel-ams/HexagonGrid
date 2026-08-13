@@ -159,6 +159,7 @@ function updateDetailPanel(selected) {
     setText('detailProgress', selected
         ? `${selected.done?.length || 0} done, ${selected.left?.length || 0} left${selected.isCurrent ? ' - current focus' : ''}`
         : '-');
+    setText('detailNextAction', selected?.left?.[0] || 'No next action recorded.');
     renderList('detailDone', selected?.done);
     renderList('detailLeft', selected?.left);
     renderList('detailEvidence', selected?.evidence);

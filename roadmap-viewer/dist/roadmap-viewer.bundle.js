@@ -30980,6 +30980,7 @@
     setText("detailPhase", selected2?.phaseLabel || "-");
     setText("detailLane", selected2?.laneTitle || "-");
     setText("detailProgress", selected2 ? `${selected2.done?.length || 0} done, ${selected2.left?.length || 0} left${selected2.isCurrent ? " - current focus" : ""}` : "-");
+    setText("detailNextAction", selected2?.left?.[0] || "No next action recorded.");
     renderList("detailDone", selected2?.done);
     renderList("detailLeft", selected2?.left);
     renderList("detailEvidence", selected2?.evidence);

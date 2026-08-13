@@ -119,7 +119,8 @@ window.HW_ROADMAP_STATE = {
                         "Added Escape pause overlay focus coverage and allowed Escape to close settings while sliders are focused.",
                         "Trapped Tab focus inside the settings overlay so keyboard users stay in the pause modal.",
                         "Added modal dialog semantics and accessible labels/descriptions to gameplay overlays.",
-                        "Expanded browser smoke coverage for dialog semantics across reward, camp, test, and settings overlays."
+                        "Expanded browser smoke coverage for dialog semantics across reward, camp, test, and settings overlays.",
+                        "Added a next-action field to roadmap node details so selected work shows the immediate follow-up."
                     ],
                     "left": [
                         "Keep popups from competing with HUD.",
@@ -136,7 +137,10 @@ window.HW_ROADMAP_STATE = {
                         "roadmap hygiene: current focus follows the latest UI readability sprint",
                         "src/systems/menu-controller.js",
                         "index.js",
-                        "index.html"
+                        "index.html",
+                        "roadmap-viewer/index.html",
+                        "roadmap-viewer/roadmap-viewer.js",
+                        "tools/smoke-roadmap-browser.js"
                     ]
                 }
             ]

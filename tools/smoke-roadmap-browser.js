@@ -48,6 +48,7 @@ async function main() {
     assert(detailTitle && detailTitle.trim() !== 'Select a node', 'Selecting a node should update the detail panel.');
     assert(await page.locator('#detailPhase').textContent().then((text) => text.trim().length > 0 && text.trim() !== '-'), 'Selecting a node should show its timeline phase.');
     assert(await page.locator('#detailProgress').textContent().then((text) => text.includes('done') && text.includes('left')), 'Selecting a node should show done/left progress counts.');
+    assert(await page.locator('#detailNextAction').textContent().then((text) => text.trim().length > 0 && text.trim() !== '-'), 'Selecting a node should show the next action.');
     await page.locator('#statusFilters [data-status-filter="active"]').click();
     await page.waitForFunction(() => window.HW_ROADMAP_VIEWER?.getActiveStatus?.() === 'active');
     const activeNodeIds = await page.evaluate(() => window.HW_ROADMAP_VIEWER.getVisibleNodeIds());

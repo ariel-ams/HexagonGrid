@@ -29,6 +29,7 @@ assert(html.includes('dist/roadmap-viewer.bundle.css'), 'Roadmap viewer should l
 assert(html.includes('statusFilters'), 'Roadmap viewer should expose status filter controls');
 assert(html.includes('timeline-legend'), 'Roadmap viewer should expose a timeline legend');
 assert(html.includes('detailProgress'), 'Roadmap viewer should expose progress details for selected nodes');
+assert(html.includes('detailNextAction'), 'Roadmap viewer should expose the next action for selected nodes');
 assert(fs.existsSync(path.join(root, 'tools', 'update-roadmap-state.js')), 'Roadmap updater script should exist');
 assert(fs.existsSync(path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.js')), 'Roadmap viewer JS bundle should be built');
 assert(fs.existsSync(path.join(root, 'roadmap-viewer', 'dist', 'roadmap-viewer.bundle.css')), 'Roadmap viewer CSS bundle should be built');
@@ -38,6 +39,7 @@ assert(viewerJs.includes('onNodeClick'), 'Roadmap viewer should support node sel
 assert(viewerJs.includes('getActiveStatus'), 'Roadmap viewer should expose active status filter state for browser checks');
 assert(viewerJs.includes('TIMELINE_GROUPS'), 'Roadmap viewer should define chronological timeline groups');
 assert(viewerJs.includes('getNodePositions'), 'Roadmap viewer should expose node positions for chronology checks');
+assert(viewerJs.includes('detailNextAction'), 'Roadmap viewer should update the next action detail field');
 assert(css.includes('.detail-panel'), 'Roadmap viewer should style a detail panel');
 assert(css.includes('.status-filter'), 'Roadmap viewer should style status filter buttons');
 assert(css.includes('.timeline-legend'), 'Roadmap viewer should style the timeline legend');
