@@ -43,6 +43,8 @@ The fifth sprint stabilized the first-run onboarding template. The required poll
 
 The sixth sprint improved inspect-panel scanning without adding more floating feedback. Every stat chip now pairs its HUD icon and value with a compact bilingual meaning label such as Gain, Cost, Damage, Threat, or Route, making pickup rewards and route consequences easier to distinguish at a glance.
 
+The seventh sprint finished the current HUD declutter pass. Top feedback toasts now measure the visible stat and enemy-timer clusters and move below any cluster they would overlap, including wrapped mobile and crowded test-room layouts. The layout smoke test includes a Queen Signaler scenario so future HUD additions cannot silently cover feedback again.
+
 Scope:
 
 - Define first-run room templates by player level:

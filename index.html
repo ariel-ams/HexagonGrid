@@ -188,7 +188,8 @@
 
         .event-toast {
             position: absolute;
-            top: 112px;
+            --event-toast-base-top: 112px;
+            top: var(--event-toast-top, var(--event-toast-base-top));
             left: 46px;
             z-index: 8;
             width: min(360px, calc(48% - 56px));
@@ -1890,7 +1891,7 @@
             }
 
             .event-toast {
-                top: 66px;
+                --event-toast-base-top: 66px;
                 left: 12px;
                 width: min(380px, calc(100vw - 24px));
                 padding: 10px 14px 12px;

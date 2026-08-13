@@ -5820,6 +5820,7 @@ function getToastTone(title = '', message = '') {
 function renderTopToast() {
     if (!eventToastNode) return;
     const toast = game.toast;
+    eventToastNode.style.removeProperty('--event-toast-top');
     eventToastNode.classList.toggle('visible', Boolean(toast));
     eventToastNode.classList.toggle('warning', toast?.tone === 'warning');
     eventToastNode.classList.toggle('danger', toast?.tone === 'danger');
@@ -5828,9 +5829,26 @@ function renderTopToast() {
         ? `<strong>${escapeHtml(toast.title)}</strong> <span>${escapeHtml(toast.message)}</span>`
         : '';
     if (!toast) return;
+    positionTopToast();
     eventToastNode.classList.remove('toast-swap');
     void eventToastNode.offsetWidth;
     eventToastNode.classList.add('toast-swap');
+}
+
+function positionTopToast() {
+    if (!eventToastNode?.classList.contains('visible')) return;
+    const board = eventToastNode.parentElement?.getBoundingClientRect();
+    const toast = eventToastNode.getBoundingClientRect();
+    if (!board || !toast.width) return;
+
+    const baseTop = Number.parseFloat(getComputedStyle(eventToastNode).getPropertyValue('--event-toast-base-top')) || 0;
+    const overlapsHorizontally = (rect) => rect.width > 0 && toast.left < rect.right && toast.right > rect.left;
+    const obstacleBottom = [statsHudNode, timerHudNode]
+        .map((node) => node?.getBoundingClientRect())
+        .filter((rect) => rect && rect.height > 0 && overlapsHorizontally(rect))
+        .reduce((bottom, rect) => Math.max(bottom, rect.bottom - board.top + 10), baseTop);
+
+    eventToastNode.style.setProperty('--event-toast-top', `${Math.round(obstacleBottom)}px`);
 }
 
 function renderStats() {
@@ -6616,7 +6634,10 @@ window.addEventListener('keydown', (event) => {
     event.preventDefault();
     openSettingsOverlay();
 });
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    positionTopToast();
+});
 
 setLanguage(currentLanguage);
 setDungeonThemePreference(selectedThemeId);

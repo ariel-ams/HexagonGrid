@@ -50,7 +50,9 @@ async function layoutSnapshot(page) {
             life: box('#bottomCombatHud .life-orb'),
             move: box('#bottomCombatHud .move-orb'),
             xp: box('#bottomCombatHud .xp-hud'),
-            toast: box('#eventToast.visible')
+            toast: box('#eventToast.visible'),
+            stats: box('#statsHud'),
+            timers: box('#timerHud')
         };
     });
 }
@@ -78,7 +80,7 @@ async function assertGameplayLayout(page, viewport) {
     await page.waitForSelector('#bottomCombatHud .life-orb');
     await page.waitForSelector('#bottomCombatHud .move-orb');
     await page.waitForSelector('#bottomCombatHud .xp-hud');
-    const { hud, life, move, xp, toast } = await layoutSnapshot(page);
+    const { hud, life, move, xp, toast, stats, timers } = await layoutSnapshot(page);
     assert(hud && life && move && xp, 'HUD, orb, and XP elements should be measurable.');
 
     assert(hud.left >= 0 && hud.right <= viewport.width, 'Bottom HUD should fit inside the viewport width.');
@@ -91,6 +93,8 @@ async function assertGameplayLayout(page, viewport) {
     assert(xp.right <= move.left + 1, 'XP bar should not overlap the movement orb.');
     if (toast) {
         assert(toast.right < viewport.width * 0.55 || viewport.width < 700, 'Toast should stay away from the board center on desktop.');
+        if (stats?.height > 0) assert(!overlaps(toast, stats), 'Toast should not overlap the top-left stat HUD.');
+        if (timers?.height > 0) assert(!overlaps(toast, timers), 'Toast should not overlap nearby-enemy timers.');
     }
 
     await inspectNeighbor(page);
@@ -98,6 +102,19 @@ async function assertGameplayLayout(page, viewport) {
     assert(!overlaps(inspect, move), 'Inspect panel should not overlap the movement orb.');
     assert(!overlaps(inspect, life), 'Inspect panel should not overlap the life orb.');
     assert(inspect.bottom <= hud.top || viewport.width < 700, 'Desktop inspect panel should sit above the bottom HUD.');
+}
+
+async function assertCrowdedFeedbackLayout(page) {
+    await page.evaluate(() => window.HW_TEST_API.startTestScenario('queenSignaler'));
+    await page.waitForSelector('#eventToast.visible');
+    await page.waitForFunction(() => document.querySelectorAll('#statsHud .hud-pill').length >= 6);
+    const { toast, stats, timers } = await layoutSnapshot(page);
+    assert(toast && stats, 'Crowded feedback layout should expose toast and stat HUD bounds.');
+    assert(!overlaps(toast, stats), 'Toast should move below wrapped stat icons in crowded rooms.');
+    if (timers?.height > 0) assert(!overlaps(toast, timers), 'Toast should move below active enemy timers.');
+    if (page.viewportSize()?.width === 390) {
+        await page.screenshot({ path: path.join(root, '.codex-video-frames', 'toast-hud-clearance.png') });
+    }
 }
 
 async function assertEndStats(page, viewport) {
@@ -117,6 +134,7 @@ async function runViewport(browser, viewport) {
 
     await startRun(page);
     await assertGameplayLayout(page, viewport);
+    await assertCrowdedFeedbackLayout(page);
     await assertEndStats(page, viewport);
     assert(!logs.some((line) => line.startsWith('pageerror:')), `Browser errors found:\n${logs.join('\n')}`);
     await page.close();

@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-13",
-    "currentTaskId": "ui-declutter",
+    "currentTaskId": "tactical-combat",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -85,7 +85,7 @@ window.HW_ROADMAP_STATE = {
                 {
                     "id": "tactical-combat",
                     "title": "Tactical Combat Loop",
-                    "status": "in_progress",
+                    "status": "active",
                     "owner": "Codex",
                     "objective": "Make enemies position puzzles first and HP bags second.",
                     "done": [
@@ -102,13 +102,14 @@ window.HW_ROADMAP_STATE = {
                     "evidence": [
                         "src/systems/tactical-combat.js",
                         "src/systems/enemy-turns.js",
-                        "tools/playtest-boss-cdp.js"
+                        "tools/playtest-boss-cdp.js",
+                        "Next focus after the completed UI declutter milestone"
                     ]
                 },
                 {
                     "id": "ui-declutter",
                     "title": "UI Declutter",
-                    "status": "active",
+                    "status": "done",
                     "owner": "Codex",
                     "objective": "Move durable explanation into panels and keep floating feedback short.",
                     "done": [
@@ -123,11 +124,10 @@ window.HW_ROADMAP_STATE = {
                         "Added a next-action field to roadmap node details so selected work shows the immediate follow-up.",
                         "Added shared modal focus management for Test, Settings, Camp, and Reward overlays, including initial focus, Tab trapping, reward-step focus, and launcher focus return.",
                         "Escape now dismisses the Test menu and returns focus to its launcher, while required Camp and Reward choices remain modal.",
-                        "Added bilingual semantic captions and stronger value hierarchy to inspect chips so gains, costs, damage, threats, and route values scan visually."
+                        "Added bilingual semantic captions and stronger value hierarchy to inspect chips so gains, costs, damage, threats, and route values scan visually.",
+                        "Positioned top feedback below overlapping stat and enemy-timer HUD clusters across desktop and mobile."
                     ],
-                    "left": [
-                        "Keep popups from competing with HUD."
-                    ],
+                    "left": [],
                     "evidence": [
                         "src/systems/inspect-ui.js",
                         "src/systems/hud.js",
@@ -144,7 +144,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-roadmap-browser.js",
                         "node tools/smoke-browser.js: modal keyboard flow passed",
                         "node tools/smoke-browser.js: Test Escape dismissal passed",
-                        "node tools/smoke-browser.js: bilingual inspect captions passed"
+                        "node tools/smoke-browser.js: bilingual inspect captions passed",
+                        "node tools/smoke-ui-layout.js: crowded Queen Signaler feedback layout passed"
                     ]
                 }
             ]
