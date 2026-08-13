@@ -193,6 +193,46 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             .sort((a, b) => a.type.localeCompare(b.type));
     }
 
+    function createEquipmentEffectDeltas(loadout = {}, equipmentId, { language = 'en' } = {}) {
+        const equipped = equipItem(loadout, equipmentId);
+        if (!equipped) return null;
+        const beforeTotals = createEquipmentEffectTotals(loadout, { language });
+        const afterTotals = createEquipmentEffectTotals(equipped.loadout, { language });
+        const beforeByType = new Map(beforeTotals.map((effect) => [effect.type, effect]));
+        const afterByType = new Map(afterTotals.map((effect) => [effect.type, effect]));
+        const effectTypes = new Set([...beforeByType.keys(), ...afterByType.keys()]);
+        return Array.from(effectTypes)
+            .map((type) => {
+                const before = beforeByType.get(type) || null;
+                const after = afterByType.get(type) || null;
+                const beforeAmount = before?.amount || 0;
+                const afterAmount = after?.amount || 0;
+                const delta = afterAmount - beforeAmount;
+                const copySource = after || before || { type, amount: Math.abs(delta) };
+                return {
+                    type,
+                    beforeAmount,
+                    afterAmount,
+                    delta,
+                    direction: delta > 0 ? 'up' : delta < 0 ? 'down' : 'same',
+                    beforeItemIds: before?.itemIds || [],
+                    afterItemIds: after?.itemIds || [],
+                    beforeItemNames: before?.itemNames || [],
+                    afterItemNames: after?.itemNames || [],
+                    label: copySource.label,
+                    description: copySource.description,
+                    isActive: Boolean(EQUIPMENT_EFFECT_HANDLERS[type]),
+                    isFuture: !EQUIPMENT_EFFECT_HANDLERS[type],
+                    changed: delta !== 0
+                };
+            })
+            .sort((a, b) => (
+                Number(b.changed) - Number(a.changed)
+                || Math.abs(b.delta) - Math.abs(a.delta)
+                || a.type.localeCompare(b.type)
+            ));
+    }
+
     function createStartingEquipment() {
         return Object.fromEntries(equipmentSlots.map((slot) => [slot.id, null]));
     }
@@ -294,6 +334,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
             rarityRank: EQUIPMENT_RARITY_ORDER[equipment.rarity] ?? 99,
             rewardWeight: getEquipmentRewardWeight(equipment),
             effects: createEquipmentEffectSummaries(equipment, { language }),
+            effectDeltas: createEquipmentEffectDeltas(loadout, equipment.id, { language }),
             current: localizeEquipmentContent(current, language),
             currentEffects: createEquipmentEffectSummaries(current, { language }),
             currentId,
@@ -384,6 +425,7 @@ function createEquipmentSystem({ equipmentSlots, equipmentDefs }) {
 
     return {
         applyLoadout,
+        createEquipmentEffectDeltas,
         createEquipmentEffectSummaries,
         createEquipmentEffectTotals,
         createEquipmentLoadoutDetails,

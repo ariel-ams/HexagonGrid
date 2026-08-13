@@ -503,6 +503,8 @@ assert(emptyChoiceDetails.rewardWeight > 0, 'Equipment choice details should inc
 assert(emptyChoiceDetails.effects.length === emptyChoiceDetails.equipment.effects.length, 'Equipment choice details should include candidate effect summaries');
 assert(emptyChoiceDetails.effects.every((effect) => effect.isFuture && !effect.isActive), 'Starter equipment choice effect summaries should mark future effects');
 assert(emptyChoiceDetails.effects.every((effect) => effect.label && effect.description), 'Equipment choice details should include readable effect copy');
+assert(emptyChoiceDetails.effectDeltas.length === emptyChoiceDetails.effects.length, 'Equipment choice details should include effect deltas for empty slots');
+assert(emptyChoiceDetails.effectDeltas.every((effect) => effect.beforeAmount === 0 && effect.afterAmount > 0 && effect.direction === 'up'), 'Empty-slot equipment deltas should show gains from zero');
 assert(emptyChoiceDetails.isEmptySlot && !emptyChoiceDetails.isReplacement && !emptyChoiceDetails.isEquipped, 'Equipment choice details should flag empty slots');
 const rewardChoiceDetails = equipmentSystem.createEquipmentRewardChoiceDetails({
     playerLevel: 1,
@@ -613,6 +615,13 @@ assert(localizedChoiceDetails?.slotDef?.name === 'Aguijon', 'Equipment choice de
 assert(localizedChoiceDetails?.current?.name === 'Aguijon dentado', 'Equipment choice details should localize current gear');
 assert(localizedChoiceDetails?.effects?.[0]?.label === '+1 alcance', 'Equipment choice details should localize effect summaries');
 assert(localizedChoiceDetails?.rarityLabel === 'Comun', 'Equipment choice details should localize rarity labels');
+const localizedAttackDelta = localizedChoiceDetails.effectDeltas.find((effect) => effect.type === 'attackRange');
+const localizedFutureAttackDelta = localizedChoiceDetails.effectDeltas.find((effect) => effect.type === 'futureAttackRange');
+assert(localizedAttackDelta?.delta === 1 && localizedAttackDelta.direction === 'up' && localizedAttackDelta.label === '+1 alcance', 'Equipment choice details should show localized active effect gains');
+assert(localizedFutureAttackDelta?.delta === -1 && localizedFutureAttackDelta.direction === 'down', 'Equipment choice details should show replaced future effect losses');
+const shieldReplacementDeltas = equipmentSystem.createEquipmentEffectDeltas(starterLoadout, 'resinCrown', { language: 'en' });
+assert(shieldReplacementDeltas.some((effect) => effect.type === 'maxShield' && effect.delta === 1 && effect.isActive), 'Equipment effect deltas should expose active replacement gains');
+assert(shieldReplacementDeltas.some((effect) => effect.type === 'futureRevealHint' && effect.delta === -1 && effect.isFuture), 'Equipment effect deltas should expose replaced future-effect losses');
 const selectedEquipmentReward = equipmentSystem.selectEquipmentReward(starterLoadout, 'longSting', { language: 'es-419' });
 assert(selectedEquipmentReward?.loadout?.sting === 'longSting', 'Equipment reward selection should equip the chosen item');
 assert(selectedEquipmentReward.currentId === 'barbedSting' && selectedEquipmentReward.isReplacement, 'Equipment reward selection should include replacement details');

@@ -276,7 +276,8 @@ window.HW_ROADMAP_STATE = {
                         "Added planned asset paths and artist request coverage for wearable gear.",
                         "Added smoke coverage tying wearable planned asset paths to artist request rows.",
                         "Added a wearable content manifest section and smoke coverage for it.",
-                        "Added equipped effect total summaries for future inventory/stat UI."
+                        "Added equipped effect total summaries for future inventory/stat UI.",
+                        "Added equipment effect delta summaries for future reward comparison UI."
                     ],
                     "left": [
                         "Design loot acquisition.",
