@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-13",
-    "currentTaskId": "content-scaling",
+    "currentTaskId": "ui-declutter",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -108,7 +108,7 @@ window.HW_ROADMAP_STATE = {
                 {
                     "id": "ui-declutter",
                     "title": "UI Declutter",
-                    "status": "in_progress",
+                    "status": "active",
                     "owner": "Codex",
                     "objective": "Move durable explanation into panels and keep floating feedback short.",
                     "done": [
@@ -128,7 +128,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-ui-layout.js",
                         "src/systems/choice-ui.js",
                         "tools/smoke-browser.js",
-                        "npm test"
+                        "npm test",
+                        "roadmap hygiene: current focus follows the latest UI readability sprint"
                     ]
                 }
             ]
@@ -188,7 +189,7 @@ window.HW_ROADMAP_STATE = {
                 {
                     "id": "content-scaling",
                     "title": "Content Scaling Safety",
-                    "status": "active",
+                    "status": "in_progress",
                     "owner": "Codex",
                     "objective": "Make new enemies, items, relics, and themes safer to add through data and tests.",
                     "done": [
@@ -246,7 +247,8 @@ window.HW_ROADMAP_STATE = {
                         "index.js",
                         "ui-development/player-experience-roadmap.md",
                         "src/systems/inspect-stats.js",
-                        "src/systems/equipment.js"
+                        "src/systems/equipment.js",
+                        "roadmap hygiene: moved current focus to UI declutter after reward-card readability sprint"
                     ]
                 },
                 {
