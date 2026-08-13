@@ -84,6 +84,13 @@ async function main() {
     assert((firstRoomPacing.counts.water || 0) >= 1, 'Onboarding room should include water.');
     assert((firstRoomPacing.counts.lampCell || 0) >= 1, 'Onboarding room should include a lamp cell.');
     assert((firstRoomPacing.counts.upgrade || 0) >= 1, 'Onboarding room should include shield upgrade.');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#settingsScreen.visible');
+    assert(await page.evaluate(() => document.activeElement?.id === 'settingsCloseButton'), 'Escape pause should focus the Resume button.');
+    await page.focus('#musicVolumeInput');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('#settingsScreen.visible'));
+    assert(await page.evaluate(() => document.activeElement?.id === 'settingsToggle'), 'Closing settings should return focus to the Settings button.');
     const startingEquipment = await page.evaluate(() => window.HW_TEST_API.getEquipment());
     assert(startingEquipment.helmet === 'waxScoutHelmet', 'New runs should equip the starter helmet.');
     assert(startingEquipment.jacket === 'leafJacket', 'New runs should equip the starter jacket.');

@@ -75,12 +75,14 @@ function createMenuController(context) {
         applyAudioSettings();
         nodes.settingsScreen?.classList.add('visible');
         audioSystem.pauseAll();
+        nodes.settingsCloseButton?.focus();
     }
 
     function closeSettingsOverlay() {
         game.settingsPaused = false;
         nodes.settingsScreen?.classList.remove('visible');
         audioSystem.resumeActive();
+        nodes.settingsToggle?.focus();
     }
 
     function toggleOptions() {

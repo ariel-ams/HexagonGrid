@@ -565,7 +565,9 @@ menuController = window.HW_MENU_CONTROLLER.createMenuController({
         relicScreen,
         campScreen,
         endScreen,
-        settingsScreen
+        settingsScreen,
+        settingsToggle,
+        settingsCloseButton
     },
     game,
     getLanguage: () => currentLanguage,
@@ -6584,11 +6586,12 @@ testObjectListNode.addEventListener('click', (event) => {
 });
 window.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    if (event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
     if (settingsScreen?.classList.contains('visible')) {
+        event.preventDefault();
         closeSettingsOverlay();
         return;
     }
+    if (event.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
     if (!startScreen.classList.contains('hidden') || game.ended || game.replay) return;
     event.preventDefault();
     openSettingsOverlay();

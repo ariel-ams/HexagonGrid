@@ -115,7 +115,8 @@ window.HW_ROADMAP_STATE = {
                         "Persistent inspect panel explains selected cells.",
                         "Bottom life/shield and movement orbs improved fast-read status.",
                         "Top-center toast replaced scattered warning messages.",
-                        "Improved relic reward-card hierarchy with rarity/depth kicker and separated effect copy."
+                        "Improved relic reward-card hierarchy with rarity/depth kicker and separated effect copy.",
+                        "Added Escape pause overlay focus coverage and allowed Escape to close settings while sliders are focused."
                     ],
                     "left": [
                         "Keep popups from competing with HUD.",
@@ -129,7 +130,8 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/choice-ui.js",
                         "tools/smoke-browser.js",
                         "npm test",
-                        "roadmap hygiene: current focus follows the latest UI readability sprint"
+                        "roadmap hygiene: current focus follows the latest UI readability sprint",
+                        "src/systems/menu-controller.js"
                     ]
                 }
             ]
