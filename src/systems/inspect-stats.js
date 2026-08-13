@@ -5,6 +5,25 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
     const resourceKinds = { pollen: 'pollen', water: 'water', honey: 'honey', stingCharges: 'sting' };
     const resourceRows = { pollen: hudRows.pollen, water: hudRows.water, honey: hudRows.honey, stingCharges: hudRows.sting };
 
+    function getStatCaption(stat) {
+        const spanish = isSpanish();
+        if (stat.kind === 'health') return 'HP';
+        if (stat.kind === 'shield') return spanish ? 'Escudo' : 'Shield';
+        if (stat.kind === 'damage' || stat.kind === 'attack') return spanish ? 'Daño' : 'Damage';
+        if (['lethal', 'danger', 'spawn'].includes(stat.kind)) return spanish ? 'Peligro' : 'Threat';
+        if (stat.tone === 'good') return spanish ? 'Ganas' : 'Gain';
+        if (stat.tone === 'cost') return spanish ? 'Costo' : 'Cost';
+        if (['move', 'range', 'reveal', 'hidden', 'action'].includes(stat.kind)) return spanish ? 'Ruta' : 'Route';
+        return spanish ? 'Efecto' : 'Effect';
+    }
+
+    function enrichStats(stats) {
+        return stats.map((stat) => ({
+            ...stat,
+            caption: stat.caption || getStatCaption(stat)
+        }));
+    }
+
     function getObjectEffectStats(objectId, objects) {
         const stats = [];
         const def = objects[objectId] || objects.empty || {};
@@ -43,7 +62,7 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
         });
 
         addTerrainStats(stats, objectId);
-        return stats;
+        return enrichStats(stats);
     }
 
     function getEnemyStats(objectId, cell, enemy) {
@@ -103,12 +122,12 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
             stats.push({ icon: '+', label: isSpanish() ? 'Nucleo' : 'Core', tone: 'route', kind: 'attack', hudRow: hudRows.sting });
         }
 
-        return stats;
+        return enrichStats(stats);
     }
 
     function getRouteStats(preview, moveBudget) {
         const stats = [];
-        if (!preview?.path?.length) return stats;
+        if (!preview?.path?.length) return enrichStats(stats);
 
         const reachable = Math.min(preview.path.length, moveBudget);
         stats.push({
@@ -133,15 +152,15 @@ function createInspectStatsSystem({ hudRows, getLanguage, vineDamage, hasEnemyBe
             stats.push({ icon: '!', label: isSpanish() ? 'Bloqueado' : 'Blocked', tone: 'cost', kind: 'blocked', hudRow: hudRows.danger });
         }
 
-        return stats;
+        return enrichStats(stats);
     }
 
     function getVisibilityStats(cell, isDanceMode) {
         if (!cell.revealed && !cell.litByLamp && !isDanceMode) {
-            return [{ icon: '?', label: isSpanish() ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden', hudRow: hudRows.objective }];
+            return enrichStats([{ icon: '?', label: isSpanish() ? 'Oculto' : 'Hidden', tone: 'route', kind: 'hidden', hudRow: hudRows.objective }]);
         }
         if (!cell.revealed && cell.litByLamp && !isDanceMode) {
-            return [{ icon: 'O', label: isSpanish() ? 'Iluminada' : 'Lit', tone: 'route', kind: 'reveal', hudRow: hudRows.objective }];
+            return enrichStats([{ icon: 'O', label: isSpanish() ? 'Iluminada' : 'Lit', tone: 'route', kind: 'reveal', hudRow: hudRows.objective }]);
         }
         return [];
     }

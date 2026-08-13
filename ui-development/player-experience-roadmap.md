@@ -41,6 +41,8 @@ The fourth sprint made room 3's first combat lesson more explicit. The enemy-gat
 
 The fifth sprint stabilized the first-run onboarding template. The required pollen, water, lamp cell, and shield pickup are now placed from the route first and nearby off-route cells second, so short entry-to-exit cave routes still teach the intended supplies instead of falling back to random room contents.
 
+The sixth sprint improved inspect-panel scanning without adding more floating feedback. Every stat chip now pairs its HUD icon and value with a compact bilingual meaning label such as Gain, Cost, Damage, Threat, or Route, making pickup rewards and route consequences easier to distinguish at a glance.
+
 Scope:
 
 - Define first-run room templates by player level:

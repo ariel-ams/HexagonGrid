@@ -253,9 +253,39 @@ async function main() {
     const inspectStats = await page.locator('#inspectPanel .inspect-stat').count();
     assert(inspectStats > 0, 'Inspect panel should show stat chips.');
     assert(await page.locator('#inspectPanel .has-sheet-icon').count() > 0, 'Inspect stat chips should use HUD sprite sheet icons.');
+    assert(
+        await page.locator('#inspectPanel .inspect-stat-caption').count() === inspectStats,
+        'Every inspect stat should label whether it represents a gain, cost, danger, or route value.'
+    );
+    assert(
+        await page.locator('#inspectPanel .inspect-stat-caption').allTextContents().then((labels) => labels.includes('Gain')),
+        'Collectable inspect stats should identify gained value.'
+    );
+    assert(
+        await page.locator('#inspectPanel .inspect-stat-value').allTextContents().then((values) => values.includes('+1')),
+        'Collectable inspect stats should emphasize the exact gained amount.'
+    );
+    await page.evaluate(() => window.setLanguage('es-419'));
+    await page.waitForFunction(() => (
+        [...document.querySelectorAll('#inspectPanel .inspect-stat-caption')]
+            .some((node) => node.textContent === 'Ganas')
+    ));
+    await page.evaluate(() => window.setLanguage('en'));
     const routeInspectText = await page.locator('#inspectPanel').textContent();
     assert(routeInspectText.includes('Route: costs'), 'Inspect panel should explain route movement cost.');
     assert(routeInspectText.includes('Result:') || routeInspectText.includes('Stop:'), 'Inspect panel should explain the route outcome.');
+
+    await page.evaluate(() => {
+        const api = window.HW_TEST_API;
+        const player = api.getState().player;
+        const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
+        const cell = dirs.map((direction) => window.getCell(player.q + direction.q, player.r + direction.r)).find(Boolean);
+        api.setCellObject(cell.q, cell.r, 'burningCell', true);
+        api.inspectCell(cell.q, cell.r);
+    });
+    const hazardCaptions = await page.locator('#inspectPanel .inspect-stat-caption').allTextContents();
+    assert(hazardCaptions.includes('Damage'), 'Hazard inspect stats should label incoming damage.');
+    assert(hazardCaptions.includes('Cost'), 'Hazard inspect stats should label the resource cost that avoids damage.');
 
     const lampResult = await page.evaluate(() => {
         const api = window.HW_TEST_API;

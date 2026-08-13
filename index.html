@@ -317,13 +317,12 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            min-height: 28px;
-            padding: 5px 8px;
+            min-height: 34px;
+            padding: 4px 8px 4px 6px;
             border-radius: 999px;
             border: 1px solid rgba(111, 71, 31, 0.22);
             background: rgba(255, 244, 199, 0.64);
             color: #3b210f;
-            font-size: 12px;
             font-weight: 900;
         }
 
@@ -331,14 +330,34 @@
             content: attr(data-icon);
             display: inline-grid;
             place-items: center;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.55);
             color: inherit;
             font-size: 13px;
             font-weight: 900;
             line-height: 1;
+        }
+
+        .inspect-stat-copy {
+            display: grid;
+            gap: 1px;
+            line-height: 1;
+        }
+
+        .inspect-stat-caption {
+            color: inherit;
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            opacity: 0.78;
+        }
+
+        .inspect-stat-value {
+            color: inherit;
+            font-size: 13px;
+            line-height: 1.05;
         }
 
         .inspect-stat.good {
@@ -407,7 +426,7 @@
         .inspect-stat.has-sheet-icon::before {
             content: "";
             background-image: url("assets/ui/alpha/hud-icons.png");
-            background-size: 80px 260px;
+            background-size: 96px 312px;
             background-position: 0 var(--inspect-icon-y, 0);
             background-repeat: no-repeat;
             background-color: transparent;

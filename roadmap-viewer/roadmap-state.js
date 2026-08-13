@@ -122,11 +122,11 @@ window.HW_ROADMAP_STATE = {
                         "Expanded browser smoke coverage for dialog semantics across reward, camp, test, and settings overlays.",
                         "Added a next-action field to roadmap node details so selected work shows the immediate follow-up.",
                         "Added shared modal focus management for Test, Settings, Camp, and Reward overlays, including initial focus, Tab trapping, reward-step focus, and launcher focus return.",
-                        "Escape now dismisses the Test menu and returns focus to its launcher, while required Camp and Reward choices remain modal."
+                        "Escape now dismisses the Test menu and returns focus to its launcher, while required Camp and Reward choices remain modal.",
+                        "Added bilingual semantic captions and stronger value hierarchy to inspect chips so gains, costs, damage, threats, and route values scan visually."
                     ],
                     "left": [
-                        "Keep popups from competing with HUD.",
-                        "Add richer inspect graphics for damage, cost, and rewards."
+                        "Keep popups from competing with HUD."
                     ],
                     "evidence": [
                         "src/systems/inspect-ui.js",
@@ -143,7 +143,8 @@ window.HW_ROADMAP_STATE = {
                         "roadmap-viewer/roadmap-viewer.js",
                         "tools/smoke-roadmap-browser.js",
                         "node tools/smoke-browser.js: modal keyboard flow passed",
-                        "node tools/smoke-browser.js: Test Escape dismissal passed"
+                        "node tools/smoke-browser.js: Test Escape dismissal passed",
+                        "node tools/smoke-browser.js: bilingual inspect captions passed"
                     ]
                 }
             ]

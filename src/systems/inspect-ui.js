@@ -37,10 +37,17 @@ function createInspectUi(context) {
                 const kind = stat.kind || 'info';
                 const classes = ['inspect-stat', tone, `stat-${kind}`].filter(Boolean).join(' ');
                 const style = Number.isInteger(stat.hudRow)
-                    ? ` style="--inspect-icon-y:-${stat.hudRow * 20}px"`
+                    ? ` style="--inspect-icon-y:-${stat.hudRow * 24}px"`
                     : '';
                 const iconClass = Number.isInteger(stat.hudRow) ? ' has-sheet-icon' : '';
-                return `<span class="${escapeAttr(`${classes}${iconClass}`)}" data-icon="${escapeAttr(stat.icon || '')}"${style}>${escapeHtml(stat.label || '')}</span>`;
+                const caption = stat.caption || '';
+                const value = stat.label || '';
+                return `<span class="${escapeAttr(`${classes}${iconClass}`)}" data-icon="${escapeAttr(stat.icon || '')}" aria-label="${escapeAttr(`${caption} ${value}`.trim())}"${style}>
+                    <span class="inspect-stat-copy">
+                        <span class="inspect-stat-caption">${escapeHtml(caption)}</span>
+                        <strong class="inspect-stat-value">${escapeHtml(value)}</strong>
+                    </span>
+                </span>`;
             }).join('')}
         </div>`;
     }
