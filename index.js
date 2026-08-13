@@ -1340,6 +1340,7 @@ function getTestScenarioMessage(objectId) {
     const name = getDisplayNameForObject(objectId);
     const messageKeys = {
         waspHive: 'testWaspHive',
+        crawlingFire: 'testCrawlingFire',
         larvaBrood: 'testLarvaBrood',
         honeySnareSpider: 'testHoneySnareSpider',
         combBomber: 'testCombBomber',
@@ -4815,6 +4816,11 @@ function attackEnemyCell(cell) {
         followPathTo(cell);
         return;
     }
+    const targetObject = cell.object;
+    if (targetObject === 'crawlingFire' && game.player.water > 0) {
+        extinguishCrawlingFire(cell);
+        return;
+    }
     consumeAction('attack');
     if (cell.isBoss || game.roomDepth >= FINAL_ROOM) {
         game.bossEngaged = true;
@@ -4824,7 +4830,6 @@ function attackEnemyCell(cell) {
     game.metrics.lastAttack = { turn: game.metrics.turns, q: cell.q, r: cell.r, object: cell.object };
     audioSystem.playEffect('sting');
     addAttackEffect(game.player.q, game.player.r, cell.q, cell.r, cell.object, 'melee');
-    const targetObject = cell.object;
     const interaction = resolveInteraction(targetObject, cell);
     if (cell.isBoss && game.roomDepth >= FINAL_ROOM) {
         interaction.consume = true;
@@ -4853,6 +4858,30 @@ function attackEnemyCell(cell) {
     updateObjectiveProgress();
     recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r, action: 'attack' });
     endPlayerTurn('attack');
+    draw();
+}
+
+function extinguishCrawlingFire(cell) {
+    const targetObject = cell.object;
+    consumeAction('extinguish');
+    game.autoPath = [];
+    game.player.water -= 1;
+    game.objectiveProgress.kills += 1;
+    game.runStats.kills += 1;
+    game.metrics.enemiesKilled += 1;
+    addAttackEffect(game.player.q, game.player.r, cell.q, cell.r, targetObject, 'projectile');
+    addStatPopups(cell.q, cell.r, [{ stat: 'water', amount: -1 }]);
+    const message = t('messages', 'crawlingFireExtinguished');
+    game.message = message;
+    addLog(getDisplayNameForObject(targetObject), message);
+    awardXp(getEnemyXp(targetObject), getEnemyDef(targetObject).name);
+    applyEnemyKillRelics(cell);
+    cell.object = 'empty';
+    cell.hits = 0;
+    cell.nextAuraAt = 0;
+    updateObjectiveProgress();
+    recordReplayEvent('playerAction', { object: targetObject, q: cell.q, r: cell.r, action: 'extinguish', resource: 'water' });
+    endPlayerTurn('extinguish');
     draw();
 }
 
@@ -5730,11 +5759,26 @@ function addStatPopups(q, r, deltas) {
             label,
             textWidth: Math.max(28, label.length * 9),
             icon: getDeltaIcon(delta),
-            color: delta.stat === 'blocked' ? '#b8b8b8' : delta.amount < 0 ? '#ff8a72' : '#fff2a7',
+            color: getStatPopupColor(delta),
             createdAt: performance.now() + index * 70,
             duration: 920
         });
     });
+}
+
+function getStatPopupColor(delta) {
+    if (delta.stat === 'blocked') return '#b8b8b8';
+    if (delta.amount >= 0) return '#fff2a7';
+    if (delta.stat === 'health') return '#ff8a72';
+    const costColors = {
+        pollen: '#f7d45c',
+        water: '#4bb6f2',
+        honey: '#f2b544',
+        upgrades: '#b8b8b8',
+        stamina: '#f5c84b',
+        stingCharges: '#f28f3b'
+    };
+    return costColors[delta.stat] || '#d6c889';
 }
 
 function getDeltaIcon(delta) {
@@ -6262,6 +6306,7 @@ window.HW_TEST_API = {
         roomDepth: game.roomDepth
     }),
     getCellObject: (q, r) => getCell(q, r)?.object || null,
+    getStatPopups: () => game.statPopups.map((popup) => ({ ...popup })),
     isEnemyObject: (object) => isEnemyObject(object),
     getCellData: (q, r) => {
         const cell = getCell(q, r);

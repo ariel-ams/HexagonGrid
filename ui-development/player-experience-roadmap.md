@@ -70,6 +70,8 @@ Goal: reduce repeated hit-run-wait patterns and make enemy interaction spatial.
 
 Status: in progress. The first Iteration 2 sprint added a Stag Beetle `chargeLane` telegraph. This reuses the existing marked danger-cell visual language, teaches the behavior through the inspect panel, and has browser smoke coverage that triggers the telegraph deterministically.
 
+The second Iteration 2 sprint added the first direct resource counter in combat. Clicking an adjacent Crawling Fire while carrying water spends `1 water`, extinguishes it without using the sting, awards the normal defeat progress, and ends the turn. The focused Test scenario teaches this counter, browser smoke coverage verifies it, and resource-cost popups now keep their utility colors instead of borrowing danger red.
+
 Scope:
 
 - Convert more enemies into position puzzles:

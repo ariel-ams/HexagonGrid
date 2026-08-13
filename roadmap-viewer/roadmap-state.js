@@ -92,18 +92,21 @@ window.HW_ROADMAP_STATE = {
                         "Turn-based movement points and one action per turn.",
                         "Path preview shows reachable route and risk.",
                         "Stag Beetle charge lane telegraph.",
-                        "Boss fight uses hive pressure instead of only long-range reach."
+                        "Boss fight uses hive pressure instead of only long-range reach.",
+                        "Added a direct water counter that extinguishes Crawling Fire without spending a sting attack.",
+                        "Resource-cost popups now use utility colors instead of danger red."
                     ],
                     "left": [
                         "Add more enemy lane, flank, and forced-movement behaviors.",
-                        "Tune boss pressure through playtest evidence.",
-                        "Add one resource-to-combat interaction such as water extinguishing fire."
+                        "Tune boss pressure through playtest evidence."
                     ],
                     "evidence": [
                         "src/systems/tactical-combat.js",
                         "src/systems/enemy-turns.js",
                         "tools/playtest-boss-cdp.js",
-                        "Next focus after the completed UI declutter milestone"
+                        "Next focus after the completed UI declutter milestone",
+                        "node tools/smoke-browser.js: Crawling Fire water counter passed",
+                        ".codex-video-frames/tactical-water-counter.png"
                     ]
                 },
                 {

@@ -41,7 +41,7 @@ Resources should feed into each other:
 - Pollen and water can be spent at beetles.
 - Shield absorbs damage before health.
 - Sting upgrades convert into stored stronger attacks.
-- Water provides survival utility.
+- Water provides survival utility and directly extinguishes Crawling Fire enemies and burning terrain.
 - Honey/pollen/water can be spent in markets or camp choices between rooms.
 
 ### 2.4 Learn By Inspecting

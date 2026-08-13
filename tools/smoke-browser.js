@@ -287,6 +287,27 @@ async function main() {
     assert(hazardCaptions.includes('Damage'), 'Hazard inspect stats should label incoming damage.');
     assert(hazardCaptions.includes('Cost'), 'Hazard inspect stats should label the resource cost that avoids damage.');
 
+    const extinguishResult = await page.evaluate(async () => {
+        const api = window.HW_TEST_API;
+        api.startTestScenario('crawlingFire');
+        const before = api.getState();
+        api.moveToCell(1, 0);
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        const after = api.getState();
+        return {
+            waterBefore: before.player.water,
+            waterAfter: after.player.water,
+            targetObject: api.getCellObject(1, 0),
+            attacksMade: after.metrics.attacksMade,
+            popupColors: api.getStatPopups().map((popup) => popup.color)
+        };
+    });
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'tactical-water-counter.png') });
+    assert(extinguishResult.waterAfter === extinguishResult.waterBefore - 1, 'Water should extinguish Crawling Fire when the player interacts with it.');
+    assert(extinguishResult.targetObject === 'empty', 'Extinguished Crawling Fire should leave an empty cell.');
+    assert(extinguishResult.attacksMade === 0, 'Extinguishing Crawling Fire should be a resource action, not a sting attack.');
+    assert(!extinguishResult.popupColors.includes('#ff8a72'), 'Water costs should use utility blue instead of reserved danger red.');
+
     const lampResult = await page.evaluate(() => {
         const api = window.HW_TEST_API;
         const player = api.getState().player;
