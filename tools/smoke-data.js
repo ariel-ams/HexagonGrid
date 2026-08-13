@@ -575,6 +575,13 @@ const laterRewardPlan = equipmentSystem.createEquipmentRewardPlan({
 });
 assert(laterRewardPlan.status === 'waiting' && laterRewardPlan.nextEligibleDepth === 4, 'Equipment reward plan should compute the next cadence reward depth');
 const relicRewardChoice = Object.values(HW_CONTENT.RELICS)[0];
+const relicChoiceNode = { innerHTML: '' };
+choiceUi.renderRelicChoices(relicChoiceNode, [relicRewardChoice], {
+    common: 'Common',
+    depth: 'Depth'
+});
+assert(relicChoiceNode.innerHTML.includes('relic-card-kicker'), 'Choice UI should render a relic rarity/depth kicker');
+assert(relicChoiceNode.innerHTML.includes('relic-card-effect'), 'Choice UI should render relic effect copy with a distinct class');
 const rewardFlowPlan = rewardFlowSystem.createPostRoomRewardPlan({
     roomDepth: 2,
     playerLevel: 2,

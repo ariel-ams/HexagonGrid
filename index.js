@@ -2360,6 +2360,12 @@ function chooseRelicRewards() {
 function renderRelicChoices() {
     renderRewardHeader(t('ui', 'chooseRelic'), t('ui', 'chooseRelicCopy'));
     choiceUi.renderRelicChoices(relicChoicesNode, game.relicChoices, {
+        common: currentLanguage === 'es-419' ? 'Comun' : 'Common',
+        rare: currentLanguage === 'es-419' ? 'Rara' : 'Rare',
+        epic: currentLanguage === 'es-419' ? 'Epica' : 'Epic',
+        legendary: currentLanguage === 'es-419' ? 'Legendaria' : 'Legendary',
+        depth: currentLanguage === 'es-419' ? 'Prof.' : 'Depth',
+        emptyKicker: currentLanguage === 'es-419' ? 'Completo' : 'Complete',
         emptyTitle: currentLanguage === 'es-419' ? 'Sin reliquias nuevas' : 'No New Relics',
         emptyCopy: currentLanguage === 'es-419'
             ? 'La abeja ya conoce todas las reliquias disponibles.'

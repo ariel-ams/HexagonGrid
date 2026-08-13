@@ -114,7 +114,8 @@ window.HW_ROADMAP_STATE = {
                     "done": [
                         "Persistent inspect panel explains selected cells.",
                         "Bottom life/shield and movement orbs improved fast-read status.",
-                        "Top-center toast replaced scattered warning messages."
+                        "Top-center toast replaced scattered warning messages.",
+                        "Improved relic reward-card hierarchy with rarity/depth kicker and separated effect copy."
                     ],
                     "left": [
                         "Keep popups from competing with HUD.",
@@ -124,7 +125,10 @@ window.HW_ROADMAP_STATE = {
                     "evidence": [
                         "src/systems/inspect-ui.js",
                         "src/systems/hud.js",
-                        "tools/smoke-ui-layout.js"
+                        "tools/smoke-ui-layout.js",
+                        "src/systems/choice-ui.js",
+                        "tools/smoke-browser.js",
+                        "npm test"
                     ]
                 }
             ]

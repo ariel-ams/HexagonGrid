@@ -26,17 +26,25 @@ function createChoiceUi(context) {
     function renderRelicChoices(node, relics, labels) {
         if (!relics.length) {
             node.innerHTML = `<button class="relic-card" type="button" data-relic-id="skip">
+                <span class="relic-card-kicker">${escapeHtml(labels.emptyKicker || 'Complete')}</span>
                 <strong>${escapeHtml(labels.emptyTitle)}</strong>
-                <span>${escapeHtml(labels.emptyCopy)}</span>
+                <span class="relic-card-effect">${escapeHtml(labels.emptyCopy)}</span>
             </button>`;
             return;
         }
         node.innerHTML = relics.map((relic) => (
             `<button class="relic-card" type="button" data-relic-id="${escapeAttr(relic.id)}">
+                <span class="relic-card-kicker">${escapeHtml(formatRelicKicker(relic, labels))}</span>
                 <strong>${escapeHtml(relic.name)}</strong>
-                <span>${escapeHtml(relic.description)}</span>
+                <span class="relic-card-effect">${escapeHtml(relic.description)}</span>
             </button>`
         )).join('');
+    }
+
+    function formatRelicKicker(relic, labels = {}) {
+        const rarity = labels[relic.rarity] || relic.rarity || labels.relic || 'Relic';
+        const depthLabel = labels.depth || 'Depth';
+        return `${rarity} · ${depthLabel} ${relic.minDepth || 1}`;
     }
 
     function formatDelta(delta) {

@@ -99,6 +99,8 @@ async function main() {
     assert(initialRewardOverlay.rewardFlowSteps.join(',') === 'relic,equipment', 'Reward overlay should sequence relic rewards before equipment rewards.');
     assert(initialRewardOverlay.title === 'Choose a Relic', 'Reward overlay should start on the relic step.');
     assert(initialRewardOverlay.relicIds.length > 0, 'Reward overlay should render relic choices first.');
+    assert(await page.locator('#relicChoices .relic-card-kicker').count() === initialRewardOverlay.relicIds.length, 'Relic cards should show rarity/depth kicker text.');
+    assert(await page.locator('#relicChoices .relic-card-effect').count() === initialRewardOverlay.relicIds.length, 'Relic cards should separate effect copy from the title.');
     await page.click('#relicChoices [data-relic-id]');
     await page.waitForFunction(() => window.HW_TEST_API.getRewardOverlayState().title === 'Choose Gear');
     const equipmentRewardOverlay = await page.evaluate(() => window.HW_TEST_API.getRewardOverlayState());
