@@ -40,11 +40,11 @@ This file separates runtime art gaps from future content art. Before creating a 
 
 ## Future Art
 
-Migrate the remaining art through small roadmap batches. The normal Wasp, Bat, Trader Beetle, Vine, Double Sting, Glow Pollen, Nectar Cache, Honey Drop, Clean Water, and Smoke Puff are complete with reversible 2026-08-14 backups and runtime evidence.
+Migrate the remaining art through small roadmap batches. The normal Wasp, Bat, Trader Beetle, Vine, Double Sting, Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff, and Mite Swarm are complete with reversible 2026-08-14 backups and runtime evidence.
 
 1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, and Double Sting complete.
 2. Common utility items: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, and Smoke Puff complete.
-3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat (`4 x 2`), Wax Moth, and Fog Moth.
+3. Early/mid enemies: Guard Wasp, Sleeping Bat (`4 x 2`), Wax Moth, and Fog Moth. Mite Swarm complete.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, and Flower Map.
 5. Advanced enemies: Brood Wasp, Stag Beetle, Honey Leech, False Flower, and Wasp Hive (`4 x 3`).
 6. Complex-enemy refresh: Honey Snare Spider, Burrow Beetle, Queen Signaler, Fog Shepherd, and Pollen Thief Moth.

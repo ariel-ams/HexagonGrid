@@ -404,6 +404,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-smoke-puff.png') });
 
+    const miteSwarmScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('miteSwarm'));
+    assert(miteSwarmScenario.targetObject === 'miteSwarm', 'Mite Swarm should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-mite-swarm.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {
