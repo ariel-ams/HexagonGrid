@@ -59,6 +59,8 @@ The thirteenth sprint improved the first combat target's visual salience. The au
 
 The fourteenth sprint cleaned the Thorn Beetle's baked checkerboard background through a reusable boundary-connected alpha tool. The original artist sheet remains untouched, the game uses a generated transparent derivative, and enclosed highlights survive because only pale neutral pixels reachable from the sheet edge are removed.
 
+The fifteenth sprint replaced the first-run Lamp Cell text fallback with a generated transparent four-frame idle strip. The walkable reveal beacon now has its own non-collectible visual treatment, reproducible source prompt, deterministic preparation script, data validation, and browser evidence at gameplay scale. Remaining art gaps are classified in `ASSET_BACKLOG.md` so functional fallbacks are not replaced before their mechanics need final art.
+
 Scope:
 
 - Define first-run room templates by player level:

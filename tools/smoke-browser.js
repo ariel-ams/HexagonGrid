@@ -390,6 +390,7 @@ async function main() {
         }
         throw new Error('No lamp lighting route available for smoke test.');
     });
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-cell.png') });
     assert(lampResult.litByLamp === true, 'Lamp cells should softly light adjacent hidden cells.');
     assert(lampResult.revealed === false, 'Lamp light should not fully reveal adjacent cells until explored.');
     assert(await page.locator('#inspectPanel:not(.hidden)').count() === 1, 'Lamp-lit objects should be inspectable.');

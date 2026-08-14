@@ -77,7 +77,8 @@ window.HW_ROADMAP_STATE = {
                         "Give level-1 Room 2 a bilingual pollen-to-wax-door objective.",
                         "Give level-1 Room 3 a bilingual safe-flank objective.",
                         "Keep the Room 3 guard in the opening view and mark it as the lesson target.",
-                        "Use a cleaned transparent Thorn Beetle sprite in the first combat lesson."
+                        "Use a cleaned transparent Thorn Beetle sprite in the first combat lesson.",
+                        "Replaced the Lamp Cell text fallback with a generated transparent four-frame idle sprite."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms."
@@ -95,7 +96,9 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-browser.js: Room 3 objective ID and localized copy",
                         ".codex-video-frames/first-run-room-three.png",
                         "tools/smoke-browser.js: guard distance and lesson-focus contract",
-                        "npm run sprites:thorn-alpha: boundary-connected alpha generation"
+                        "npm run sprites:thorn-alpha: boundary-connected alpha generation",
+                        "assets/items/lamp-cell.png",
+                        ".codex-video-frames/lamp-cell.png"
                     ]
                 },
                 {

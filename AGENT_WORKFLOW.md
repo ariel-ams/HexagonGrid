@@ -19,6 +19,7 @@ This file gives future agents enough project context to work independently witho
    - `GAME_DESIGN_DOCUMENT.md` for design pillars and mechanics.
    - `ui-development/player-experience-roadmap.md` for current roadmap priorities.
    - `SURROUNDING_MOSAIC_SYSTEM.md` for theme environment work.
+   - `ASSET_BACKLOG.md` before generating or replacing raster game art.
 4. Inspect current code before editing. Prefer `rg` and focused reads.
 5. Check `git status --short` and preserve user changes.
 
@@ -89,6 +90,7 @@ For layout-heavy work, save or reference screenshots under `.codex-video-frames/
 - Every new object needs English and Latin American Spanish text.
 - Every new object needs either a sprite file or a fallback label.
 - Every new enemy/item/hazard should appear in the Test list.
+- Use the ImageGen skill for new raster assets when no final artist asset exists and generation suits the requirement. Record the prompt/format, keep source and final files in the workspace, and never overwrite user-provided art without explicit approval.
 - If a mechanic needs setup to understand, add a focused test scenario.
 - Use `CONTENT_MANIFEST_CHECKLIST.md` before adding or reviewing new content.
 - Red visual language is reserved for damage, death, or immediate danger.

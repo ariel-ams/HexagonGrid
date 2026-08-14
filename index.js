@@ -3012,7 +3012,7 @@ function drawCell(cell) {
             drawTileArt('exit', x, y, size, visibleObject === 'finalExit' ? 1 : 0.88);
         } else if (!softLit && isEnemyObject(visibleObject)) {
             drawTileArt('enemyBorder', x, y, size, 0.9);
-        } else if (!softLit && !['entry', 'vine', 'stickyTrap'].includes(visibleObject)) {
+        } else if (!softLit && !['entry', 'vine', 'stickyTrap', 'lampCell'].includes(visibleObject)) {
             drawTileArt('pickableBorder', x, y, size, 0.9);
         }
         drawSprite(visibleObject, x, y, size, cell);

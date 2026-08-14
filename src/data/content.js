@@ -556,7 +556,7 @@ const SPRITE_DEFS = {
     larvaBrood: { src: 'assets/enemies/larva-brood-alpha.png', columns: 4, rows: 4, row: 0, frameMs: 220 },
     pollen: { src: 'assets/pollen-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 220 },
     water: { src: 'assets/water_drop-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },
-    lampCell: { src: '', plannedAsset: 'assets/items/lamp-cell.png', columns: 4, rows: 1, row: 0, frameMs: 190, fallback: 'L' },
+    lampCell: { src: 'assets/items/lamp-cell.png', columns: 4, rows: 1, row: 0, frameMs: 190, fallback: 'L' },
     upgrade: { src: 'assets/shield-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     stingUpgrade: { src: 'assets/sting-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     vine: { src: 'assets/vines-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 200 },

@@ -32,4 +32,5 @@ Current product direction:
 - Prioritize first-run clarity, readable tactical choices, and UI decluttering.
 - Keep theme mosaic art non-clickable and separate from playable cells.
 - Every new game object should have localized text, sprite or fallback, data definitions, and a Test scenario.
+- For new raster game art without a final artist asset, read `ASSET_BACKLOG.md` and use the ImageGen skill when generation is appropriate. Define requirements first, preserve user-provided source art, save project-bound outputs in the workspace, and verify transparency, frame alignment, and in-game readability.
 - Run `npm test` after meaningful code changes when available; for UI-heavy work, add a browser screenshot or manual visual check summary.
