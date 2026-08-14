@@ -201,10 +201,12 @@ The seventh art-cohesion sprint migrated Glow Pollen. Its mint bioluminescent gr
 
 The eighth art-cohesion sprint migrated Nectar Cache. Its opening wax-and-wood chest exposes a pollen pouch, blue water vial, and amber honey flask, making the multi-resource reward legible without relying on generic sparkles. The existing `4 x 1` timing and focused Test scenario remain unchanged.
 
+The ninth art-cohesion sprint migrated Honey Drop. Its amber droplet, wax blossom cradle, pale heart highlight, and contained healing pulse distinguish restorative honey from blue Water and the bundled Nectar Cache.
+
 Planned small migrations:
 
 1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, and Double Sting complete.
-2. Common utility: Honey Drop, Clean Water, Smoke Puff. Glow Pollen and Nectar Cache complete.
+2. Common utility: Clean Water, Smoke Puff. Glow Pollen, Nectar Cache, and Honey Drop complete.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
 5. Advanced enemies: Brood Wasp, Stag Beetle, Honey Leech, False Flower, Wasp Hive.
