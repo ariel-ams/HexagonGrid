@@ -334,12 +334,13 @@ window.HW_ROADMAP_STATE = {
                         "Defined lamp-style-core-v1 from the accepted Lamp Cell art direction.",
                         "Migrated Bee, Pollen, Water, Shield Upgrade, Entry, Exit, Wax Door, Thorn Beetle, Crawling Fire, and Burning Cell.",
                         "Preserved a hash-verified dated backup with restore instructions.",
-                        "Added reproducible prompts, source files, a sprite preparation manifest, and runtime contract smoke checks."
+                        "Added reproducible prompts, source files, a sprite preparation manifest, and runtime contract smoke checks.",
+                        "Migrated the normal Wasp to lamp-style-core-v1 with a lean black-and-amber threat silhouette."
                     ],
                     "left": [
-                        "Migrate common movement/combat sprites: Wasp, Bat, Trader Beetle, Vine, Double Sting.",
                         "Migrate common utility items and early/mid enemies in separate five-asset batches.",
-                        "Refresh advanced/complex enemies before effects, wearables, and theme-specific playable tiles."
+                        "Refresh advanced/complex enemies before effects, wearables, and theme-specific playable tiles.",
+                        "Migrate remaining common movement/combat sprites: Bat, Trader Beetle, Vine, Double Sting."
                     ],
                     "evidence": [
                         "assets/style-sources/lamp-style-core/manifest.json",
@@ -351,7 +352,11 @@ window.HW_ROADMAP_STATE = {
                         "ASSET_BACKLOG.md",
                         "ui-development/player-experience-roadmap.md",
                         "npm test: core art, gameplay browser, and UI layout checks passed",
-                        ".codex-video-frames/lamp-style-crawling-fire.png"
+                        ".codex-video-frames/lamp-style-crawling-fire.png",
+                        "assets/sprite-backups/pre-lamp-style-wasp-2026-08-14/README.md",
+                        "assets/style-sources/lamp-style-core/wasp.prompt.md",
+                        ".codex-video-frames/lamp-style-wasp.png",
+                        "npm test: Wasp art contract, Test scenario, gameplay browser, and UI layout passed"
                     ]
                 },
                 {

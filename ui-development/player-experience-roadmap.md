@@ -187,9 +187,11 @@ Goal: move game objects toward the Lamp Cell's readable hand-painted fantasy sty
 
 Status: in progress. The first art-cohesion sprint replaced ten first-run runtime sheets: Bee, Pollen, Water, Shield Upgrade, Entry, Exit, Wax Door, Thorn Beetle, Crawling Fire, and Burning Cell. Every previous runtime file is hash-verified under `assets/sprite-backups/pre-lamp-style-2026-08-14/`, exact prompts and generated sources are retained, and `npm run sprites:core-style` deterministically removes connected neutral backgrounds, detects visual row bands, and composes `512 x 512` runtime frames. Browser evidence covers the onboarding room and the first authored resource/combat lessons.
 
+The second art-cohesion sprint migrated the normal Wasp as the first small post-core replacement. Its lean black-and-amber armor, long sting, aggressive eyes, and sharper silhouette distinguish it from the friendly Bee at cell scale. The source, prompt, per-batch checksum, and one-file restore script are retained, while the art smoke test now supports independent immutable backup metadata for later small batches.
+
 Planned small migrations:
 
-1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, Double Sting.
+1. Common movement/combat: Bat, Trader Beetle, Vine, Double Sting. Wasp complete.
 2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.

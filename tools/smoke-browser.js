@@ -354,6 +354,11 @@ async function main() {
     assert(hazardCaptions.includes('Damage'), 'Hazard inspect stats should label incoming damage.');
     assert(hazardCaptions.includes('Cost'), 'Hazard inspect stats should label the resource cost that avoids damage.');
 
+    const waspScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('enemy'));
+    assert(waspScenario.targetObject === 'enemy', 'The normal Wasp should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-wasp.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {

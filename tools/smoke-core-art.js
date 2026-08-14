@@ -81,16 +81,18 @@ function readPngCornerAlpha(filePath) {
 assert(fs.existsSync(manifestPath), 'Lamp-style core art manifest is missing');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert(manifest.styleVersion === 'lamp-style-core-v1', 'Unexpected Lamp-style core art version');
-assert(Array.isArray(manifest.assets) && manifest.assets.length === 10, 'Core art manifest must define exactly ten assets');
-const checksumPath = path.join(root, manifest.backupRoot, 'checksums.sha256');
-assert(fs.existsSync(checksumPath), 'Core art backup checksum file is missing');
-const backupChecksums = new Map(fs.readFileSync(checksumPath, 'utf8')
-    .trim()
-    .split(/\r?\n/)
-    .map((line) => {
-        const [hash, relativePath] = line.trim().split(/\s{2,}/);
-        return [relativePath.replace(/\\/g, '/'), hash];
-    }));
+assert(Array.isArray(manifest.assets) && manifest.assets.length >= 10, 'Lamp-style art manifest must retain the ten core assets');
+
+function readChecksums(checksumPath) {
+    assert(fs.existsSync(checksumPath), `Lamp-style art backup checksum file is missing: ${checksumPath}`);
+    return new Map(fs.readFileSync(checksumPath, 'utf8')
+        .trim()
+        .split(/\r?\n/)
+        .map((line) => {
+            const [hash, relativePath] = line.trim().split(/\s{2,}/);
+            return [relativePath.replace(/\\/g, '/'), hash];
+        }));
+}
 
 manifest.assets.forEach((asset) => {
     assert(asset.id && asset.runtimePath && asset.sourcePath && asset.promptPath, `Incomplete core art manifest entry: ${asset.id || 'unknown'}`);
@@ -99,9 +101,11 @@ manifest.assets.forEach((asset) => {
     assert(fs.existsSync(path.join(root, asset.promptPath)), `Generation prompt missing for ${asset.id}`);
     assert(fs.existsSync(path.join(root, asset.runtimePath)), `Runtime sprite missing for ${asset.id}`);
     const runtimePath = path.join(root, asset.runtimePath);
-    const backupPath = path.join(root, manifest.backupRoot, asset.runtimePath);
+    const backupPath = path.join(root, asset.backupPath || path.join(manifest.backupRoot, asset.runtimePath));
     assert(fs.existsSync(backupPath), `Backup sprite missing for ${asset.id}`);
 
+    const checksumPath = path.join(root, asset.backupChecksumPath || path.join(manifest.backupRoot, 'checksums.sha256'));
+    const backupChecksums = readChecksums(checksumPath);
     const backupHash = crypto.createHash('sha256').update(fs.readFileSync(backupPath)).digest('hex');
     const runtimeHash = crypto.createHash('sha256').update(fs.readFileSync(runtimePath)).digest('hex');
     assert(backupChecksums.get(asset.runtimePath) === backupHash, `Backup checksum mismatch for ${asset.id}`);
