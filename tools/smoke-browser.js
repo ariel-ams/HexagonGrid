@@ -268,11 +268,21 @@ async function main() {
         [1, 2, 3, 4].every((size) => themeTileDebug.pieceSizes.includes(size)),
         'Theme environment should place deterministic 1-4 hex mosaic pieces.'
     );
-    const repeatedThemeTileDebug = await page.evaluate(() => window.HW_TEST_API.getThemeTileDebug());
+    const repeatedThemeTileDebug = await page.evaluate(() => {
+        const first = window.HW_TEST_API.getThemeTileDebug();
+        const second = window.HW_TEST_API.getThemeTileDebug();
+        return {
+            ...second,
+            cacheHitDelta: second.cache.hits - first.cache.hits,
+            cacheBuildDelta: second.cache.builds - first.cache.builds
+        };
+    });
     assert(
         repeatedThemeTileDebug.placementFingerprint === themeTileDebug.placementFingerprint,
         'Theme environment placement should remain stable between renders.'
     );
+    assert(repeatedThemeTileDebug.cacheHitDelta === 1, 'Repeated surroundings queries should reuse the cached viewport.');
+    assert(repeatedThemeTileDebug.cacheBuildDelta === 0, 'Repeated surroundings queries should not rebuild an unchanged viewport.');
     const themeSurroundingsCoverage = await page.evaluate(async () => {
         const themeIds = ['forest', 'cave', 'waspHive', 'underground'];
         const coverage = [];

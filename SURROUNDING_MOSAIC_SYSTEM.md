@@ -140,6 +140,13 @@ The first implementation uses stable 2 x 2 blocks as the chunk unit. Larger cach
 - Loading a later theme does not reopen or extend the startup loading screen.
 - Browser smoke coverage must verify both the single-sheet startup contract and successful on-demand loading for forest, cave, wasp hive, and underground.
 
+## Runtime Cache
+
+- Visible environment metadata is cached for an unchanged theme, run seed, room cell array, rounded camera hex, board geometry, and tile-sheet layout.
+- Stationary animation frames reuse the same decorated environment cells instead of rebuilding the playable-coordinate set and 1-4 hex piece metadata.
+- Camera movement, panning, resizing, theme changes, room replacement, or seed changes invalidate the cache through its key or room-array identity.
+- The current cache stores metadata only. An offscreen raster canvas per camera chunk remains a later optimization if profiling shows tile drawing itself is the next bottleneck.
+
 ## UI Changes Needed
 
 The current board canvas can support this if the renderer keeps two layers:

@@ -159,6 +159,13 @@ const tileArtAssets = {};
 const themeTileSheetAssets = {};
 const themeTileSheetMeta = {};
 const themeTileSheetLoads = {};
+const themeEnvironmentCache = {
+    key: null,
+    cellsRef: null,
+    cells: null,
+    hits: 0,
+    builds: 0
+};
 const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
@@ -3367,12 +3374,37 @@ function drawThemeEnvironmentLayer(board) {
 }
 
 function getVisibleEnvironmentCells(board) {
-    const playable = new Set(game.cells.map((cell) => cellKey(cell.q, cell.r)));
     const camera = getCameraWorldPosition();
     const radiusQ = Math.ceil(board.width / (board.size * Math.sqrt(3))) + 7;
     const radiusR = Math.ceil(board.height / (board.size * 1.5)) + 7;
     const centerQ = Math.round(camera.q);
     const centerR = Math.round(camera.r);
+    const meta = getThemeTileSheet()?.meta;
+    const cacheKey = [
+        getCurrentTheme()?.id || 'forest',
+        game.runSeed,
+        board.width,
+        board.height,
+        board.size.toFixed(3),
+        board.originX.toFixed(3),
+        board.originY.toFixed(3),
+        centerQ,
+        centerR,
+        radiusQ,
+        radiusR,
+        meta?.baseRows || 5,
+        meta?.columns || 6
+    ].join('|');
+    if (
+        themeEnvironmentCache.key === cacheKey
+        && themeEnvironmentCache.cellsRef === game.cells
+        && themeEnvironmentCache.cells
+    ) {
+        themeEnvironmentCache.hits += 1;
+        return themeEnvironmentCache.cells;
+    }
+
+    const playable = new Set(game.cells.map((cell) => cellKey(cell.q, cell.r)));
     const cells = [];
 
     for (let q = centerQ - radiusQ; q <= centerQ + radiusQ; q++) {
@@ -3396,13 +3428,17 @@ function getVisibleEnvironmentCells(board) {
         }
     }
 
-    const meta = getThemeTileSheet()?.meta;
-    return themeSurroundingsSystem.decorateCells(cells, {
+    const decoratedCells = themeSurroundingsSystem.decorateCells(cells, {
         playable,
         seed: game.runSeed,
         baseRows: meta?.baseRows || 5,
         columns: meta?.columns || 6
     });
+    themeEnvironmentCache.key = cacheKey;
+    themeEnvironmentCache.cellsRef = game.cells;
+    themeEnvironmentCache.cells = decoratedCells;
+    themeEnvironmentCache.builds += 1;
+    return decoratedCells;
 }
 
 function getEnvironmentTileRow(q, r) {
@@ -6343,6 +6379,10 @@ window.HW_TEST_API = {
             playableCells: game.cells.length,
             overlapsPlayable: environmentCells.filter((cell) => playableKeys.has(cellKey(cell.q, cell.r))).length,
             rows: [...new Set(environmentCells.map((cell) => cell.themeTileRow).filter((row) => row != null))],
+            cache: {
+                hits: themeEnvironmentCache.hits,
+                builds: themeEnvironmentCache.builds
+            },
             blendEdges: environmentCells.reduce((count, cell) => count + HEX_DIRECTIONS.filter((direction) => {
                 const neighbor = environmentMap.get(cellKey(cell.q + direction.q, cell.r + direction.r));
                 return neighbor && neighbor.themeTileRow != null && neighbor.themeTileRow !== cell.themeTileRow;

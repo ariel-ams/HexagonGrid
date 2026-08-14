@@ -123,6 +123,8 @@ The fifth Iteration 3 sprint unlocked a playable surroundings bridge without cha
 
 The sixth Iteration 3 sprint removed the four-theme surroundings bundle from the startup-critical path. The selected theme, or forest when Random is selected before a run, is the only surroundings sheet tracked by the loading screen; other sheets load once on demand and reuse their in-flight promise. The renderer keeps its current/default sheet available during a theme transition, while browser coverage verifies one startup sheet and successful lazy loading for every supported theme.
 
+The seventh Iteration 3 sprint reduced repeated work in the continuous canvas animation loop. Visible surroundings metadata is cached while theme, room, seed, camera, board geometry, and sheet layout remain unchanged; repeated stationary queries reuse the decorated cell set, while camera and room changes naturally invalidate it. Browser coverage now asserts a cache hit with zero rebuilds for an unchanged viewport.
+
 Scope:
 
 - Implement the non-clickable surrounding mosaic described in `SURROUNDING_MOSAIC_SYSTEM.md`.

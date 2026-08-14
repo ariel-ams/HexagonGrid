@@ -176,7 +176,8 @@ window.HW_ROADMAP_STATE = {
                         "Added browser and data evidence for zero playable overlap and stable placement.",
                         "Added automatic generation pipeline for theme surroundings sheets via npm run themes:surroundings.",
                         "Generated transparent bridge sheets are wired for all four themes with passing placement and viewport verification.",
-                        "Lazy-load theme surroundings so startup tracks only the selected/default sheet."
+                        "Lazy-load theme surroundings so startup tracks only the selected/default sheet.",
+                        "Cache visible surroundings metadata for unchanged animation frames."
                     ],
                     "left": [
                         "Replace generated bridge sheets with dedicated multi-hex surroundings compositions when final artist assets arrive.",
@@ -199,7 +200,9 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-browser.js: all four themes load surroundings with zero playable overlap",
                         "tools/smoke-ui-layout.js: desktop and mobile HUD layout remains readable with surroundings enabled",
                         "tools/smoke-browser.js: one startup sheet and on-demand coverage for all four themes",
-                        "Initial surroundings payload reduced from 8.7 MB to one 2.0-2.5 MB sheet"
+                        "Initial surroundings payload reduced from 8.7 MB to one 2.0-2.5 MB sheet",
+                        "tools/smoke-browser.js: repeated viewport query adds one cache hit and zero builds",
+                        "SURROUNDING_MOSAIC_SYSTEM.md: runtime cache and invalidation contract"
                     ]
                 },
                 {
