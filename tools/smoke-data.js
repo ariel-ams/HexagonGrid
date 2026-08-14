@@ -123,6 +123,64 @@ assert(
     'Theme surroundings should not overlap occupied environment coordinates'
 );
 
+const lessonDirections = [
+    { q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 },
+    { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }
+];
+const waxLessonGame = {
+    roomDepth: 2,
+    player: { q: 0, r: 0, pollen: 0, upgrades: 1 },
+    entryCell: { q: 0, r: 0 },
+    exitCell: { q: 4, r: 0 },
+    currentRoomCells: [
+        { q: 0, r: 0 }, { q: 1, r: 0 }, { q: 2, r: 0 }, { q: 3, r: 0 }, { q: 4, r: 0 },
+        { q: 4, r: -1 }, { q: 5, r: -1 }, { q: 5, r: 0 }, { q: 4, r: 1 }
+    ],
+    cells: [],
+    roomSpawnCounts: { enemies: 0, hazards: 0, specialItems: 0 },
+    objectiveProgress: { supplies: 0, kills: 0, tookDamage: false, exitSeen: false, exitReached: false, rewarded: false }
+};
+waxLessonGame.cells = waxLessonGame.currentRoomCells.map((cell) => ({
+    ...cell,
+    object: cell.q === 0 && cell.r === 0 ? 'entry' : cell.q === 4 && cell.r === 0 ? 'exit' : 'empty',
+    hits: 0,
+    nextAuraAt: 0,
+    nextAttackAt: 0
+}));
+const waxLessonCellKey = (q, r) => `${q},${r}`;
+const waxLessonHexDistance = (aq, ar, bq, br) => (
+    Math.abs(aq - bq) + Math.abs(ar - br) + Math.abs((aq + ar) - (bq + br))
+) / 2;
+const waxLessonSystem = sandbox.window.HW_ROOM_TEMPLATES.createRoomTemplateSystem({
+    game: waxLessonGame,
+    directions: lessonDirections,
+    seededRandom: () => 0.5,
+    randomFrom: (values) => values[0],
+    getCell: (q, r) => waxLessonGame.cells.find((cell) => cell.q === q && cell.r === r),
+    hexDistance: waxLessonHexDistance,
+    isEnemyObject: () => false,
+    isObjectAllowedByTheme: () => true,
+    getPlayerLevel: () => 1,
+    getObjectUnlockLevel: () => 1,
+    getRoomProfile: () => ({ allowedEnemies: ['enemy'] }),
+    chooseWeightedObject: () => 'empty',
+    cellKey: waxLessonCellKey,
+    awardObjectiveXp: () => {},
+    addObjectivePopup: () => {},
+    getLanguage: () => 'en'
+});
+waxLessonSystem.placeRoomLessonGate('waxDoorPollen');
+const waxExitNeighbors = lessonDirections
+    .map((direction) => waxLessonGame.cells.find((cell) => (
+        cell.q === waxLessonGame.exitCell.q + direction.q && cell.r === waxLessonGame.exitCell.r + direction.r
+    )))
+    .filter(Boolean);
+const waxTraversableExitNeighbors = waxExitNeighbors.filter((cell) => cell.object !== 'wall');
+assert(
+    waxTraversableExitNeighbors.length === 1 && waxTraversableExitNeighbors[0].object === 'waxDoor',
+    'Wax-door lesson should make the door the exit\'s only traversable neighbor'
+);
+
 const hiveCell = { q: 0, r: 0, object: 'waspHive', revealed: true };
 const hiveSpawnCells = [
     { q: 1, r: 0, object: 'empty' },

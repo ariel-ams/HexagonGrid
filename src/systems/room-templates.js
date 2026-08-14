@@ -352,7 +352,6 @@ function createRoomTemplateSystem(context) {
 
         getExitNeighborCells()
             .filter((cell) => cell !== door && isGateCandidateCell(cell))
-            .slice(0, 2)
             .forEach((cell) => {
                 cell.object = 'wall';
             });

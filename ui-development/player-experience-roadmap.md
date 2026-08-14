@@ -49,6 +49,8 @@ The eighth sprint extended the authored level-1 learning sequence into room 4. I
 
 The ninth sprint made that resource lesson structurally meaningful. All other playable approaches beside the room-4 exit become walls, so the bee must cross the authored burning cell; carrying the supplied water prevents its damage, while missing the pickup remains recoverable through the existing one-damage crossing rule. Browser coverage verifies that the burning cell is the exit's only traversable neighbor.
 
+The tenth sprint made the room 2 wax-door lesson structurally required. Pollen remains before the blocker, every alternate playable approach beside the visible exit becomes a wall, and the sting fallback keeps the lesson recoverable if the player misses the supplied pollen. Data and browser smoke coverage now protect the multi-neighbor exit geometry.
+
 Scope:
 
 - Define first-run room templates by player level:

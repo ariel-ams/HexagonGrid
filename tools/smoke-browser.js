@@ -566,12 +566,14 @@ async function main() {
         api.generateRoomAtDepth(2);
         const roomTwo = api.getState();
         const roomTwoCells = api.getCells();
+        const roomTwoEntry = roomTwo.entryCell;
         const roomTwoExit = roomTwo.exitCell;
-        const waxDoorNearExit = roomTwoCells.some((cell) => (
-            cell.object === 'waxDoor'
-            && roomTwoExit
-            && distance(cell, roomTwoExit) === 1
-        ));
+        const roomTwoDoors = roomTwoCells.filter((cell) => cell.object === 'waxDoor');
+        const roomTwoPollenCells = roomTwoCells.filter((cell) => cell.object === 'pollen');
+        const roomTwoExitNeighbors = roomTwoCells.filter((cell) => roomTwoExit && distance(cell, roomTwoExit) === 1);
+        const roomTwoTraversableExitNeighbors = roomTwoExitNeighbors.filter((cell) => cell.object !== 'wall');
+        const nearestRoomTwoPollen = roomTwoPollenCells.reduce((min, cell) => Math.min(min, distance(cell, roomTwoEntry)), Infinity);
+        const nearestRoomTwoDoor = roomTwoDoors.reduce((min, cell) => Math.min(min, distance(cell, roomTwoEntry)), Infinity);
 
         api.generateRoomAtDepth(3);
         const roomThree = api.getState();
@@ -604,8 +606,11 @@ async function main() {
 
         return {
             roomTwoTemplate: roomTwo.roomTemplate,
-            waxDoorNearExit,
-            roomTwoPollen: roomTwoCells.filter((cell) => cell.object === 'pollen').length,
+            waxDoorNearExit: roomTwoDoors.some((cell) => roomTwoExit && distance(cell, roomTwoExit) === 1),
+            roomTwoPollen: roomTwoPollenCells.length,
+            roomTwoPollenBeforeDoor: nearestRoomTwoPollen < nearestRoomTwoDoor,
+            roomTwoTraversableExitNeighborObjects: roomTwoTraversableExitNeighbors.map((cell) => cell.object),
+            roomTwoExitRevealed: Boolean(roomTwoExit && roomTwoCells.find((cell) => cell.q === roomTwoExit.q && cell.r === roomTwoExit.r)?.revealed),
             roomThreeTemplate: roomThree.roomTemplate,
             enemyCount: enemies.length,
             hasThornGuard: Boolean(thornGuard),
@@ -631,6 +636,12 @@ async function main() {
     assert(lessonRooms.roomTwoTemplate === 'waxDoorPollen', 'Room 2 should use the wax door and pollen lesson template.');
     assert(lessonRooms.waxDoorNearExit, 'Room 2 should place a wax door directly near the exit route.');
     assert(lessonRooms.roomTwoPollen >= 1, 'Room 2 should provide pollen for the wax door lesson.');
+    assert(lessonRooms.roomTwoPollenBeforeDoor, 'Room 2 should provide pollen before the wax door gate.');
+    assert(
+        lessonRooms.roomTwoTraversableExitNeighborObjects.length === 1 && lessonRooms.roomTwoTraversableExitNeighborObjects[0] === 'waxDoor',
+        'Room 2 should require opening the authored wax door to reach the exit.'
+    );
+    assert(lessonRooms.roomTwoExitRevealed, 'Room 2 should keep the exit visible while teaching pollen spending.');
     assert(lessonRooms.roomThreeTemplate === 'enemyGate', 'Room 3 should use the enemy gate lesson template.');
     assert(lessonRooms.enemyCount >= 1, 'Room 3 should include a visible guard lesson.');
     assert(lessonRooms.hasThornGuard, 'Room 3 should teach the first armored positional guard.');
@@ -661,6 +672,9 @@ async function main() {
     assert(roomFourObjectiveCopyEs.includes('Junta agua primero'), 'Room 4 objective should explain the water-before-fire action in Latin American Spanish.');
     await page.evaluate(() => window.setLanguage('en'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-four.png') });
+
+    await page.evaluate(() => window.HW_TEST_API.generateRoomAtDepth(2));
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-two.png') });
 
     const themedTemplates = await page.evaluate(() => {
         const api = window.HW_TEST_API;
