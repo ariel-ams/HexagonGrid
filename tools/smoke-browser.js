@@ -151,6 +151,7 @@ async function main() {
     assert((firstRoomPacing.counts.water || 0) >= 1, 'Onboarding room should include water.');
     assert((firstRoomPacing.counts.lampCell || 0) >= 1, 'Onboarding room should include a lamp cell.');
     assert((firstRoomPacing.counts.upgrade || 0) >= 1, 'Onboarding room should include shield upgrade.');
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-first-run.png') });
     await page.keyboard.press('Escape');
     await page.waitForSelector('#settingsScreen.visible');
     await assertDialogSemantics(page, '#settingsScreen', {
@@ -353,9 +354,10 @@ async function main() {
     assert(hazardCaptions.includes('Damage'), 'Hazard inspect stats should label incoming damage.');
     assert(hazardCaptions.includes('Cost'), 'Hazard inspect stats should label the resource cost that avoids damage.');
 
+    await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {
         const api = window.HW_TEST_API;
-        api.startTestScenario('crawlingFire');
         const before = api.getState();
         api.moveToCell(1, 0);
         await new Promise((resolve) => setTimeout(resolve, 120));

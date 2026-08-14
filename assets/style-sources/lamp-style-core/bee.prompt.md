@@ -1,0 +1,5 @@
+# Bee ImageGen Prompt
+
+Reference: `assets/items/lamp-cell.png`. Mode: built-in ImageGen.
+
+Create the Honeycomb Wayfinder player Bee in the exact hand-painted fantasy style, material richness, clean dark outline, warm glow, and small-cell readability of the provided Lamp Cell reference. Output one transparent PNG sprite sheet with exactly 4 equal square columns and 2 equal square rows, no gaps or dividers. Row 1 is a gentle idle hover cycle: steady hover, slight rise, wings lift, settle. Row 2 is a sting attack cycle: lean toward the right, wings snap, quick sting extension, recoil. The same cute golden bee appears in all 8 frames, centered at the same scale and anchor so it never slides. Distinct round golden abdomen with black bands, expressive friendly determined eyes, small translucent wings, tiny antennae. Strong silhouette at 64-96 px. Transparent background, no hex tile, floor, cast shadow, text, labels, frame borders, extra objects, or scenery. Keep the bee fully inside each frame. Do not depict honey, flowers, armor, a wasp, or a realistic insect.

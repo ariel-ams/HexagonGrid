@@ -91,6 +91,8 @@ For layout-heavy work, save or reference screenshots under `.codex-video-frames/
 - Every new object needs either a sprite file or a fallback label.
 - Every new enemy/item/hazard should appear in the Test list.
 - Use the ImageGen skill for new raster assets when no final artist asset exists and generation suits the requirement. Record the prompt/format, keep source and final files in the workspace, and never overwrite user-provided art without explicit approval.
+- The current object-art direction is `lamp-style-core-v1`: hand-painted fantasy materials, clean dark silhouettes, warm wax/gold lighting, transparent backgrounds, and stable frame anchors. Use `assets/items/lamp-cell.png` as the reference and `assets/style-sources/lamp-style-core/manifest.json` as the runtime precedent.
+- Before coordinated sprite replacement, create a dated mirrored backup under `assets/sprite-backups/` with hashes and restore instructions. Never edit a dated backup.
 - If a mechanic needs setup to understand, add a focused test scenario.
 - Use `CONTENT_MANIFEST_CHECKLIST.md` before adding or reviewing new content.
 - Red visual language is reserved for damage, death, or immediate danger.

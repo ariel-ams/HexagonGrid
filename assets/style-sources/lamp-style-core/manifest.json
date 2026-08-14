@@ -1,0 +1,17 @@
+{
+  "styleVersion": "lamp-style-core-v1",
+  "referenceAsset": "assets/items/lamp-cell.png",
+  "backupRoot": "assets/sprite-backups/pre-lamp-style-2026-08-14",
+  "assets": [
+    { "id": "bee", "runtimePath": "assets/bee-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/bee-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/bee.prompt.md", "columns": 4, "rows": 2, "frameSize": 512 },
+    { "id": "pollen", "runtimePath": "assets/pollen-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/pollen-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/pollen.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "water", "runtimePath": "assets/water_drop-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/water-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/water.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "shield", "runtimePath": "assets/shield-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/shield-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/shield.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "entry", "runtimePath": "assets/entry-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/entry-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/entry.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "exit", "runtimePath": "assets/exit-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/exit-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/exit.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "waxDoor", "runtimePath": "assets/waxDoor.png", "sourcePath": "assets/style-sources/lamp-style-core/wax-door-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/wax-door.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "thornBeetle", "runtimePath": "assets/thornBeetle-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/thorn-beetle-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/thorn-beetle.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 },
+    { "id": "crawlingFire", "runtimePath": "assets/enemies/crawling-fire-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/crawling-fire-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/crawling-fire.prompt.md", "columns": 4, "rows": 3, "frameSize": 512 },
+    { "id": "burningCell", "runtimePath": "assets/effects/burning-cell-alpha.png", "sourcePath": "assets/style-sources/lamp-style-core/burning-cell-imagegen.png", "promptPath": "assets/style-sources/lamp-style-core/burning-cell.prompt.md", "columns": 4, "rows": 1, "frameSize": 512 }
+  ]
+}

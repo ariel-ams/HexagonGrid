@@ -181,6 +181,31 @@ Acceptance checks:
 - A new enemy can be added with behavior data plus an enemy system handler.
 - `npm test` catches missing sprite, missing localization, or missing test scenario.
 
+## Iteration 5: Cohesive Object Art
+
+Goal: move game objects toward the Lamp Cell's readable hand-painted fantasy style without losing animation contracts or recovery paths.
+
+Status: in progress. The first art-cohesion sprint replaced ten first-run runtime sheets: Bee, Pollen, Water, Shield Upgrade, Entry, Exit, Wax Door, Thorn Beetle, Crawling Fire, and Burning Cell. Every previous runtime file is hash-verified under `assets/sprite-backups/pre-lamp-style-2026-08-14/`, exact prompts and generated sources are retained, and `npm run sprites:core-style` deterministically removes connected neutral backgrounds, detects visual row bands, and composes `512 x 512` runtime frames. Browser evidence covers the onboarding room and the first authored resource/combat lessons.
+
+Planned small migrations:
+
+1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, Double Sting.
+2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff.
+3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
+4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
+5. Advanced enemies: Brood Wasp, Stag Beetle, Honey Leech, False Flower, Wasp Hive.
+6. Complex enemies: Spider, Burrow Beetle, Queen Signaler, Fog Shepherd, Pollen Thief Moth.
+7. Late enemies: Wax Sentinel, Mirror Wasp, Comb Bomber, Water Leech, Larva Brood.
+8. Combat effects/blockers, then wearables, then theme-specific playable tiles.
+
+Acceptance checks for every batch:
+
+- Preserve current runtime files in a dated backup before replacement.
+- Keep exact ImageGen prompts and original generated outputs.
+- Preserve sprite row/state contracts and stable frame anchors.
+- Validate dimensions, transparency, data references, and Test scenario availability.
+- Capture browser evidence at actual cell size and run `npm test` before committing.
+
 ## Backlog For Later
 
 - Equipment loot loop: helmet, jacket, abdomen guard, sting, wings. Starter loadouts now exist, are equipped for new runs, carry level metadata, include level-2 common and level-4 rare reward tiers, carry English and Latin American Spanish copy for slots, gear, rarity labels, and reward effects, record planned asset paths for the artist handoff with smoke coverage, include a final wearable sprite format contract, include a wearable manifest checklist, can describe each equipped slot and aggregate equipped effects for future UI, can compare candidate effect gains/losses against the current loadout, can summarize active stat bonuses, can apply replacement loadouts without stacking stale active bonuses, can be filtered by player level, can report whether gear rewards are available for a player/loadout, can plan room-depth reward cadence, can package localized reward-offer status with available pool counts, can generate small weighted unequipped reward-choice sets, can apply selected rewards into a replacement loadout, can bundle each reward with localized replacement, slot display, rarity, reward weight, effect summary details, and effect delta details, has shared equipment reward-card rendering for future loot screens, has post-room reward-flow planning for relic/equipment ordering, now shows eligible equipment choices after relic rewards, and shows a compact equipped-gear list plus aggregate effect chips in the side panel; next work is balancing reward cadence, improving inventory details, and requesting final wearable sprites.

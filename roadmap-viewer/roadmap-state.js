@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-14",
-    "currentTaskId": "first-run",
+    "currentTaskId": "art-cohesion",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -322,6 +322,36 @@ window.HW_ROADMAP_STATE = {
                         "src/systems/inspect-stats.js",
                         "src/systems/equipment.js",
                         "roadmap hygiene: moved current focus to UI declutter after reward-card readability sprint"
+                    ]
+                },
+                {
+                    "id": "art-cohesion",
+                    "title": "Cohesive Object Art",
+                    "status": "in_progress",
+                    "owner": "Codex + Artist",
+                    "objective": "Move gameplay sprites toward the Lamp Cell's hand-painted fantasy style in small reversible batches.",
+                    "done": [
+                        "Defined lamp-style-core-v1 from the accepted Lamp Cell art direction.",
+                        "Migrated Bee, Pollen, Water, Shield Upgrade, Entry, Exit, Wax Door, Thorn Beetle, Crawling Fire, and Burning Cell.",
+                        "Preserved a hash-verified dated backup with restore instructions.",
+                        "Added reproducible prompts, source files, a sprite preparation manifest, and runtime contract smoke checks."
+                    ],
+                    "left": [
+                        "Migrate common movement/combat sprites: Wasp, Bat, Trader Beetle, Vine, Double Sting.",
+                        "Migrate common utility items and early/mid enemies in separate five-asset batches.",
+                        "Refresh advanced/complex enemies before effects, wearables, and theme-specific playable tiles."
+                    ],
+                    "evidence": [
+                        "assets/style-sources/lamp-style-core/manifest.json",
+                        "assets/sprite-backups/pre-lamp-style-2026-08-14/README.md",
+                        "tools/prepare-sprite-grid.ps1",
+                        "tools/smoke-core-art.js",
+                        ".codex-video-frames/lamp-style-first-run.png",
+                        ".codex-video-frames/lamp-style-runtime-sheets.png",
+                        "ASSET_BACKLOG.md",
+                        "ui-development/player-experience-roadmap.md",
+                        "npm test: core art, gameplay browser, and UI layout checks passed",
+                        ".codex-video-frames/lamp-style-crawling-fire.png"
                     ]
                 },
                 {

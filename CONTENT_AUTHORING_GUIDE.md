@@ -50,6 +50,8 @@ When an artist sheet has a pale checkerboard baked into its background, run `too
 
 For entirely new raster art, check `ASSET_BACKLOG.md` and use the ImageGen skill when no final artist asset exists. Requirements must name the gameplay lesson, sheet dimensions, animation states, palette, silhouette, transparency strategy, and avoid list before generation. Keep generated source files separate from prepared runtime derivatives.
 
+The current core-art precedent is `assets/style-sources/lamp-style-core/manifest.json`. Generated sources and prompts stay in that directory, `npm run sprites:core-style` prepares transparent square-frame runtime sheets, and the previous runtime set can be restored from `assets/sprite-backups/pre-lamp-style-2026-08-14/`. Add future migrations as smaller versioned manifests and dated backups rather than silently overwriting source art.
+
 ## Adding Wearable Gear Art
 
 Wearable gear uses `plannedAsset` paths in `EQUIPMENT_DEFS` until final art exists. Add final files under `assets/equipment/` using the contract in `ART_SPRITE_REQUESTS.md`.
