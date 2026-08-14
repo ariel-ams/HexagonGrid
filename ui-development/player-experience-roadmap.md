@@ -191,9 +191,11 @@ The second art-cohesion sprint migrated the normal Wasp as the first small post-
 
 The third art-cohesion sprint migrated the normal pursuing Bat. Broad plum wings, pale-gold alert eyes, hooked feet, and a charcoal-violet body give its movement pressure a distinct silhouette over cave and forest cells without borrowing the red immediate-danger language. The existing `4 x 1` timing and focused Test scenario remain intact, with an independent hash-verified restore package.
 
+The fourth art-cohesion sprint migrated the safe Trader Beetle. Its teal engraved shell, brass trim, leather harness, pollen charm, and water flask communicate a market interaction before text appears and separate it from armored enemy beetles. The market behavior and focused Test scenario remain unchanged.
+
 Planned small migrations:
 
-1. Common movement/combat: Trader Beetle, Vine, Double Sting. Wasp and Bat complete.
+1. Common movement/combat: Vine, Double Sting. Wasp, Bat, and Trader Beetle complete.
 2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.

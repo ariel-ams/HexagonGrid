@@ -364,6 +364,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-bat.png') });
 
+    const traderScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('npc'));
+    assert(traderScenario.targetObject === 'npc', 'The Trader Beetle should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-trader-beetle.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {
