@@ -73,7 +73,8 @@ window.HW_ROADMAP_STATE = {
                         "Mist cells can be targeted for movement.",
                         "Authored level-1 room 4 as a single fire-and-water resource lesson.",
                         "Require the Room 4 fire gate while keeping missed-water recovery possible.",
-                        "Require the Room 2 wax-door gate while preserving the sting fallback."
+                        "Require the Room 2 wax-door gate while preserving the sting fallback.",
+                        "Give level-1 Room 2 a bilingual pollen-to-wax-door objective."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms."
@@ -86,7 +87,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-browser.js: fire is the exit's only traversable neighbor",
                         "tools/smoke-data.js: synthetic multi-neighbor wax-door geometry",
                         "tools/smoke-browser.js: pollen-before-door and visible-exit contract",
-                        ".codex-video-frames/first-run-room-two.png"
+                        ".codex-video-frames/first-run-room-two.png",
+                        "tools/smoke-browser.js: Room 2 objective ID and localized copy"
                     ]
                 },
                 {

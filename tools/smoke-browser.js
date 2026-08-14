@@ -563,6 +563,7 @@ async function main() {
         };
         const dirs = [{ q: 1, r: 0 }, { q: 1, r: -1 }, { q: 0, r: -1 }, { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 }];
 
+        api.setProgressionLevel(1);
         api.generateRoomAtDepth(2);
         const roomTwo = api.getState();
         const roomTwoCells = api.getCells();
@@ -606,6 +607,7 @@ async function main() {
 
         return {
             roomTwoTemplate: roomTwo.roomTemplate,
+            roomTwoObjective: roomTwo.roomObjective?.id,
             waxDoorNearExit: roomTwoDoors.some((cell) => roomTwoExit && distance(cell, roomTwoExit) === 1),
             roomTwoPollen: roomTwoPollenCells.length,
             roomTwoPollenBeforeDoor: nearestRoomTwoPollen < nearestRoomTwoDoor,
@@ -634,6 +636,7 @@ async function main() {
         };
     });
     assert(lessonRooms.roomTwoTemplate === 'waxDoorPollen', 'Room 2 should use the wax door and pollen lesson template.');
+    assert(lessonRooms.roomTwoObjective === 'openWaxDoor', 'Level-1 room 2 should explicitly teach spending pollen on the wax door.');
     assert(lessonRooms.waxDoorNearExit, 'Room 2 should place a wax door directly near the exit route.');
     assert(lessonRooms.roomTwoPollen >= 1, 'Room 2 should provide pollen for the wax door lesson.');
     assert(lessonRooms.roomTwoPollenBeforeDoor, 'Room 2 should provide pollen before the wax door gate.');
@@ -674,6 +677,12 @@ async function main() {
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-four.png') });
 
     await page.evaluate(() => window.HW_TEST_API.generateRoomAtDepth(2));
+    const roomTwoObjectiveCopy = await page.locator('[data-hud-id="objective"]').getAttribute('aria-label');
+    assert(roomTwoObjectiveCopy.includes('Collect pollen first'), 'Room 2 objective should explain the pollen-before-door action in English.');
+    await page.evaluate(() => window.setLanguage('es-419'));
+    const roomTwoObjectiveCopyEs = await page.locator('[data-hud-id="objective"]').getAttribute('aria-label');
+    assert(roomTwoObjectiveCopyEs.includes('Junta polen primero'), 'Room 2 objective should explain the pollen-before-door action in Latin American Spanish.');
+    await page.evaluate(() => window.setLanguage('en'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-two.png') });
 
     const themedTemplates = await page.evaluate(() => {

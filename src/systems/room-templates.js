@@ -23,6 +23,14 @@ const ROOM_OBJECTIVES = [
         isComplete: ({ game }) => game.objectiveProgress.exitReached && game.player.upgrades > 0
     },
     {
+        id: 'openWaxDoor',
+        minDepth: 2,
+        random: false,
+        label: { en: 'Open the wax door', 'es-419': 'Abre la puerta de cera' },
+        hint: { en: 'Collect pollen first, then spend it on the door.', 'es-419': 'Junta polen primero y luego gastalo en la puerta.' },
+        isComplete: ({ game }) => game.objectiveProgress.exitReached
+    },
+    {
         id: 'avoidDamage',
         minDepth: 2,
         label: { en: 'Avoid damage this room', 'es-419': 'Evita dano en esta sala' },
@@ -124,6 +132,7 @@ function createRoomTemplateSystem(context) {
     function chooseRoomObjective() {
         const options = ROOM_OBJECTIVES.filter((objective) => objective.random !== false && game.roomDepth >= objective.minDepth);
         if (getPlayerLevel() === 1 && game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'collectTwo'));
+        if (getPlayerLevel() === 1 && game.roomDepth === 2) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'openWaxDoor'));
         if (getPlayerLevel() === 1 && game.roomDepth === 4) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'crossFire'));
         if (game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit'));
         return decorateObjective(randomFrom(options));

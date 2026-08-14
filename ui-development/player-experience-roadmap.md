@@ -51,6 +51,8 @@ The ninth sprint made that resource lesson structurally meaningful. All other pl
 
 The tenth sprint made the room 2 wax-door lesson structurally required. Pollen remains before the blocker, every alternate playable approach beside the visible exit becomes a wall, and the sting fallback keeps the lesson recoverable if the player misses the supplied pollen. Data and browser smoke coverage now protect the multi-neighbor exit geometry.
 
+The eleventh sprint aligned Room 2's HUD guidance with its authored route. A dedicated bilingual `openWaxDoor` objective now tells level-1 players to collect pollen before spending it on the door, while browser coverage protects both English and Latin American Spanish copy.
+
 Scope:
 
 - Define first-run room templates by player level:
