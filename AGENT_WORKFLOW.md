@@ -12,6 +12,8 @@ This file gives future agents enough project context to work independently witho
    - `ui-development/oracle/trust-and-trends-roadmap.md`
    - `ui-development/oracle/project-usage-guide.md`
    - `ui-development/project-profile.md`
+   - `godmode:ux-patterns` from `C:\Users\ariel\.codex\godmode\skills\ux-patterns\SKILL.md`
+   - `godmode:ui-engineering` from `C:\Users\ariel\.codex\godmode\skills\ui-engineering\SKILL.md`
 3. Read the relevant project docs:
    - `src/README.md` for architecture and current gameplay model.
    - `CONTENT_AUTHORING_GUIDE.md` for adding content.
@@ -52,6 +54,10 @@ For every UI-affecting task, include this compact gate in notes or the final res
 
 ```text
 UX scope:
+Pattern reference:
+Tokens reused or added:
+Structure and states:
+Responsive and accessibility behavior:
 Mandatory laws:
 - <law>: <criterion> -> <test/result>
 Verification:
@@ -60,6 +66,14 @@ Verdict: Ship | Iterate | Hold
 ```
 
 Use `Iterate` when a visual/manual check could not be run or when a known readability/accessibility risk remains.
+
+The required visual-work sequence is:
+
+1. Identify the applicable game UI pattern and reference in `godmode:ux-patterns`.
+2. Reuse established project tokens; add documented tokens before components when a necessary value is missing.
+3. Define semantics, default/hover/focus/active/disabled/loading/error/empty states as applicable, responsive behavior, keyboard/touch interaction, and reduced-motion behavior with `godmode:ui-engineering`.
+4. Implement using the repository's existing systems and visual language.
+5. Verify desktop and mobile presentation, interaction states, text contrast, 44px mobile targets, non-overlap, and `prefers-reduced-motion` for motion changes.
 
 ## Test Commands
 
