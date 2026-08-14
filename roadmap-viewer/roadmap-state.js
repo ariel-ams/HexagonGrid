@@ -1,5 +1,5 @@
 window.HW_ROADMAP_STATE = {
-    "updatedAt": "2026-08-13",
+    "updatedAt": "2026-08-14",
     "currentTaskId": "theme-surroundings",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
@@ -175,7 +175,8 @@ window.HW_ROADMAP_STATE = {
                         "Defined and implemented deterministic connected 1-4 hex piece placement.",
                         "Added browser and data evidence for zero playable overlap and stable placement.",
                         "Added automatic generation pipeline for theme surroundings sheets via npm run themes:surroundings.",
-                        "Generated transparent bridge sheets are wired for all four themes with passing placement and viewport verification."
+                        "Generated transparent bridge sheets are wired for all four themes with passing placement and viewport verification.",
+                        "Lazy-load theme surroundings so startup tracks only the selected/default sheet."
                     ],
                     "left": [
                         "Replace generated bridge sheets with dedicated multi-hex surroundings compositions when final artist assets arrive.",
@@ -196,7 +197,9 @@ window.HW_ROADMAP_STATE = {
                         "assets/tiles/themes/underground-surroundings.png",
                         "npm run themes:surroundings",
                         "tools/smoke-browser.js: all four themes load surroundings with zero playable overlap",
-                        "tools/smoke-ui-layout.js: desktop and mobile HUD layout remains readable with surroundings enabled"
+                        "tools/smoke-ui-layout.js: desktop and mobile HUD layout remains readable with surroundings enabled",
+                        "tools/smoke-browser.js: one startup sheet and on-demand coverage for all four themes",
+                        "Initial surroundings payload reduced from 8.7 MB to one 2.0-2.5 MB sheet"
                     ]
                 },
                 {

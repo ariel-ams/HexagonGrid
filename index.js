@@ -158,6 +158,7 @@ const uiArtAssets = {};
 const tileArtAssets = {};
 const themeTileSheetAssets = {};
 const themeTileSheetMeta = {};
+const themeTileSheetLoads = {};
 const spriteAssets = {};
 let spriteFrames = {};
 let spritesReady = false;
@@ -1002,6 +1003,7 @@ function isObjectAllowedByTheme(object) {
 function applyDungeonTheme() {
     const theme = getCurrentTheme();
     if (!theme) return;
+    loadThemeTileSheet(theme.id);
     document.documentElement.style.setProperty('--art-board-bg', `url("${theme.boardBackground}")`);
     document.documentElement.style.setProperty('--theme-board-overlay', theme.boardOverlay || 'rgba(0, 0, 0, 0)');
     document.documentElement.style.setProperty('--theme-cell-tint', theme.cellTint || '#4d6f4f');
@@ -2877,25 +2879,56 @@ function loadTileArt() {
 }
 
 function loadThemeTileSheets() {
-    loadTrackedImages(THEME_TILE_SHEET_DEFS || {}, themeTileSheetAssets, (key, image) => {
-        if (!image?.naturalWidth || !image?.naturalHeight) {
-            delete themeTileSheetMeta[key];
-            return;
-        }
-        const columns = 6;
-        const frameSize = image.naturalWidth / columns;
-        const rows = Math.max(1, Math.round(image.naturalHeight / frameSize));
-        themeTileSheetMeta[key] = {
-            columns,
-            rows,
-            frameSize,
-            baseRows: rows >= 6 ? 5 : Math.max(1, rows),
-            blendRow: rows >= 6 ? 5 : Math.max(0, rows - 1),
-            sourceInset: Math.round(frameSize * 0.03),
-            drawScale: 1.06
+    const initialThemeId = selectedThemeId !== 'random' && THEME_TILE_SHEET_DEFS?.[selectedThemeId]
+        ? selectedThemeId
+        : 'forest';
+    loadThemeTileSheet(initialThemeId, { trackStartup: true });
+}
+
+function loadThemeTileSheet(themeId, options = {}) {
+    const src = THEME_TILE_SHEET_DEFS?.[themeId];
+    if (!src) return Promise.resolve(null);
+    if (themeTileSheetAssets[themeId]) return Promise.resolve(themeTileSheetAssets[themeId]);
+    if (themeTileSheetLoads[themeId]) return themeTileSheetLoads[themeId];
+
+    const finish = options.trackStartup ? registerAssetLoad() : () => {};
+    themeTileSheetLoads[themeId] = new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => {
+            themeTileSheetAssets[themeId] = image;
+            updateThemeTileSheetMeta(themeId, image);
+            finish();
+            draw();
+            resolve(image);
         };
-        draw();
+        image.onerror = () => {
+            themeTileSheetAssets[themeId] = null;
+            delete themeTileSheetMeta[themeId];
+            finish();
+            resolve(null);
+        };
+        image.src = src;
     });
+    return themeTileSheetLoads[themeId];
+}
+
+function updateThemeTileSheetMeta(themeId, image) {
+    if (!image?.naturalWidth || !image?.naturalHeight) {
+        delete themeTileSheetMeta[themeId];
+        return;
+    }
+    const columns = 6;
+    const frameSize = image.naturalWidth / columns;
+    const rows = Math.max(1, Math.round(image.naturalHeight / frameSize));
+    themeTileSheetMeta[themeId] = {
+        columns,
+        rows,
+        frameSize,
+        baseRows: rows >= 6 ? 5 : Math.max(1, rows),
+        blendRow: rows >= 6 ? 5 : Math.max(0, rows - 1),
+        sourceInset: Math.round(frameSize * 0.03),
+        drawScale: 1.06
+    };
 }
 
 function drawForestTexture(board) {
@@ -6317,10 +6350,11 @@ window.HW_TEST_API = {
         };
     },
     getCells: () => game.cells.map((cell) => ({ ...cell })),
-    setDungeonTheme: (themeId) => {
+    setDungeonTheme: async (themeId) => {
         if (!DUNGEON_THEMES?.[themeId]) return false;
         game.dungeonTheme = DUNGEON_THEMES[themeId];
         applyDungeonTheme();
+        await loadThemeTileSheet(themeId);
         draw();
         return true;
     },

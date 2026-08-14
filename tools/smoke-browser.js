@@ -41,6 +41,11 @@ async function main() {
     await page.goto(gameUrl, { waitUntil: 'load' });
     await page.waitForFunction(() => window.HW_TEST_API && window.HW_TEST_API.areAssetsReady && window.HW_TEST_API.areAssetsReady());
     assert(await page.locator('#loadingScreen.ready').count() === 1, 'Loading screen should hide after assets are ready.');
+    const startupThemeSheets = await page.evaluate(() => window.HW_TEST_API.getThemeTileDebug().loadedSheets);
+    assert(
+        startupThemeSheets.length === 1 && startupThemeSheets[0] === 'forest',
+        `Startup should load only the selected theme surroundings sheet, received ${startupThemeSheets.join(', ')}`
+    );
     const testObjectEntries = await page.evaluate(() => window.HW_TEST_API.getTestObjectEntries());
     assert(testObjectEntries.length > 0, 'Test menu should expose testable game objects.');
     const effectStatCoverage = await page.evaluate(() => window.HW_TEST_API.getObjectEffectStatCoverage());
@@ -268,19 +273,21 @@ async function main() {
         repeatedThemeTileDebug.placementFingerprint === themeTileDebug.placementFingerprint,
         'Theme environment placement should remain stable between renders.'
     );
-    const themeSurroundingsCoverage = await page.evaluate(() => {
+    const themeSurroundingsCoverage = await page.evaluate(async () => {
         const themeIds = ['forest', 'cave', 'waspHive', 'underground'];
-        return themeIds.map((themeId) => {
-            window.HW_TEST_API.setDungeonTheme(themeId);
+        const coverage = [];
+        for (const themeId of themeIds) {
+            await window.HW_TEST_API.setDungeonTheme(themeId);
             const debug = window.HW_TEST_API.getThemeTileDebug();
-            return {
+            coverage.push({
                 themeId,
                 activeThemeId: debug.themeId,
                 sheetLoaded: debug.loadedSheets.includes(themeId),
                 environmentCells: debug.environmentCells,
                 overlapsPlayable: debug.overlapsPlayable
-            };
-        });
+            });
+        }
+        return coverage;
     });
     themeSurroundingsCoverage.forEach((coverage) => {
         assert(coverage.activeThemeId === coverage.themeId, `Theme ${coverage.themeId} should become the active surroundings theme.`);

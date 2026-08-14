@@ -132,6 +132,14 @@ The first implementation uses stable 2 x 2 blocks as the chunk unit. Larger cach
 - Playable cells keep their current cell art, borders, fog, enemies, and pickups.
 - Blend overlays are transparent and draw on top of neighboring surrounding pieces only.
 
+## Loading And Fallback
+
+- The loading screen tracks only the selected theme sheet. When the menu preference is Random, forest is the startup fallback because the first room uses the forest theme.
+- A theme sheet loads on demand the first time that theme becomes active. Repeated requests share the same pending load and loaded image.
+- Theme switches update gameplay metadata immediately. Until the requested sheet is ready, the renderer may continue using the already loaded forest sheet so the board never flashes to an empty background.
+- Loading a later theme does not reopen or extend the startup loading screen.
+- Browser smoke coverage must verify both the single-sheet startup contract and successful on-demand loading for forest, cave, wasp hive, and underground.
+
 ## UI Changes Needed
 
 The current board canvas can support this if the renderer keeps two layers:

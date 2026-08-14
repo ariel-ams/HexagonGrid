@@ -121,6 +121,8 @@ The fourth Iteration 3 sprint corrected boss durability before alternate boss id
 
 The fifth Iteration 3 sprint unlocked a playable surroundings bridge without changing playable cells. `npm run themes:surroundings` now derives transparent first-pass sheets for forest, cave, wasp hive, and underground, all four themes are wired through centralized art metadata, and browser coverage verifies that every sheet loads, renders non-playable environment cells, and preserves zero overlap with gameplay coordinates. Dedicated multi-hex compositions and final atmosphere tuning remain an art-and-performance polish pass rather than a blocker for using the feature.
 
+The sixth Iteration 3 sprint removed the four-theme surroundings bundle from the startup-critical path. The selected theme, or forest when Random is selected before a run, is the only surroundings sheet tracked by the loading screen; other sheets load once on demand and reuse their in-flight promise. The renderer keeps its current/default sheet available during a theme transition, while browser coverage verifies one startup sheet and successful lazy loading for every supported theme.
+
 Scope:
 
 - Implement the non-clickable surrounding mosaic described in `SURROUNDING_MOSAIC_SYSTEM.md`.
