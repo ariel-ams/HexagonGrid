@@ -55,6 +55,8 @@ The eleventh sprint aligned Room 2's HUD guidance with its authored route. A ded
 
 The twelfth sprint aligned Room 3's HUD guidance with its positional combat lesson. A dedicated bilingual `flankGuard` objective now directs level-1 players to a highlighted safe cell before stinging the Thorn Beetle, and completes through the existing room kill progress.
 
+The thirteenth sprint improved the first combat target's visual salience. The authored Thorn Beetle now starts three to four route steps from the entrance, receives a pulsing gold lesson-focus ring, and keeps green safe-flank markers nearby. This puts the teaching target inside the opening camera view while keeping instruction and danger colors distinct.
+
 Scope:
 
 - Define first-run room templates by player level:

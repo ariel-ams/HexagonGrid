@@ -300,6 +300,7 @@ function createRoomTemplateSystem(context) {
             cell.nextAttackAt = 0;
             cell.facingDir = null;
             cell.lessonSafe = false;
+            cell.lessonGuard = false;
         });
     }
 
@@ -384,6 +385,7 @@ function createRoomTemplateSystem(context) {
         guard.nextAuraAt = 0;
         guard.nextAttackAt = 0;
         guard.hits = 0;
+        guard.lessonGuard = true;
         game.roomSpawnCounts.enemies += 1;
         neighbors.slice(1, 3).forEach((cell) => {
             if (isGateCandidateCell(cell)) cell.object = 'wall';
@@ -396,10 +398,14 @@ function createRoomTemplateSystem(context) {
             return;
         }
         clearRouteForLesson(route);
-        const guardIndex = Math.max(2, route.length - 3);
-        const guardStep = route[guardIndex];
-        const guard = getCell(guardStep.q, guardStep.r);
-        if (!guard || !isGateCandidateCell(guard) || hexDistance(guard.q, guard.r, game.entryCell.q, game.entryCell.r) <= 2) {
+        const guard = route
+            .slice(1, -1)
+            .map((step) => getCell(step.q, step.r))
+            .find((cell) => {
+                const distance = cell ? hexDistance(cell.q, cell.r, game.entryCell.q, game.entryCell.r) : 0;
+                return isGateCandidateCell(cell) && distance >= 3 && distance <= 4;
+            });
+        if (!guard) {
             placeEnemyExitGate(enemyObject);
             return;
         }
@@ -412,6 +418,7 @@ function createRoomTemplateSystem(context) {
         guard.hits = 0;
         guard.revealed = true;
         guard.litByLamp = true;
+        guard.lessonGuard = true;
         game.roomSpawnCounts.enemies += 1;
 
         const routeKeys = new Set(route.map((step) => cellKey(step.q, step.r)));

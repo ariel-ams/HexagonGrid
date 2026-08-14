@@ -618,6 +618,7 @@ async function main() {
             enemyCount: enemies.length,
             hasThornGuard: Boolean(thornGuard),
             thornGuardVisible: Boolean(thornGuard && (thornGuard.revealed || thornGuard.litByLamp)),
+            thornGuardFocused: Boolean(thornGuard?.lessonGuard),
             nearestEnemyDistance,
             guardHasReadableSpace,
             lessonSafeCount: lessonSafeCells.length,
@@ -651,7 +652,9 @@ async function main() {
     assert(lessonRooms.enemyCount >= 1, 'Room 3 should include a visible guard lesson.');
     assert(lessonRooms.hasThornGuard, 'Room 3 should teach the first armored positional guard.');
     assert(lessonRooms.thornGuardVisible, 'Room 3 armored guard should be visible before engagement.');
+    assert(lessonRooms.thornGuardFocused, 'Room 3 armored guard should carry the authored lesson focus marker.');
     assert(lessonRooms.nearestEnemyDistance > 2, 'Room 3 guard should not start adjacent to the bee.');
+    assert(lessonRooms.nearestEnemyDistance <= 4, `Room 3 guard should start inside the opening camera view; got distance ${lessonRooms.nearestEnemyDistance}.`);
     assert(lessonRooms.guardHasReadableSpace, 'Room 3 guard should expose at least one readable nearby route cell.');
     assert(lessonRooms.lessonSafeCount >= 1, 'Room 3 should mark at least one safe flank lesson cell.');
     assert(lessonRooms.lessonSafeNearGuard, 'Room 3 safe lesson cell should sit beside the armored guard.');

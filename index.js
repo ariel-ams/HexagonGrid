@@ -3024,6 +3024,10 @@ function drawCell(cell) {
         }
     }
 
+    if (!hidden && cell.lessonGuard) {
+        drawLessonGuardMarker(x, y, size);
+    }
+
     if (!hidden && (cell.object === 'bat' || (cell.object === 'sleepingBat' && cell.awake))) {
         drawBatAttackTimer(cell, x, y, size);
     }
@@ -3079,6 +3083,30 @@ function drawLessonSafeMarker(x, y, size) {
     ctx.fill();
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
+}
+
+function drawLessonGuardMarker(x, y, size) {
+    const pulse = (Math.sin(performance.now() / 150) + 1) / 2;
+    ctx.save();
+    drawHexPath(x, y, size - 6);
+    ctx.fillStyle = `rgba(255, 193, 66, ${0.08 + pulse * 0.08})`;
+    ctx.strokeStyle = `rgba(255, 214, 94, ${0.7 + pulse * 0.25})`;
+    ctx.lineWidth = 5;
+    ctx.setLineDash([10, 5]);
+    ctx.shadowColor = 'rgba(255, 193, 66, 0.8)';
+    ctx.shadowBlur = 8 + pulse * 8;
+    ctx.fill();
+    ctx.stroke();
+    const markerY = y - size * 0.62;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(x, markerY + 10);
+    ctx.lineTo(x - 9, markerY - 5);
+    ctx.lineTo(x + 9, markerY - 5);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(255, 224, 112, ${0.82 + pulse * 0.18})`;
+    ctx.fill();
     ctx.restore();
 }
 

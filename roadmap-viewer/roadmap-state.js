@@ -75,7 +75,8 @@ window.HW_ROADMAP_STATE = {
                         "Require the Room 4 fire gate while keeping missed-water recovery possible.",
                         "Require the Room 2 wax-door gate while preserving the sting fallback.",
                         "Give level-1 Room 2 a bilingual pollen-to-wax-door objective.",
-                        "Give level-1 Room 3 a bilingual safe-flank objective."
+                        "Give level-1 Room 3 a bilingual safe-flank objective.",
+                        "Keep the Room 3 guard in the opening view and mark it as the lesson target."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms."
@@ -91,7 +92,8 @@ window.HW_ROADMAP_STATE = {
                         ".codex-video-frames/first-run-room-two.png",
                         "tools/smoke-browser.js: Room 2 objective ID and localized copy",
                         "tools/smoke-browser.js: Room 3 objective ID and localized copy",
-                        ".codex-video-frames/first-run-room-three.png"
+                        ".codex-video-frames/first-run-room-three.png",
+                        "tools/smoke-browser.js: guard distance and lesson-focus contract"
                     ]
                 },
                 {
