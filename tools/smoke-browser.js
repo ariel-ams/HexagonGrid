@@ -359,6 +359,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-wasp.png') });
 
+    const batScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('bat'));
+    assert(batScenario.targetObject === 'bat', 'The normal Bat should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-bat.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {

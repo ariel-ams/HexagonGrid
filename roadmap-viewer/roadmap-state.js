@@ -335,12 +335,13 @@ window.HW_ROADMAP_STATE = {
                         "Migrated Bee, Pollen, Water, Shield Upgrade, Entry, Exit, Wax Door, Thorn Beetle, Crawling Fire, and Burning Cell.",
                         "Preserved a hash-verified dated backup with restore instructions.",
                         "Added reproducible prompts, source files, a sprite preparation manifest, and runtime contract smoke checks.",
-                        "Migrated the normal Wasp to lamp-style-core-v1 with a lean black-and-amber threat silhouette."
+                        "Migrated the normal Wasp to lamp-style-core-v1 with a lean black-and-amber threat silhouette.",
+                        "Migrated the normal Bat to lamp-style-core-v1 with broad plum wings and a readable pursuit silhouette."
                     ],
                     "left": [
                         "Migrate common utility items and early/mid enemies in separate five-asset batches.",
                         "Refresh advanced/complex enemies before effects, wearables, and theme-specific playable tiles.",
-                        "Migrate remaining common movement/combat sprites: Bat, Trader Beetle, Vine, Double Sting."
+                        "Migrate remaining common movement/combat sprites: Trader Beetle, Vine, Double Sting."
                     ],
                     "evidence": [
                         "assets/style-sources/lamp-style-core/manifest.json",
@@ -356,7 +357,11 @@ window.HW_ROADMAP_STATE = {
                         "assets/sprite-backups/pre-lamp-style-wasp-2026-08-14/README.md",
                         "assets/style-sources/lamp-style-core/wasp.prompt.md",
                         ".codex-video-frames/lamp-style-wasp.png",
-                        "npm test: Wasp art contract, Test scenario, gameplay browser, and UI layout passed"
+                        "npm test: Wasp art contract, Test scenario, gameplay browser, and UI layout passed",
+                        "assets/sprite-backups/pre-lamp-style-bat-2026-08-14/README.md",
+                        "assets/style-sources/lamp-style-core/bat.prompt.md",
+                        ".codex-video-frames/lamp-style-bat.png",
+                        "npm test: Bat art contract, Test scenario, gameplay browser, and UI layout passed"
                     ]
                 },
                 {

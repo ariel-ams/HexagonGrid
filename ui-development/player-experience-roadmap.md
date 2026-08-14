@@ -189,9 +189,11 @@ Status: in progress. The first art-cohesion sprint replaced ten first-run runtim
 
 The second art-cohesion sprint migrated the normal Wasp as the first small post-core replacement. Its lean black-and-amber armor, long sting, aggressive eyes, and sharper silhouette distinguish it from the friendly Bee at cell scale. The source, prompt, per-batch checksum, and one-file restore script are retained, while the art smoke test now supports independent immutable backup metadata for later small batches.
 
+The third art-cohesion sprint migrated the normal pursuing Bat. Broad plum wings, pale-gold alert eyes, hooked feet, and a charcoal-violet body give its movement pressure a distinct silhouette over cave and forest cells without borrowing the red immediate-danger language. The existing `4 x 1` timing and focused Test scenario remain intact, with an independent hash-verified restore package.
+
 Planned small migrations:
 
-1. Common movement/combat: Bat, Trader Beetle, Vine, Double Sting. Wasp complete.
+1. Common movement/combat: Trader Beetle, Vine, Double Sting. Wasp and Bat complete.
 2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
