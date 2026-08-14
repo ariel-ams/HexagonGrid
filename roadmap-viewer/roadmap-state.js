@@ -71,18 +71,19 @@ window.HW_ROADMAP_STATE = {
                         "Room 2 teaches wax-door spending.",
                         "Room 3 teaches a guarded route and safe flanks.",
                         "Mist cells can be targeted for movement.",
-                        "Authored level-1 room 4 as a single fire-and-water resource lesson."
+                        "Authored level-1 room 4 as a single fire-and-water resource lesson.",
+                        "Require the Room 4 fire gate while keeping missed-water recovery possible."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms.",
-                        "Keep the exit visible while shaping routes around mechanics.",
-                        "Improve early resource-use constraints without crowding."
+                        "Keep the exit visible while shaping routes around mechanics."
                     ],
                     "evidence": [
                         "ui-development/player-experience-roadmap.md",
                         "tools/smoke-browser.js",
                         "tools/smoke-browser.js: room 4 water-before-fire, visible exit, no competing threats",
-                        ".codex-video-frames/first-run-room-four.png"
+                        ".codex-video-frames/first-run-room-four.png",
+                        "tools/smoke-browser.js: fire is the exit's only traversable neighbor"
                     ]
                 },
                 {

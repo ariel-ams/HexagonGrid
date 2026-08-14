@@ -596,7 +596,9 @@ async function main() {
         const burningCells = roomFourCells.filter((cell) => cell.object === 'burningCell');
         const waterCells = roomFourCells.filter((cell) => cell.object === 'water');
         const competingHazards = new Set(['vine', 'stickyTrap', 'waxDoor', 'burrowWarningCell', 'bomberMarkedCell']);
-        const lessonObjects = new Set(['empty', 'entry', 'exit', 'finalExit', 'water', 'burningCell']);
+        const lessonObjects = new Set(['empty', 'entry', 'exit', 'finalExit', 'wall', 'water', 'burningCell']);
+        const exitNeighbors = roomFourCells.filter((cell) => roomFourExit && distance(cell, roomFourExit) === 1);
+        const traversableExitNeighbors = exitNeighbors.filter((cell) => cell.object !== 'wall');
         const nearestWaterDistance = waterCells.reduce((min, cell) => Math.min(min, distance(cell, roomFourEntry)), Infinity);
         const nearestFireDistance = burningCells.reduce((min, cell) => Math.min(min, distance(cell, roomFourEntry)), Infinity);
 
@@ -618,6 +620,8 @@ async function main() {
             burningCount: burningCells.length,
             competingHazardCount: roomFourCells.filter((cell) => competingHazards.has(cell.object)).length,
             burningNearExit: burningCells.some((cell) => roomFourExit && distance(cell, roomFourExit) === 1),
+            exitNeighborCount: exitNeighbors.length,
+            traversableExitNeighborObjects: traversableExitNeighbors.map((cell) => cell.object),
             roomFourWater: waterCells.length,
             unrelatedObjectCount: roomFourCells.filter((cell) => !lessonObjects.has(cell.object)).length,
             waterBeforeFire: nearestWaterDistance < nearestFireDistance,
@@ -641,6 +645,11 @@ async function main() {
     assert(lessonRooms.burningCount === 1, 'Room 4 should contain one readable burning-cell gate.');
     assert(lessonRooms.competingHazardCount === 0, 'Room 4 should not mix competing hazards into the first fire lesson.');
     assert(lessonRooms.burningNearExit, 'Room 4 burning cell should guard the visible exit route.');
+    assert(lessonRooms.exitNeighborCount >= 1, 'Room 4 exit should have at least one playable approach cell.');
+    assert(
+        lessonRooms.traversableExitNeighborObjects.length === 1 && lessonRooms.traversableExitNeighborObjects[0] === 'burningCell',
+        'Room 4 should require crossing the authored burning cell to reach the exit.'
+    );
     assert(lessonRooms.roomFourWater >= 1, 'Room 4 should supply the water required by its hazard lesson.');
     assert(lessonRooms.unrelatedObjectCount === 0, 'Room 4 should not crowd the first fire lesson with unrelated pickups.');
     assert(lessonRooms.waterBeforeFire, 'Room 4 should place water before the burning-cell gate.');

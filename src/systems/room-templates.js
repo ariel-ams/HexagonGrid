@@ -463,18 +463,21 @@ function createRoomTemplateSystem(context) {
             cell.nextAttackAt = 0;
         });
         game.roomSpawnCounts.enemies = 0;
-        game.roomSpawnCounts.hazards = 1;
 
         const fireStep = route.length >= 3 ? route[route.length - 2] : null;
-        const fire = fireStep ? getCell(fireStep.q, fireStep.r) : null;
+        let fire = fireStep ? getCell(fireStep.q, fireStep.r) : null;
         if (!fire || !isGateCandidateCell(fire)) {
-            const fallback = getExitNeighborCells()
+            fire = getExitNeighborCells()
                 .filter(isGateCandidateCell)
                 .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r))[0];
-            if (fallback) fallback.object = 'burningCell';
-        } else {
-            fire.object = 'burningCell';
         }
+        if (fire) fire.object = 'burningCell';
+        getExitNeighborCells()
+            .filter((cell) => cell !== fire && isGateCandidateCell(cell))
+            .forEach((cell) => {
+                cell.object = 'wall';
+            });
+        game.roomSpawnCounts.hazards = fire ? 1 : 0;
 
         const waterStep = route
             .slice(0, Math.max(1, route.length - 2))

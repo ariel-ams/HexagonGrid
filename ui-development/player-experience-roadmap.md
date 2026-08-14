@@ -47,6 +47,8 @@ The seventh sprint finished the current HUD declutter pass. Top feedback toasts 
 
 The eighth sprint extended the authored level-1 learning sequence into room 4. Instead of falling through to the level-3 mixed gate, room 4 now supplies water before one burning cell beside the visible exit, removes unrelated pickups and competing threats, and uses a bilingual `crossFire` objective that explicitly tells the player to collect water before crossing. Browser evidence verifies the route order, solvability, localized objective, and low-noise room composition.
 
+The ninth sprint made that resource lesson structurally meaningful. All other playable approaches beside the room-4 exit become walls, so the bee must cross the authored burning cell; carrying the supplied water prevents its damage, while missing the pickup remains recoverable through the existing one-damage crossing rule. Browser coverage verifies that the burning cell is the exit's only traversable neighbor.
+
 Scope:
 
 - Define first-run room templates by player level:
