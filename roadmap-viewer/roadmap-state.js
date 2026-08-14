@@ -74,7 +74,8 @@ window.HW_ROADMAP_STATE = {
                         "Authored level-1 room 4 as a single fire-and-water resource lesson.",
                         "Require the Room 4 fire gate while keeping missed-water recovery possible.",
                         "Require the Room 2 wax-door gate while preserving the sting fallback.",
-                        "Give level-1 Room 2 a bilingual pollen-to-wax-door objective."
+                        "Give level-1 Room 2 a bilingual pollen-to-wax-door objective.",
+                        "Give level-1 Room 3 a bilingual safe-flank objective."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms."
@@ -88,7 +89,9 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-data.js: synthetic multi-neighbor wax-door geometry",
                         "tools/smoke-browser.js: pollen-before-door and visible-exit contract",
                         ".codex-video-frames/first-run-room-two.png",
-                        "tools/smoke-browser.js: Room 2 objective ID and localized copy"
+                        "tools/smoke-browser.js: Room 2 objective ID and localized copy",
+                        "tools/smoke-browser.js: Room 3 objective ID and localized copy",
+                        ".codex-video-frames/first-run-room-three.png"
                     ]
                 },
                 {

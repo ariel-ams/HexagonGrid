@@ -46,6 +46,14 @@ const ROOM_OBJECTIVES = [
         isComplete: ({ game }) => game.objectiveProgress.exitReached && !game.objectiveProgress.tookDamage
     },
     {
+        id: 'flankGuard',
+        minDepth: 3,
+        random: false,
+        label: { en: 'Flank the thorn beetle', 'es-419': 'Flanquea al escarabajo espinoso' },
+        hint: { en: 'Move to a highlighted safe cell, then sting the guard.', 'es-419': 'Muevete a una celda segura resaltada y luego pica al guardian.' },
+        isComplete: ({ game }) => game.objectiveProgress.kills >= 1
+    },
+    {
         id: 'defeatEnemy',
         minDepth: 3,
         label: { en: 'Defeat 1 enemy', 'es-419': 'Derrota 1 enemigo' },
@@ -133,6 +141,7 @@ function createRoomTemplateSystem(context) {
         const options = ROOM_OBJECTIVES.filter((objective) => objective.random !== false && game.roomDepth >= objective.minDepth);
         if (getPlayerLevel() === 1 && game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'collectTwo'));
         if (getPlayerLevel() === 1 && game.roomDepth === 2) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'openWaxDoor'));
+        if (getPlayerLevel() === 1 && game.roomDepth === 3) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'flankGuard'));
         if (getPlayerLevel() === 1 && game.roomDepth === 4) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'crossFire'));
         if (game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit'));
         return decorateObjective(randomFrom(options));

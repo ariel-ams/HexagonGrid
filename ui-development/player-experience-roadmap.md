@@ -53,6 +53,8 @@ The tenth sprint made the room 2 wax-door lesson structurally required. Pollen r
 
 The eleventh sprint aligned Room 2's HUD guidance with its authored route. A dedicated bilingual `openWaxDoor` objective now tells level-1 players to collect pollen before spending it on the door, while browser coverage protects both English and Latin American Spanish copy.
 
+The twelfth sprint aligned Room 3's HUD guidance with its positional combat lesson. A dedicated bilingual `flankGuard` objective now directs level-1 players to a highlighted safe cell before stinging the Thorn Beetle, and completes through the existing room kill progress.
+
 Scope:
 
 - Define first-run room templates by player level:

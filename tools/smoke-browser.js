@@ -614,6 +614,7 @@ async function main() {
             roomTwoTraversableExitNeighborObjects: roomTwoTraversableExitNeighbors.map((cell) => cell.object),
             roomTwoExitRevealed: Boolean(roomTwoExit && roomTwoCells.find((cell) => cell.q === roomTwoExit.q && cell.r === roomTwoExit.r)?.revealed),
             roomThreeTemplate: roomThree.roomTemplate,
+            roomThreeObjective: roomThree.roomObjective?.id,
             enemyCount: enemies.length,
             hasThornGuard: Boolean(thornGuard),
             thornGuardVisible: Boolean(thornGuard && (thornGuard.revealed || thornGuard.litByLamp)),
@@ -646,6 +647,7 @@ async function main() {
     );
     assert(lessonRooms.roomTwoExitRevealed, 'Room 2 should keep the exit visible while teaching pollen spending.');
     assert(lessonRooms.roomThreeTemplate === 'enemyGate', 'Room 3 should use the enemy gate lesson template.');
+    assert(lessonRooms.roomThreeObjective === 'flankGuard', 'Level-1 room 3 should explicitly teach flanking its armored guard.');
     assert(lessonRooms.enemyCount >= 1, 'Room 3 should include a visible guard lesson.');
     assert(lessonRooms.hasThornGuard, 'Room 3 should teach the first armored positional guard.');
     assert(lessonRooms.thornGuardVisible, 'Room 3 armored guard should be visible before engagement.');
@@ -684,6 +686,15 @@ async function main() {
     assert(roomTwoObjectiveCopyEs.includes('Junta polen primero'), 'Room 2 objective should explain the pollen-before-door action in Latin American Spanish.');
     await page.evaluate(() => window.setLanguage('en'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-two.png') });
+
+    await page.evaluate(() => window.HW_TEST_API.generateRoomAtDepth(3));
+    const roomThreeObjectiveCopy = await page.locator('[data-hud-id="objective"]').getAttribute('aria-label');
+    assert(roomThreeObjectiveCopy.includes('Move to a highlighted safe cell'), 'Room 3 objective should explain the safe-flank action in English.');
+    await page.evaluate(() => window.setLanguage('es-419'));
+    const roomThreeObjectiveCopyEs = await page.locator('[data-hud-id="objective"]').getAttribute('aria-label');
+    assert(roomThreeObjectiveCopyEs.includes('Muevete a una celda segura resaltada'), 'Room 3 objective should explain the safe-flank action in Latin American Spanish.');
+    await page.evaluate(() => window.setLanguage('en'));
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-three.png') });
 
     const themedTemplates = await page.evaluate(() => {
         const api = window.HW_TEST_API;
