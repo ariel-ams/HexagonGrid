@@ -339,7 +339,8 @@ window.HW_ROADMAP_STATE = {
                         "Migrated the normal Bat to lamp-style-core-v1 with broad plum wings and a readable pursuit silhouette.",
                         "Migrated the Trader Beetle to lamp-style-core-v1 with teal merchant gear and readable supply props.",
                         "Migrated the Vine hazard to lamp-style-core-v1 with a grounded thorny terrain silhouette.",
-                        "Migrated Double Sting to lamp-style-core-v1 with two readable stingers and an amber charge capsule."
+                        "Migrated Double Sting to lamp-style-core-v1 with two readable stingers and an amber charge capsule.",
+                        "Migrated Glow Pollen to lamp-style-core-v1 with mint grains and a contained mist-reveal ring."
                     ],
                     "left": [
                         "Migrate common utility items and early/mid enemies in separate five-asset batches.",
@@ -375,7 +376,11 @@ window.HW_ROADMAP_STATE = {
                         "assets/sprite-backups/pre-lamp-style-double-sting-2026-08-14/README.md",
                         "assets/style-sources/lamp-style-core/double-sting.prompt.md",
                         ".codex-video-frames/lamp-style-double-sting.png",
-                        "npm test: Double Sting art contract, Test scenario, gameplay browser, and UI layout passed"
+                        "npm test: Double Sting art contract, Test scenario, gameplay browser, and UI layout passed",
+                        "assets/sprite-backups/pre-lamp-style-glow-pollen-2026-08-14/README.md",
+                        "assets/style-sources/lamp-style-core/glow-pollen.prompt.md",
+                        ".codex-video-frames/lamp-style-glow-pollen.png",
+                        "npm test: Glow Pollen art contract, Test scenario, gameplay browser, and UI layout passed"
                     ]
                 },
                 {

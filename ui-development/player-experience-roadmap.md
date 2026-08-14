@@ -197,10 +197,12 @@ The fifth art-cohesion sprint migrated the persistent Vine hazard. Its low roote
 
 The sixth art-cohesion sprint migrated the Double Sting pickup. Its two black stingers, compact amber venom capsule, and orange charge pulse replace the previous shield-dominant silhouette, so the stored combat charge reads as an attack resource before the player opens its description. The existing `4 x 1` timing, HUD usage, and focused Test scenario remain unchanged.
 
+The seventh art-cohesion sprint migrated Glow Pollen. Its mint bioluminescent grains preserve the pollen family shape while a carved wax lantern cup and expanding reveal ring distinguish the mist-reveal utility from ordinary golden pollen. The existing `4 x 1` timing and focused Test scenario remain unchanged.
+
 Planned small migrations:
 
 1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, and Double Sting complete.
-2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff.
+2. Common utility: Nectar Cache, Honey Drop, Clean Water, Smoke Puff. Glow Pollen complete.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
 5. Advanced enemies: Brood Wasp, Stag Beetle, Honey Leech, False Flower, Wasp Hive.
