@@ -394,6 +394,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-honey-drop.png') });
 
+    const cleanWaterScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('cleanWater'));
+    assert(cleanWaterScenario.targetObject === 'cleanWater', 'Clean Water should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-clean-water.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {
