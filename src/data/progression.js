@@ -213,7 +213,7 @@ const DUNGEON_THEMES = {
             'flowerMap',
             'royalNectar'
         ],
-        hazards: ['vine', 'waxDoor', 'stickyTrap'],
+        hazards: ['vine', 'waxDoor', 'stickyTrap', 'burningCell'],
         bossEncounter: {
             boss: 'queenSignaler',
             support: 'waspHive',

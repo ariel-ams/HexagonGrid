@@ -77,7 +77,7 @@ Smoke checks
 
 Room lesson templates
 
-- Early rooms force simple lessons: collect supplies, spend pollen on wax doors, defeat an enemy gate, or cross fire with water.
+- The level-1 authored sequence introduces one decision at a time: collect supplies in room 1, spend pollen on a wax door in room 2, flank an armored guard in room 3, then collect water before crossing a single burning-cell gate in room 4. Room 4 is fully authored with no unrelated pickups, enemies, or hazards; the exit stays revealed and its bilingual `crossFire` objective states the intended action directly.
 - Room objectives, template selection, exit reveal, and gate placement live in `systems/room-templates.js`; `index.js` should only orchestrate when those passes run.
 - `ROOM_TEMPLATE_DEFS` records each authored lesson's minimum player level, random-selection eligibility, and required objects/enemies. Keep it in sync when adding new templates or synergy lessons; data smoke rejects unsupported keys, malformed reference lists, required content that unlocks after the template, random templates with no compatible dungeon theme, and themes with no compatible random lesson.
 - Room 3's enemy-gate lesson uses an armored Thorn Beetle and `lessonSafe` cells to visually mark safe flank positions without using danger-red language.

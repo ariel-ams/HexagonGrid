@@ -30,7 +30,7 @@ function createHudRenderer({ statsNode, timerNode, spriteDefs, escapeHtml, escap
         if (item.tone) classes.push(item.tone);
 
         return `
-            <div class="${classes.join(' ')}" data-tooltip="${escapeAttr(item.title)}" aria-label="${escapeAttr(item.title)}">
+            <div class="${classes.join(' ')}" data-hud-id="${escapeAttr(item.id)}" data-tooltip="${escapeAttr(item.title)}" aria-label="${escapeAttr(item.title)}">
                 ${renderIcon(item)}
                 <span class="hud-value">${escapeHtml(value)}</span>
             </div>

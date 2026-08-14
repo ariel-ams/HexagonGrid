@@ -586,6 +586,20 @@ async function main() {
         }));
         const lessonSafeCells = roomThreeCells.filter((cell) => cell.lessonSafe);
 
+        api.setProgressionLevel(1);
+        api.setDungeonTheme('forest');
+        api.generateRoomAtDepth(4);
+        const roomFour = api.getState();
+        const roomFourCells = api.getCells();
+        const roomFourEntry = roomFour.entryCell;
+        const roomFourExit = roomFour.exitCell;
+        const burningCells = roomFourCells.filter((cell) => cell.object === 'burningCell');
+        const waterCells = roomFourCells.filter((cell) => cell.object === 'water');
+        const competingHazards = new Set(['vine', 'stickyTrap', 'waxDoor', 'burrowWarningCell', 'bomberMarkedCell']);
+        const lessonObjects = new Set(['empty', 'entry', 'exit', 'finalExit', 'water', 'burningCell']);
+        const nearestWaterDistance = waterCells.reduce((min, cell) => Math.min(min, distance(cell, roomFourEntry)), Infinity);
+        const nearestFireDistance = burningCells.reduce((min, cell) => Math.min(min, distance(cell, roomFourEntry)), Infinity);
+
         return {
             roomTwoTemplate: roomTwo.roomTemplate,
             waxDoorNearExit,
@@ -597,7 +611,17 @@ async function main() {
             nearestEnemyDistance,
             guardHasReadableSpace,
             lessonSafeCount: lessonSafeCells.length,
-            lessonSafeNearGuard: lessonSafeCells.some((cell) => thornGuard && distance(cell, thornGuard) === 1)
+            lessonSafeNearGuard: lessonSafeCells.some((cell) => thornGuard && distance(cell, thornGuard) === 1),
+            roomFourTemplate: roomFour.roomTemplate,
+            roomFourObjective: roomFour.roomObjective?.id,
+            roomFourEnemyCount: roomFourCells.filter((cell) => window.HW_TEST_API.isEnemyObject(cell.object)).length,
+            burningCount: burningCells.length,
+            competingHazardCount: roomFourCells.filter((cell) => competingHazards.has(cell.object)).length,
+            burningNearExit: burningCells.some((cell) => roomFourExit && distance(cell, roomFourExit) === 1),
+            roomFourWater: waterCells.length,
+            unrelatedObjectCount: roomFourCells.filter((cell) => !lessonObjects.has(cell.object)).length,
+            waterBeforeFire: nearestWaterDistance < nearestFireDistance,
+            roomFourExitRevealed: Boolean(roomFourExit && roomFourCells.find((cell) => cell.q === roomFourExit.q && cell.r === roomFourExit.r)?.revealed)
         };
     });
     assert(lessonRooms.roomTwoTemplate === 'waxDoorPollen', 'Room 2 should use the wax door and pollen lesson template.');
@@ -611,6 +635,23 @@ async function main() {
     assert(lessonRooms.guardHasReadableSpace, 'Room 3 guard should expose at least one readable nearby route cell.');
     assert(lessonRooms.lessonSafeCount >= 1, 'Room 3 should mark at least one safe flank lesson cell.');
     assert(lessonRooms.lessonSafeNearGuard, 'Room 3 safe lesson cell should sit beside the armored guard.');
+    assert(lessonRooms.roomFourTemplate === 'fireWater', 'Level-1 room 4 should use the water and fire lesson template.');
+    assert(lessonRooms.roomFourObjective === 'crossFire', 'Room 4 objective should explicitly teach collecting water before crossing fire.');
+    assert(lessonRooms.roomFourEnemyCount === 0, 'Room 4 should teach its first hazard without competing enemies.');
+    assert(lessonRooms.burningCount === 1, 'Room 4 should contain one readable burning-cell gate.');
+    assert(lessonRooms.competingHazardCount === 0, 'Room 4 should not mix competing hazards into the first fire lesson.');
+    assert(lessonRooms.burningNearExit, 'Room 4 burning cell should guard the visible exit route.');
+    assert(lessonRooms.roomFourWater >= 1, 'Room 4 should supply the water required by its hazard lesson.');
+    assert(lessonRooms.unrelatedObjectCount === 0, 'Room 4 should not crowd the first fire lesson with unrelated pickups.');
+    assert(lessonRooms.waterBeforeFire, 'Room 4 should place water before the burning-cell gate.');
+    assert(lessonRooms.roomFourExitRevealed, 'Room 4 should keep the exit visible while teaching water use.');
+    const roomFourObjectiveCopy = await page.locator('[data-hud-id="objective"]').getAttribute('aria-label');
+    assert(roomFourObjectiveCopy.includes('Collect water first'), 'Room 4 objective should explain the water-before-fire action in English.');
+    await page.evaluate(() => window.setLanguage('es-419'));
+    const roomFourObjectiveCopyEs = await page.locator('[data-hud-id="objective"]').getAttribute('aria-label');
+    assert(roomFourObjectiveCopyEs.includes('Junta agua primero'), 'Room 4 objective should explain the water-before-fire action in Latin American Spanish.');
+    await page.evaluate(() => window.setLanguage('en'));
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'first-run-room-four.png') });
 
     const themedTemplates = await page.evaluate(() => {
         const api = window.HW_TEST_API;

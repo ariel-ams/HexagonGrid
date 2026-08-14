@@ -6338,6 +6338,10 @@ window.HW_TEST_API = {
             bossRoom: game.caveMetadata.bossRoom
         } : null,
         roomTemplate: game.roomTemplate,
+        roomObjective: game.roomObjective ? {
+            id: game.roomObjective.id,
+            complete: game.roomObjective.isComplete()
+        } : null,
         dungeonTheme: getCurrentTheme() ? {
             id: getCurrentTheme().id,
             name: getCurrentTheme().name

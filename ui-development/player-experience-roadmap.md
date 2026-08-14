@@ -45,6 +45,8 @@ The sixth sprint improved inspect-panel scanning without adding more floating fe
 
 The seventh sprint finished the current HUD declutter pass. Top feedback toasts now measure the visible stat and enemy-timer clusters and move below any cluster they would overlap, including wrapped mobile and crowded test-room layouts. The layout smoke test includes a Queen Signaler scenario so future HUD additions cannot silently cover feedback again.
 
+The eighth sprint extended the authored level-1 learning sequence into room 4. Instead of falling through to the level-3 mixed gate, room 4 now supplies water before one burning cell beside the visible exit, removes unrelated pickups and competing threats, and uses a bilingual `crossFire` objective that explicitly tells the player to collect water before crossing. Browser evidence verifies the route order, solvability, localized objective, and low-noise room composition.
+
 Scope:
 
 - Define first-run room templates by player level:

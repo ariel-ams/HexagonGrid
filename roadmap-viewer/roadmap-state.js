@@ -1,6 +1,6 @@
 window.HW_ROADMAP_STATE = {
     "updatedAt": "2026-08-14",
-    "currentTaskId": "theme-surroundings",
+    "currentTaskId": "first-run",
     "summary": "Honeycomb Wayfinder is moving toward clearer first-run learning, tactical position puzzles, theme atmosphere, and safer content scaling.",
     "lanes": [
         {
@@ -70,7 +70,8 @@ window.HW_ROADMAP_STATE = {
                         "Room 1 onboarding path starts without enemies.",
                         "Room 2 teaches wax-door spending.",
                         "Room 3 teaches a guarded route and safe flanks.",
-                        "Mist cells can be targeted for movement."
+                        "Mist cells can be targeted for movement.",
+                        "Authored level-1 room 4 as a single fire-and-water resource lesson."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms.",
@@ -79,7 +80,9 @@ window.HW_ROADMAP_STATE = {
                     ],
                     "evidence": [
                         "ui-development/player-experience-roadmap.md",
-                        "tools/smoke-browser.js"
+                        "tools/smoke-browser.js",
+                        "tools/smoke-browser.js: room 4 water-before-fire, visible exit, no competing threats",
+                        ".codex-video-frames/first-run-room-four.png"
                     ]
                 },
                 {

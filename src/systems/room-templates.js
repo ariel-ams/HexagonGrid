@@ -30,6 +30,14 @@ const ROOM_OBJECTIVES = [
         isComplete: ({ game }) => game.objectiveProgress.exitReached && !game.objectiveProgress.tookDamage
     },
     {
+        id: 'crossFire',
+        minDepth: 4,
+        random: false,
+        label: { en: 'Cross the fire safely', 'es-419': 'Cruza el fuego a salvo' },
+        hint: { en: 'Collect water first, then cross the burning cell.', 'es-419': 'Junta agua primero y luego cruza la celda en llamas.' },
+        isComplete: ({ game }) => game.objectiveProgress.exitReached && !game.objectiveProgress.tookDamage
+    },
+    {
         id: 'defeatEnemy',
         minDepth: 3,
         label: { en: 'Defeat 1 enemy', 'es-419': 'Derrota 1 enemigo' },
@@ -114,8 +122,9 @@ function createRoomTemplateSystem(context) {
     } = context;
 
     function chooseRoomObjective() {
-        const options = ROOM_OBJECTIVES.filter((objective) => game.roomDepth >= objective.minDepth);
+        const options = ROOM_OBJECTIVES.filter((objective) => objective.random !== false && game.roomDepth >= objective.minDepth);
         if (getPlayerLevel() === 1 && game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'collectTwo'));
+        if (getPlayerLevel() === 1 && game.roomDepth === 4) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'crossFire'));
         if (game.roomDepth === 1) return decorateObjective(ROOM_OBJECTIVES.find((objective) => objective.id === 'findExit'));
         return decorateObjective(randomFrom(options));
     }
@@ -132,6 +141,7 @@ function createRoomTemplateSystem(context) {
         if (game.roomDepth === 1) return 'introSupplies';
         if (game.roomDepth === 2) return 'waxDoorPollen';
         if (game.roomDepth === 3) return 'enemyGate';
+        if (game.roomDepth === 4 && getPlayerLevel() === 1) return 'fireWater';
         const candidates = Object.entries(ROOM_TEMPLATE_DEFS)
             .filter(([, template]) => template.random)
             .map(([template]) => template)
@@ -247,6 +257,10 @@ function createRoomTemplateSystem(context) {
             return;
         }
         if (template === 'fireWater') {
+            if (game.roomDepth === 4 && getPlayerLevel() === 1) {
+                placeFirstFireWaterLesson(route);
+                return;
+            }
             placeFireWaterExitGate();
             placeResourceNearPlayer('water');
             return;
@@ -437,6 +451,40 @@ function createRoomTemplateSystem(context) {
         neighbors.slice(2, 4).forEach((cell) => {
             if (isGateCandidateCell(cell)) cell.object = 'wall';
         });
+    }
+
+    function placeFirstFireWaterLesson(route) {
+        clearRouteForLesson(route);
+        game.cells.forEach((cell) => {
+            if (cell.object === 'entry' || cell.object === 'exit' || cell.object === 'finalExit') return;
+            cell.object = 'empty';
+            cell.hits = 0;
+            cell.nextAuraAt = 0;
+            cell.nextAttackAt = 0;
+        });
+        game.roomSpawnCounts.enemies = 0;
+        game.roomSpawnCounts.hazards = 1;
+
+        const fireStep = route.length >= 3 ? route[route.length - 2] : null;
+        const fire = fireStep ? getCell(fireStep.q, fireStep.r) : null;
+        if (!fire || !isGateCandidateCell(fire)) {
+            const fallback = getExitNeighborCells()
+                .filter(isGateCandidateCell)
+                .sort((a, b) => hexDistance(a.q, a.r, game.entryCell.q, game.entryCell.r) - hexDistance(b.q, b.r, game.entryCell.q, game.entryCell.r))[0];
+            if (fallback) fallback.object = 'burningCell';
+        } else {
+            fire.object = 'burningCell';
+        }
+
+        const waterStep = route
+            .slice(0, Math.max(1, route.length - 2))
+            .map((step) => getCell(step.q, step.r))
+            .find((cell) => cell && cell.object === 'empty' && !(cell.q === game.player.q && cell.r === game.player.r));
+        if (waterStep) {
+            waterStep.object = 'water';
+        } else {
+            placeResourceNearPlayer('water');
+        }
     }
 
     function placeRevealRouteLesson() {
