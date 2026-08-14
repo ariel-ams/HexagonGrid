@@ -532,7 +532,7 @@ const SPRITE_DEFS = {
     bat: { src: 'assets/bat-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
     npc: { src: 'assets/bettle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     miteSwarm: { src: 'assets/miteSwarm.png', columns: 4, rows: 1, row: 0, frameMs: 170 },
-    thornBeetle: { src: 'assets/thornBeetle.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
+    thornBeetle: { src: 'assets/thornBeetle-alpha.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     fogMoth: { src: 'assets/fogMoth.png', columns: 4, rows: 1, row: 0, frameMs: 190 },
     waxMoth: { src: 'assets/waxMoth.png', columns: 4, rows: 1, row: 0, frameMs: 185 },
     broodWasp: { src: 'assets/broodWasp.png', columns: 4, rows: 1, row: 0, frameMs: 180 },

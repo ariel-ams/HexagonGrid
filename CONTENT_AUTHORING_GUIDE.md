@@ -46,6 +46,8 @@ Where to edit:
 
 The renderer trims transparent sprite bounds in `buildSpriteFrames()` and animates frames in `drawSprite()`.
 
+When an artist sheet has a pale checkerboard baked into its background, run `tools/remove-connected-sprite-background.ps1` (or the asset-specific npm script when one exists). It removes only pale neutral pixels connected to the image boundary, preserving enclosed highlights such as eyes. Keep the original artist export and reference the generated `*-alpha.png` derivative from sprite metadata.
+
 ## Adding Wearable Gear Art
 
 Wearable gear uses `plannedAsset` paths in `EQUIPMENT_DEFS` until final art exists. Add final files under `assets/equipment/` using the contract in `ART_SPRITE_REQUESTS.md`.

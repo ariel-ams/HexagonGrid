@@ -5,6 +5,7 @@
   "scripts": {
     "build:roadmap": "node tools/build-roadmap-viewer.js",
     "themes:surroundings": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/generate-theme-surroundings.ps1",
+    "sprites:thorn-alpha": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/remove-connected-sprite-background.ps1 -InputPath assets/thornBeetle.png -OutputPath assets/thornBeetle-alpha.png",
     "roadmap:update": "node tools/update-roadmap-state.js",
     "test:roadmap": "node tools/smoke-roadmap-viewer.js && node tools/smoke-roadmap-browser.js",
     "test": "node tools/smoke-data.js && node tools/smoke-roadmap-viewer.js && node tools/smoke-roadmap-browser.js && node tools/smoke-browser.js && node tools/smoke-ui-layout.js"

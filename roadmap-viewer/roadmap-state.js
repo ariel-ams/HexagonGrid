@@ -76,7 +76,8 @@ window.HW_ROADMAP_STATE = {
                         "Require the Room 2 wax-door gate while preserving the sting fallback.",
                         "Give level-1 Room 2 a bilingual pollen-to-wax-door objective.",
                         "Give level-1 Room 3 a bilingual safe-flank objective.",
-                        "Keep the Room 3 guard in the opening view and mark it as the lesson target."
+                        "Keep the Room 3 guard in the opening view and mark it as the lesson target.",
+                        "Use a cleaned transparent Thorn Beetle sprite in the first combat lesson."
                     ],
                     "left": [
                         "Add more authored first-interaction rooms."
@@ -93,7 +94,8 @@ window.HW_ROADMAP_STATE = {
                         "tools/smoke-browser.js: Room 2 objective ID and localized copy",
                         "tools/smoke-browser.js: Room 3 objective ID and localized copy",
                         ".codex-video-frames/first-run-room-three.png",
-                        "tools/smoke-browser.js: guard distance and lesson-focus contract"
+                        "tools/smoke-browser.js: guard distance and lesson-focus contract",
+                        "npm run sprites:thorn-alpha: boundary-connected alpha generation"
                     ]
                 },
                 {

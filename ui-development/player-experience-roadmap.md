@@ -57,6 +57,8 @@ The twelfth sprint aligned Room 3's HUD guidance with its positional combat less
 
 The thirteenth sprint improved the first combat target's visual salience. The authored Thorn Beetle now starts three to four route steps from the entrance, receives a pulsing gold lesson-focus ring, and keeps green safe-flank markers nearby. This puts the teaching target inside the opening camera view while keeping instruction and danger colors distinct.
 
+The fourteenth sprint cleaned the Thorn Beetle's baked checkerboard background through a reusable boundary-connected alpha tool. The original artist sheet remains untouched, the game uses a generated transparent derivative, and enclosed highlights survive because only pale neutral pixels reachable from the sheet edge are removed.
+
 Scope:
 
 - Define first-run room templates by player level:

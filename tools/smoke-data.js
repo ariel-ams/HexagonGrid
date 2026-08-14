@@ -63,6 +63,7 @@ const roomTemplateKeys = new Set([
 
 assert(HW_CONTENT?.OBJECTS, 'HW_CONTENT.OBJECTS was not registered');
 assert(HW_CONTENT?.SPRITE_DEFS, 'HW_CONTENT.SPRITE_DEFS was not registered');
+assert(HW_CONTENT.SPRITE_DEFS.thornBeetle?.src === 'assets/thornBeetle-alpha.png', 'Thorn Beetle should use its cleaned transparent sprite');
 assert(HW_ART?.UI_ART_DEFS, 'HW_ART.UI_ART_DEFS was not registered');
 assert(HW_ART?.TILE_ART_DEFS, 'HW_ART.TILE_ART_DEFS was not registered');
 assert(HW_ART?.THEME_TILE_SHEET_DEFS, 'HW_ART.THEME_TILE_SHEET_DEFS was not registered');
