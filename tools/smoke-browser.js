@@ -374,6 +374,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-vine.png') });
 
+    const doubleStingScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('stingUpgrade'));
+    assert(doubleStingScenario.targetObject === 'stingUpgrade', 'Double Sting should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-double-sting.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {

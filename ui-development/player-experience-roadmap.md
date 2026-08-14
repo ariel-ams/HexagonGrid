@@ -195,9 +195,11 @@ The fourth art-cohesion sprint migrated the safe Trader Beetle. Its teal engrave
 
 The fifth art-cohesion sprint migrated the persistent Vine hazard. Its low rooted base, curling thorn silhouette, dark forest-green palette, and amber warning buds distinguish dangerous terrain from enemies and collectible items while preserving the existing `4 x 1` timing and focused Test scenario.
 
+The sixth art-cohesion sprint migrated the Double Sting pickup. Its two black stingers, compact amber venom capsule, and orange charge pulse replace the previous shield-dominant silhouette, so the stored combat charge reads as an attack resource before the player opens its description. The existing `4 x 1` timing, HUD usage, and focused Test scenario remain unchanged.
+
 Planned small migrations:
 
-1. Common movement/combat: Double Sting. Wasp, Bat, Trader Beetle, and Vine complete.
+1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, and Double Sting complete.
 2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, Smoke Puff.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
