@@ -343,7 +343,8 @@ window.HW_ROADMAP_STATE = {
                         "Migrated Glow Pollen to lamp-style-core-v1 with mint grains and a contained mist-reveal ring.",
                         "Migrated Nectar Cache to lamp-style-core-v1 with an opening mixed-supply chest.",
                         "Migrated Honey Drop to lamp-style-core-v1 with an amber droplet, wax cradle, and healing-heart pulse.",
-                        "Migrated Clean Water to lamp-style-core-v1 with a crystal purifier vial and cyan calm rings."
+                        "Migrated Clean Water to lamp-style-core-v1 with a crystal purifier vial and cyan calm rings.",
+                        "Migrated Smoke Puff to lamp-style-core-v1 with a wax censer and hourglass-shaped pause smoke."
                     ],
                     "left": [
                         "Migrate common utility items and early/mid enemies in separate five-asset batches.",
@@ -395,7 +396,11 @@ window.HW_ROADMAP_STATE = {
                         "assets/sprite-backups/pre-lamp-style-clean-water-2026-08-14/README.md",
                         "assets/style-sources/lamp-style-core/clean-water.prompt.md",
                         ".codex-video-frames/lamp-style-clean-water.png",
-                        "npm test: Clean Water art contract, Test scenario, gameplay browser, and UI layout passed"
+                        "npm test: Clean Water art contract, Test scenario, gameplay browser, and UI layout passed",
+                        "assets/sprite-backups/pre-lamp-style-smoke-puff-2026-08-14/README.md",
+                        "assets/style-sources/lamp-style-core/smoke-puff.prompt.md",
+                        ".codex-video-frames/lamp-style-smoke-puff.png",
+                        "npm test: Smoke Puff art contract, Test scenario, gameplay browser, and UI layout passed"
                     ]
                 },
                 {

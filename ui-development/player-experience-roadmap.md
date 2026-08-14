@@ -205,10 +205,12 @@ The ninth art-cohesion sprint migrated Honey Drop. Its amber droplet, wax blosso
 
 The tenth art-cohesion sprint migrated Clean Water. Its sealed crystal purifier vial, ivory-wax filter collar, and paired cyan calm rings distinguish cleansing utility from ordinary Water.
 
+The eleventh art-cohesion sprint migrated Smoke Puff. Its carved wax-and-brass censer, pale silver-lilac vapor, and brief hourglass-shaped curl communicate a temporary enemy-timer pause without borrowing the visual language of fog, poison, fire, or lethal danger.
+
 Planned small migrations:
 
 1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, and Double Sting complete.
-2. Common utility: Smoke Puff. Glow Pollen, Nectar Cache, Honey Drop, and Clean Water complete.
+2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, and Smoke Puff complete.
 3. Early/mid enemies: Mite Swarm, Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
 5. Advanced enemies: Brood Wasp, Stag Beetle, Honey Leech, False Flower, Wasp Hive.

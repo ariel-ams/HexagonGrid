@@ -399,6 +399,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-clean-water.png') });
 
+    const smokePuffScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('smokePuff'));
+    assert(smokePuffScenario.targetObject === 'smokePuff', 'Smoke Puff should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-smoke-puff.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {
