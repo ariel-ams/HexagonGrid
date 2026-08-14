@@ -337,12 +337,13 @@ window.HW_ROADMAP_STATE = {
                         "Added reproducible prompts, source files, a sprite preparation manifest, and runtime contract smoke checks.",
                         "Migrated the normal Wasp to lamp-style-core-v1 with a lean black-and-amber threat silhouette.",
                         "Migrated the normal Bat to lamp-style-core-v1 with broad plum wings and a readable pursuit silhouette.",
-                        "Migrated the Trader Beetle to lamp-style-core-v1 with teal merchant gear and readable supply props."
+                        "Migrated the Trader Beetle to lamp-style-core-v1 with teal merchant gear and readable supply props.",
+                        "Migrated the Vine hazard to lamp-style-core-v1 with a grounded thorny terrain silhouette."
                     ],
                     "left": [
                         "Migrate common utility items and early/mid enemies in separate five-asset batches.",
                         "Refresh advanced/complex enemies before effects, wearables, and theme-specific playable tiles.",
-                        "Migrate remaining common movement/combat sprites: Vine, Double Sting."
+                        "Migrate the remaining common movement/combat sprite: Double Sting."
                     ],
                     "evidence": [
                         "assets/style-sources/lamp-style-core/manifest.json",
@@ -366,7 +367,11 @@ window.HW_ROADMAP_STATE = {
                         "assets/sprite-backups/pre-lamp-style-trader-beetle-2026-08-14/README.md",
                         "assets/style-sources/lamp-style-core/trader-beetle.prompt.md",
                         ".codex-video-frames/lamp-style-trader-beetle.png",
-                        "npm test: Trader Beetle art contract, Test scenario, gameplay browser, and UI layout passed"
+                        "npm test: Trader Beetle art contract, Test scenario, gameplay browser, and UI layout passed",
+                        "assets/sprite-backups/pre-lamp-style-vine-2026-08-14/README.md",
+                        "assets/style-sources/lamp-style-core/vine.prompt.md",
+                        ".codex-video-frames/lamp-style-vine.png",
+                        "npm test: Vine art contract, Test scenario, gameplay browser, and UI layout passed"
                     ]
                 },
                 {
