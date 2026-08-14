@@ -384,6 +384,11 @@ async function main() {
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-glow-pollen.png') });
 
+    const nectarCacheScenario = await page.evaluate(() => window.HW_TEST_API.startTestScenario('nectarCache'));
+    assert(nectarCacheScenario.targetObject === 'nectarCache', 'Nectar Cache should retain its focused Test scenario.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-nectar-cache.png') });
+
     await page.evaluate(() => window.HW_TEST_API.startTestScenario('crawlingFire'));
     await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-crawling-fire.png') });
     const extinguishResult = await page.evaluate(async () => {
