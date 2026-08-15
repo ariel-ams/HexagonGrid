@@ -522,6 +522,8 @@ async function main() {
     });
     const guardInspectText = await page.locator('#inspectPanel').textContent();
     assert(guardInspectText.includes('Push'), 'Guard Wasp inspect details should warn about forced movement.');
+    await page.waitForTimeout(220);
+    await page.screenshot({ path: path.join(root, '.codex-video-frames', 'lamp-style-guard-wasp.png') });
     const guardPush = await page.evaluate(() => {
         const api = window.HW_TEST_API;
         const distance = (a, b) => {

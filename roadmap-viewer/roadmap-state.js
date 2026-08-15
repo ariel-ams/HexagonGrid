@@ -345,7 +345,8 @@ window.HW_ROADMAP_STATE = {
                         "Migrated Honey Drop to lamp-style-core-v1 with an amber droplet, wax cradle, and healing-heart pulse.",
                         "Migrated Clean Water to lamp-style-core-v1 with a crystal purifier vial and cyan calm rings.",
                         "Migrated Smoke Puff to lamp-style-core-v1 with a wax censer and hourglass-shaped pause smoke.",
-                        "Migrated Mite Swarm to lamp-style-core-v1 with a copper-russet crawling cluster."
+                        "Migrated Mite Swarm to lamp-style-core-v1 with a copper-russet crawling cluster.",
+                        "Migrated Guard Wasp to lamp-style-core-v1 with shield forelegs and a contained amber push ripple."
                     ],
                     "left": [
                         "Migrate common utility items and early/mid enemies in separate five-asset batches.",
@@ -405,7 +406,11 @@ window.HW_ROADMAP_STATE = {
                         "assets/sprite-backups/pre-lamp-style-mite-swarm-2026-08-14/README.md",
                         "assets/style-sources/lamp-style-core/mite-swarm.prompt.md",
                         ".codex-video-frames/lamp-style-mite-swarm.png",
-                        "npm test: Mite Swarm art contract, Test scenario, gameplay browser, and UI layout passed"
+                        "npm test: Mite Swarm art contract, Test scenario, gameplay browser, and UI layout passed",
+                        "assets/sprite-backups/pre-lamp-style-guard-wasp-2026-08-14/README.md",
+                        "assets/style-sources/lamp-style-core/guard-wasp.prompt.md",
+                        ".codex-video-frames/lamp-style-guard-wasp.png",
+                        "npm test: Guard Wasp art contract, push/landing behavior, gameplay browser, and UI layout passed"
                     ]
                 },
                 {

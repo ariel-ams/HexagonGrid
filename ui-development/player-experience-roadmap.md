@@ -209,11 +209,13 @@ The eleventh art-cohesion sprint migrated Smoke Puff. Its carved wax-and-brass c
 
 The twelfth art-cohesion sprint migrated Mite Swarm. Its low copper-russet cluster, pale-gold eyes, alternating crawl poses, and dusty foot particles communicate a fragile but persistent group pursuer without resembling the flying Wasp or armored Thorn Beetle.
 
+The thirteenth art-cohesion sprint migrated Guard Wasp. Its broad silhouette, shield-like foreleg plates, heavy wax-metal armor, and contained amber pressure ripple communicate a stationary position-control enemy that pushes the bee and threatens its landing cell.
+
 Planned small migrations:
 
 1. Common movement/combat: Wasp, Bat, Trader Beetle, Vine, and Double Sting complete.
 2. Common utility: Glow Pollen, Nectar Cache, Honey Drop, Clean Water, and Smoke Puff complete.
-3. Early/mid enemies: Guard Wasp, Sleeping Bat, Wax Moth, Fog Moth. Mite Swarm complete.
+3. Early/mid enemies: Sleeping Bat, Wax Moth, Fog Moth. Mite Swarm and Guard Wasp complete.
 4. Tactical objects: Sticky Honey, Sticky Trap, Compass Pollen, Sun Shard, Flower Map.
 5. Advanced enemies: Brood Wasp, Stag Beetle, Honey Leech, False Flower, Wasp Hive.
 6. Complex enemies: Spider, Burrow Beetle, Queen Signaler, Fog Shepherd, Pollen Thief Moth.
